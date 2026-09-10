@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -16,12 +15,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <!-- Tailwind (CDN build, configured with our design tokens below) -->
-
 <script src="https://cdn.tailwindcss.com"></script>
 
 <script>
   tailwind.config = {
-    theme: {   
+    theme: {
       extend: {
         colors: {
           navy:   { 900:'#151F33', 800:'#1C2A45', 700:'#24365C', 600:'#334671' },
@@ -85,6 +83,18 @@
     background: #DDD6C5;
     border-radius: 4px;
   }
+
+  /* Simple neutral placeholder shown if a photo fails to load, so the
+     layout never collapses even if an image asset is missing. */
+  .img-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #EDE7D8;
+    color: #A76F22;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+  }
 </style>
 
 </head>
@@ -96,40 +106,39 @@
 <header class="sticky top-0 z-40 bg-paper-100/95 backdrop-blur border-b border-line">
   <nav class="max-w-6xl mx-auto px-5 md:px-8 h-16 md:h-20 flex items-center justify-between">
 
-```
-<a href="#top" class="flex items-center gap-3 shrink-0">
-  <span class="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden shrink-0 border border-line">
-    <img src="./images/dipak_chatterjee.jpg" alt="" class="w-full h-full object-cover object-top">
-  </span>
+    <a href="#top" class="flex items-center gap-3 shrink-0">
+      <span class="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden shrink-0 border border-line">
+        <img src="./images/dipak_chatterjee.jpg" alt="" class="w-full h-full object-cover object-top"
+          onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('span'),{className:'img-fallback w-full h-full text-xs',textContent:'DC'}));">
+      </span>
 
-  <span class="leading-tight">
-    <span class="block font-display text-base md:text-lg text-navy-900">Dipak Chatterjee</span>
-    <span class="block text-[11px] md:text-xs text-ink-400 tracking-wide">Social Worker &middot; Educationist</span>
-  </span>
-</a>
+      <span class="leading-tight">
+        <span class="block font-display text-base md:text-lg text-navy-900">Dipak Chatterjee</span>
+        <span class="block text-[11px] md:text-xs text-ink-400 tracking-wide">Social Worker &middot; Educationist</span>
+      </span>
+    </a>
 
-<div class="hidden lg:flex items-center gap-8 text-sm text-ink-600 font-medium">
-  <a href="#about" class="hover:text-navy-900">About</a>
-  <a href="#works" class="hover:text-navy-900">Notable Works</a>
-  <a href="#public-life" class="hover:text-navy-900">Public Life</a>
-  <a href="#contact" class="hover:text-navy-900">Contact</a>
-</div>
+    <div class="hidden lg:flex items-center gap-8 text-sm text-ink-600 font-medium">
+      <a href="#about" class="hover:text-navy-900">About</a>
+      <a href="#works" class="hover:text-navy-900">Notable Works</a>
+      <a href="#public-life" class="hover:text-navy-900">Public Life</a>
+      <a href="#contact" class="hover:text-navy-900">Contact</a>
+    </div>
 
-<div class="flex items-center gap-3">
-  <a href="#grievance" class="hidden sm:inline-flex items-center gap-2 bg-saffron hover:bg-saffron-600 text-white text-sm font-semibold px-4 py-2.5 rounded-md transition-colors">
-    Submit a Complaint
-  </a>
+    <div class="flex items-center gap-3">
+      <a href="#grievance" class="hidden sm:inline-flex items-center gap-2 bg-saffron hover:bg-saffron-600 text-white text-sm font-semibold px-4 py-2.5 rounded-md transition-colors">
+        Submit a Complaint
+      </a>
 
-  <button id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu" class="lg:hidden w-10 h-10 flex items-center justify-center rounded-md border border-line text-navy-900">
-    <svg id="menu-icon-open" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
-    </svg>
-    <svg id="menu-icon-close" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-    </svg>
-  </button>
-</div>
-```
+      <button id="menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu" class="lg:hidden w-10 h-10 flex items-center justify-center rounded-md border border-line text-navy-900">
+        <svg id="menu-icon-open" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+        <svg id="menu-icon-close" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
 
   </nav>
 
@@ -149,360 +158,345 @@
   <section id="top" class="ledger-lines border-b border-line">
     <div class="max-w-6xl mx-auto px-5 md:px-8 pt-12 md:pt-20 pb-14 md:pb-24 grid md:grid-cols-[1.1fr_0.9fr] gap-12 md:gap-10 items-center">
 
-```
-  <div>
-    <p class="text-saffron-600 font-semibold text-sm mb-4">Head Teacher, social worker, and a first point of contact for Chanchal</p>
+      <div>
+        <p class="text-saffron-600 font-semibold text-sm mb-4">Head Teacher, social worker, and a first point of contact for Chanchal</p>
 
-    <h1 class="font-display text-4xl sm:text-5xl md:text-[3.4rem] leading-[1.08] text-navy-900">
-      A life spent teaching, organising, and showing up when it matters.
-    </h1>
+        <h1 class="font-display text-4xl sm:text-5xl md:text-[3.4rem] leading-[1.08] text-navy-900">
+          A life spent teaching, organising, and showing up when it matters.
+        </h1>
 
-    <p class="mt-6 text-ink-600 text-base md:text-lg max-w-xl leading-relaxed">
-      Dipak Chatterjee has spent over two decades as a schoolteacher and headmaster in Chanchal, North Malda, alongside a parallel life of community organising &mdash; from school admissions for underprivileged children to relief work during local crises. This is his record of work, and a direct line for anyone who needs help.
-    </p>
+        <p class="mt-6 text-ink-600 text-base md:text-lg max-w-xl leading-relaxed">
+          Dipak Chatterjee has spent over two decades as a schoolteacher and headmaster in Chanchal, North Malda, alongside a parallel life of community organising &mdash; from school admissions for underprivileged children to relief work during local crises. This is his record of work, and a direct line for anyone who needs help.
+        </p>
 
-    <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-      <a href="#works" class="inline-flex items-center gap-2 bg-navy-900 hover:bg-navy-700 text-white font-semibold px-6 py-3.5 rounded-md transition-colors">
-        View Notable Works
-      </a>
+        <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <a href="#works" class="inline-flex items-center gap-2 bg-navy-900 hover:bg-navy-700 text-white font-semibold px-6 py-3.5 rounded-md transition-colors">
+            View Notable Works
+          </a>
 
-      <a href="#grievance" class="inline-flex items-center gap-1.5 text-navy-900 font-semibold text-sm border-b-2 border-saffron pb-0.5 hover:text-saffron-600">
-        Have an issue? File a complaint <span aria-hidden="true">&rarr;</span>
-      </a>
+          <a href="#grievance" class="inline-flex items-center gap-1.5 text-navy-900 font-semibold text-sm border-b-2 border-saffron pb-0.5 hover:text-saffron-600">
+            Have an issue? File a complaint <span aria-hidden="true">&rarr;</span>
+          </a>
+        </div>
+
+        <dl class="mt-12 grid grid-cols-3 gap-6 max-w-md">
+          <div class="border-l-2 border-saffron pl-4">
+            <dt class="text-xs text-ink-400 font-medium">Years in Education</dt>
+            <dd class="font-display text-3xl md:text-4xl text-navy-900 mt-1">20+</dd>
+          </div>
+
+          <div class="border-l-2 border-saffron pl-4">
+            <dt class="text-xs text-ink-400 font-medium">Years of Public Outreach</dt>
+            <dd class="font-display text-3xl md:text-4xl text-navy-900 mt-1">15+</dd>
+          </div>
+
+          <div class="border-l-2 border-saffron pl-4">
+            <dt class="text-xs text-ink-400 font-medium">Languages Spoken</dt>
+            <dd class="font-display text-3xl md:text-4xl text-navy-900 mt-1">3</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="frame-in">
+        <div class="relative max-w-sm mx-auto md:max-w-none">
+          <div class="absolute -inset-3 border border-saffron/60 rounded-lg hidden sm:block"></div>
+
+          <img
+            src="./images/dipak_chatterjee.jpg"
+            alt="Portrait of Dipak Chatterjee"
+            class="relative w-full rounded-lg object-cover aspect-[4/5] shadow-[0_18px_40px_-16px_rgba(21,31,51,0.35)]"
+            onerror="this.onerror=null;this.classList.add('img-fallback');this.removeAttribute('src');this.alt='';this.insertAdjacentHTML('afterend','<p class=&quot;sr-only&quot;>Portrait of Dipak Chatterjee</p>');this.style.minHeight='320px';this.replaceWith(Object.assign(document.createElement('div'),{className:'relative w-full rounded-lg aspect-[4/5] img-fallback shadow-[0_18px_40px_-16px_rgba(21,31,51,0.35)]',innerHTML:'<span class=&quot;text-lg&quot;>Portrait unavailable</span>'}));">
+
+          <div class="relative -mt-8 mr-6 ml-auto w-max bg-navy-900 text-paper-100 px-5 py-3 rounded-md shadow-lg hidden sm:block">
+            <p class="text-xs text-paper-100/70">Chanchal, North Malda</p>
+            <p class="font-display text-sm">Community Leader</p>
+          </div>
+        </div>
+      </div>
+
     </div>
-
-    <dl class="mt-12 grid grid-cols-3 gap-6 max-w-md">
-      <div class="border-l-2 border-saffron pl-4">
-        <dt class="text-xs text-ink-400 font-medium">Years in Education</dt>
-        <dd class="font-display text-3xl md:text-4xl text-navy-900 mt-1">20+</dd>
-      </div>
-
-      <div class="border-l-2 border-saffron pl-4">
-        <dt class="text-xs text-ink-400 font-medium">Years of Public Outreach</dt>
-        <dd class="font-display text-3xl md:text-4xl text-navy-900 mt-1">15+</dd>
-      </div>
-
-      <div class="border-l-2 border-saffron pl-4">
-        <dt class="text-xs text-ink-400 font-medium">Languages Spoken</dt>
-        <dd class="font-display text-3xl md:text-4xl text-navy-900 mt-1">3</dd>
-      </div>
-    </dl>
-  </div>
-
-  <div class="frame-in">
-    <div class="relative max-w-sm mx-auto md:max-w-none">
-      <div class="absolute -inset-3 border border-saffron/60 rounded-lg hidden sm:block"></div>
-
-      <img
-        src="./images/dipak_chatterjee.jpg"
-        alt="Portrait of Dipak Chatterjee"
-        class="relative w-full rounded-lg object-cover aspect-[4/5] shadow-[0_18px_40px_-16px_rgba(21,31,51,0.35)]">
-
-      <div class="relative -mt-8 mr-6 ml-auto w-max bg-navy-900 text-paper-100 px-5 py-3 rounded-md shadow-lg hidden sm:block">
-        <p class="text-xs text-paper-100/70">Chanchal, North Malda</p>
-        <p class="font-display text-sm">Community Leader</p>
-      </div>
-    </div>
-  </div>
-
-</div>
-```
-
   </section>
 
   <section id="about" class="py-16 md:py-24">
     <div class="max-w-6xl mx-auto px-5 md:px-8 grid md:grid-cols-[0.8fr_1.2fr] gap-10 md:gap-16">
 
-```
-  <div>
-    <p class="text-saffron-600 font-semibold text-sm mb-3">About</p>
-    <h2 class="font-display text-3xl md:text-4xl text-navy-900 leading-tight">A teacher and organiser, known across Chanchal.</h2>
-  </div>
+      <div>
+        <p class="text-saffron-600 font-semibold text-sm mb-3">About</p>
+        <h2 class="font-display text-3xl md:text-4xl text-navy-900 leading-tight">A teacher and organiser, known across Chanchal.</h2>
+      </div>
 
-  <div class="space-y-5 text-ink-600 leading-relaxed max-w-2xl">
-    <p>Dipak Chatterjee holds an M.Sc. in Microbiology and has spent over twenty years in education and school administration, serving as Head Teacher at a Government Primary School in Chanchal. Through his teaching career he has worked closely with backward and marginalised communities, arranging school admissions and free education for many children from Dalit Rabidas, Charmakar, and other underserved backgrounds.</p>
+      <div class="space-y-5 text-ink-600 leading-relaxed max-w-2xl">
+        <p>Dipak Chatterjee holds an M.Sc. in Microbiology and has spent over twenty years in education and school administration, serving as Head Teacher at a Government Primary School in Chanchal. Through his teaching career he has worked closely with backward and marginalised communities, arranging school admissions and free education for many children from Dalit Rabidas, Charmakar, and other underserved backgrounds.</p>
 
-    <p>Alongside teaching, he has built a long record of community organising in Chanchal and North Malda &mdash; from blood donation and health-awareness camps to relief and support during local disasters and crises. He is a Second-Year Trained Swayamsevak with the Rashtriya Swayamsevak Sangh (RSS), has served as Mukhya Shikshak and Nagar Karyavah of Chanchal Shakha, and currently serves as Saha Songjojok of the Samajik Samarasata Vibhag, RSS Malda Bibhag. His background also includes work with the Akhil Bharatiya Vidyarthi Parishad (ABVP) and current involvement with ABRSM.</p>
+        <p>Alongside teaching, he has built a long record of community organising in Chanchal and North Malda &mdash; from blood donation and health-awareness camps to relief and support during local disasters and crises. He is a Second-Year Trained Swayamsevak with the Rashtriya Swayamsevak Sangh (RSS), has served as Mukhya Shikshak and Nagar Karyavah of Chanchal Shakha, and currently serves as Saha Songjojok of the Samajik Samarasata Vibhag, RSS Malda Bibhag. His background also includes work with the Akhil Bharatiya Vidyarthi Parishad (ABVP) and current involvement with ABRSM.</p>
 
-    <p>He writes and speaks openly on Facebook (@Dipak Chatterjee) about corruption and injustice affecting ordinary people, regardless of political affiliation, and is widely regarded locally as a first point of contact for people facing difficulties of almost any kind.</p>
+        <p>He writes and speaks openly on Facebook (@Dipak Chatterjee) about corruption and injustice affecting ordinary people, regardless of political affiliation, and is widely regarded locally as a first point of contact for people facing difficulties of almost any kind.</p>
 
-    <p>He lives in Chanchal with his wife, Sonali, who is herself active in social service. Dipak is fluent in Bengali, Hindi, and English.</p>
-  </div>
+        <p>He lives in Chanchal with his wife, Sonali, who is herself active in social service. Dipak is fluent in Bengali, Hindi, and English.</p>
+      </div>
 
-</div>
-```
-
+    </div>
   </section>
 
   <section id="works" class="py-16 md:py-24 bg-navy-900">
     <div class="max-w-6xl mx-auto px-5 md:px-8">
 
-```
-  <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
-    <div>
-      <p class="text-saffron font-semibold text-sm mb-3">Notable Works</p>
-      <h2 class="font-display text-3xl md:text-4xl text-white leading-tight max-w-xl">
-        A record of service, community work, and public action.
-      </h2>
+      <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
+        <div>
+          <p class="text-saffron font-semibold text-sm mb-3">Notable Works</p>
+          <h2 class="font-display text-3xl md:text-4xl text-white leading-tight max-w-xl">
+            A record of service, community work, and public action.
+          </h2>
+        </div>
+
+        <a href="./works.html" class="inline-flex items-center gap-2 text-sm font-semibold text-saffron hover:underline">
+          View More Works <span aria-hidden="true">&rarr;</span>
+        </a>
+      </div>
+
+      <div id="notable-works" class="grid md:grid-cols-3 gap-6"></div>
+
     </div>
-
-    <a href="./works.html" class="inline-flex items-center gap-2 text-sm font-semibold text-saffron hover:underline">
-      View More Works <span aria-hidden="true">&rarr;</span>
-    </a>
-  </div>
-
-  <div id="notable-works" class="grid md:grid-cols-3 gap-6"></div>
-
-</div>
-```
-
   </section>
 
   <section id="public-life" class="py-16 md:py-24 bg-paper-100 border-y border-line">
     <div class="max-w-6xl mx-auto px-5 md:px-8 grid lg:grid-cols-[0.8fr_1.2fr] gap-10 md:gap-16">
 
-```
-  <div>
-    <p class="text-saffron-600 font-semibold text-sm mb-3">Public Life</p>
-    <h2 class="font-display text-3xl md:text-4xl text-navy-900 leading-tight">
-      Public service rooted in education, community, and civic responsibility.
-    </h2>
-  </div>
+      <div>
+        <p class="text-saffron-600 font-semibold text-sm mb-3">Public Life</p>
+        <h2 class="font-display text-3xl md:text-4xl text-navy-900 leading-tight">
+          Public service rooted in education, community, and civic responsibility.
+        </h2>
+      </div>
 
-  <div class="grid sm:grid-cols-2 gap-5">
+      <div class="grid sm:grid-cols-2 gap-5">
 
-    <article class="bg-white border border-line rounded-lg p-6">
-      <h3 class="font-display text-xl text-navy-900">Education</h3>
-      <p class="mt-3 text-sm text-ink-600 leading-relaxed">
-        Supporting children, schools, and families through a long career in teaching and school administration.
-      </p>
-    </article>
+        <article class="bg-white border border-line rounded-lg p-6">
+          <h3 class="font-display text-xl text-navy-900">Education</h3>
+          <p class="mt-3 text-sm text-ink-600 leading-relaxed">
+            Supporting children, schools, and families through a long career in teaching and school administration.
+          </p>
+        </article>
 
-    <article class="bg-white border border-line rounded-lg p-6">
-      <h3 class="font-display text-xl text-navy-900">Community Service</h3>
-      <p class="mt-3 text-sm text-ink-600 leading-relaxed">
-        Helping organise relief, welfare, awareness, and public-service initiatives in Chanchal and North Malda.
-      </p>
-    </article>
+        <article class="bg-white border border-line rounded-lg p-6">
+          <h3 class="font-display text-xl text-navy-900">Community Service</h3>
+          <p class="mt-3 text-sm text-ink-600 leading-relaxed">
+            Helping organise relief, welfare, awareness, and public-service initiatives in Chanchal and North Malda.
+          </p>
+        </article>
 
-    <article class="bg-white border border-line rounded-lg p-6 sm:col-span-2">
-      <h3 class="font-display text-xl text-navy-900">Public Engagement</h3>
-      <p class="mt-3 text-sm text-ink-600 leading-relaxed">
-        A record of community outreach, public programmes, and civic involvement. Explore the notable works archive for individual initiatives and updates.
-      </p>
-      <a href="#works" class="inline-flex mt-4 text-sm font-semibold text-saffron-600 hover:text-saffron">
-        View notable works &rarr;
-      </a>
-    </article>
+        <article class="bg-white border border-line rounded-lg p-6 sm:col-span-2">
+          <h3 class="font-display text-xl text-navy-900">Public Engagement</h3>
+          <p class="mt-3 text-sm text-ink-600 leading-relaxed">
+            A record of community outreach, public programmes, and civic involvement. Explore the notable works archive for individual initiatives and updates.
+          </p>
+          <a href="#works" class="inline-flex mt-4 text-sm font-semibold text-saffron-600 hover:text-saffron">
+            View notable works &rarr;
+          </a>
+        </article>
 
-  </div>
-</div>
-```
-
+      </div>
+    </div>
   </section>
 
   <section id="grievance" class="py-16 md:py-24">
     <div class="max-w-6xl mx-auto px-5 md:px-8 grid lg:grid-cols-[0.85fr_1.15fr] gap-10 md:gap-14">
 
-```
-  <div>
-    <p class="text-saffron-600 font-semibold text-sm mb-3">Citizen Support</p>
+      <div>
+        <p class="text-saffron-600 font-semibold text-sm mb-3">Citizen Support</p>
 
-    <h2 class="font-display text-3xl md:text-4xl text-navy-900 leading-tight">
-      Tell us what's wrong. We'll follow up.
-    </h2>
+        <h2 class="font-display text-3xl md:text-4xl text-navy-900 leading-tight">
+          Tell us what's wrong. We'll follow up.
+        </h2>
 
-    <p class="mt-5 text-ink-600 leading-relaxed">
-      Every submission is logged with a reference number and routed to the right person &mdash; a school, a ward office, or a welfare department. Fill in the form, get your reference number, and expect a call within 3&ndash;5 working days.
-    </p>
-
-    <div class="mt-8 p-5 rounded-lg border border-line bg-paper-100">
-      <p class="text-sm text-ink-600">
-        <span class="font-semibold text-navy-900">Urgent safety issue?</span>
-        Don't wait for a form response &mdash; call the office directly at
-        <a href="tel:+917908995005" class="text-saffron-600 font-medium">+91 79089 95005</a>.
-      </p>
-    </div>
-  </div>
-
-  <div class="rounded-xl border border-line bg-paper-100 overflow-hidden">
-
-    <div class="bg-navy-900 px-6 md:px-8 py-5">
-      <p class="text-white font-display text-lg">Complaint Form</p>
-    </div>
-
-    <div class="p-6 md:p-8">
-
-      <form id="grievance-form" novalidate class="space-y-5">
-
-        <div>
-          <label for="full-name" class="block text-sm font-medium text-navy-900 mb-1.5">
-            Full Name <span class="text-rust">*</span>
-          </label>
-
-          <input type="text" id="full-name" name="full_name" autocomplete="name"
-            class="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink placeholder:text-ink-400 focus:border-saffron"
-            placeholder="e.g. Sunita Devi">
-
-          <p class="field-error hidden text-xs text-rust mt-1.5">
-            Please enter your full name.
-          </p>
-        </div>
-
-        <div>
-          <label for="phone" class="block text-sm font-medium text-navy-900 mb-1.5">
-            Phone Number <span class="text-rust">*</span>
-          </label>
-
-          <input type="tel" id="phone" name="phone" autocomplete="tel" inputmode="numeric"
-            class="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink placeholder:text-ink-400 focus:border-saffron"
-            placeholder="10-digit mobile number">
-
-          <p class="field-error hidden text-xs text-rust mt-1.5">
-            Please enter a valid 10-digit phone number.
-          </p>
-        </div>
-
-        <div>
-          <label for="location" class="block text-sm font-medium text-navy-900 mb-1.5">
-            Location / Ward <span class="text-rust">*</span>
-          </label>
-
-          <input type="text" id="location" name="location" autocomplete="address-level3"
-            class="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink placeholder:text-ink-400 focus:border-saffron"
-            placeholder="e.g. Ward 7, Chanchal">
-
-          <p class="field-error hidden text-xs text-rust mt-1.5">
-            Please tell us your location or ward number.
-          </p>
-        </div>
-
-        <div>
-          <label for="category" class="block text-sm font-medium text-navy-900 mb-1.5">
-            Category of Issue <span class="text-rust">*</span>
-          </label>
-
-          <select id="category" name="category"
-            class="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron">
-
-            <option value="" selected disabled>Select a category</option>
-            <option value="Education">Education</option>
-            <option value="Infrastructure">Infrastructure</option>
-            <option value="Social Aid">Social Aid</option>
-            <option value="Health">Health</option>
-            <option value="Other">Other</option>
-
-          </select>
-
-          <p class="field-error hidden text-xs text-rust mt-1.5">
-            Please select a category.
-          </p>
-        </div>
-
-        <div>
-          <label for="description" class="block text-sm font-medium text-navy-900 mb-1.5">
-            Detailed Description <span class="text-rust">*</span>
-          </label>
-
-          <textarea id="description" name="description" rows="5"
-            class="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink placeholder:text-ink-400 focus:border-saffron resize-y"
-            placeholder="Describe the issue: what happened, when, and who else is affected."></textarea>
-
-          <div class="flex justify-between mt-1.5">
-            <p class="field-error hidden text-xs text-rust">
-              Please describe your issue in at least 20 characters.
-            </p>
-
-            <p id="char-count" class="text-xs text-ink-400 ml-auto">
-              0 / 1000
-            </p>
-          </div>
-        </div>
-
-        <button type="submit" id="submit-btn"
-          class="w-full bg-saffron hover:bg-saffron-600 text-white font-semibold py-3.5 rounded-md transition-colors flex items-center justify-center gap-2">
-
-          <span id="submit-label">Submit Complaint</span>
-
-          <svg id="submit-spinner" class="hidden animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-          </svg>
-
-        </button>
-
-        <p class="text-xs text-ink-400 text-center leading-relaxed">
-          By submitting, you agree that your details are shared with our office for the sole purpose of resolving this issue.
+        <p class="mt-5 text-ink-600 leading-relaxed">
+          Every submission is logged with a reference number and routed to the right person &mdash; a school, a ward office, or a welfare department. Fill in the form, get your reference number, and expect a call within 3&ndash;5 working days.
         </p>
 
-      </form>
-
-      <div id="success-state" class="hidden text-center py-6">
-
-        <div class="w-14 h-14 rounded-full bg-forest-100 text-forest flex items-center justify-center mx-auto mb-5">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
-          </svg>
+        <div class="mt-8 p-5 rounded-lg border border-line bg-paper-100">
+          <p class="text-sm text-ink-600">
+            <span class="font-semibold text-navy-900">Urgent safety issue?</span>
+            Don't wait for a form response &mdash; call the office directly at
+            <a href="tel:+917908995005" class="text-saffron-600 font-medium">+91 79089 95005</a>.
+          </p>
         </div>
-
-        <h3 class="font-display text-xl text-navy-900 mb-2">
-          Your complaint has been logged
-        </h3>
-
-        <p class="text-sm text-ink-600 max-w-sm mx-auto">
-          Reference number
-          <span id="ref-number" class="font-semibold text-navy-900"></span>.
-          Our team will call you within 3&ndash;5 working days.
-          Please keep this number for follow-up.
-        </p>
-
-        <button id="reset-form-btn" class="mt-6 text-sm font-semibold text-saffron-600 hover:text-saffron-700">
-          Submit another complaint
-        </button>
-
       </div>
 
+      <div class="rounded-xl border border-line bg-paper-100 overflow-hidden">
+
+        <div class="bg-navy-900 px-6 md:px-8 py-5">
+          <p class="text-white font-display text-lg">Complaint Form</p>
+        </div>
+
+        <div class="p-6 md:p-8">
+
+          <form id="grievance-form" novalidate class="space-y-5">
+
+            <div>
+              <label for="full-name" class="block text-sm font-medium text-navy-900 mb-1.5">
+                Full Name <span class="text-rust">*</span>
+              </label>
+
+              <input type="text" id="full-name" name="full_name" autocomplete="name"
+                class="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink placeholder:text-ink-400 focus:border-saffron"
+                placeholder="e.g. Sunita Devi">
+
+              <p class="field-error hidden text-xs text-rust mt-1.5">
+                Please enter your full name.
+              </p>
+            </div>
+
+            <div>
+              <label for="phone" class="block text-sm font-medium text-navy-900 mb-1.5">
+                Phone Number <span class="text-rust">*</span>
+              </label>
+
+              <input type="tel" id="phone" name="phone" autocomplete="tel" inputmode="numeric"
+                class="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink placeholder:text-ink-400 focus:border-saffron"
+                placeholder="10-digit mobile number">
+
+              <p class="field-error hidden text-xs text-rust mt-1.5">
+                Please enter a valid 10-digit phone number.
+              </p>
+            </div>
+
+            <div>
+              <label for="location" class="block text-sm font-medium text-navy-900 mb-1.5">
+                Location / Ward <span class="text-rust">*</span>
+              </label>
+
+              <input type="text" id="location" name="location" autocomplete="address-level3"
+                class="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink placeholder:text-ink-400 focus:border-saffron"
+                placeholder="e.g. Ward 7, Chanchal">
+
+              <p class="field-error hidden text-xs text-rust mt-1.5">
+                Please tell us your location or ward number.
+              </p>
+            </div>
+
+            <div>
+              <label for="category" class="block text-sm font-medium text-navy-900 mb-1.5">
+                Category of Issue <span class="text-rust">*</span>
+              </label>
+
+              <select id="category" name="category"
+                class="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron">
+
+                <option value="" selected disabled>Select a category</option>
+                <option value="Education">Education</option>
+                <option value="Infrastructure">Infrastructure</option>
+                <option value="Social Aid">Social Aid</option>
+                <option value="Health">Health</option>
+                <option value="Other">Other</option>
+
+              </select>
+
+              <p class="field-error hidden text-xs text-rust mt-1.5">
+                Please select a category.
+              </p>
+            </div>
+
+            <div>
+              <label for="description" class="block text-sm font-medium text-navy-900 mb-1.5">
+                Detailed Description <span class="text-rust">*</span>
+              </label>
+
+              <textarea id="description" name="description" rows="5"
+                class="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink placeholder:text-ink-400 focus:border-saffron resize-y"
+                placeholder="Describe the issue: what happened, when, and who else is affected."></textarea>
+
+              <div class="flex justify-between mt-1.5">
+                <p class="field-error hidden text-xs text-rust">
+                  Please describe your issue in at least 20 characters.
+                </p>
+
+                <p id="char-count" class="text-xs text-ink-400 ml-auto">
+                  0 / 1000
+                </p>
+              </div>
+            </div>
+
+            <button type="submit" id="submit-btn"
+              class="w-full bg-saffron hover:bg-saffron-600 text-white font-semibold py-3.5 rounded-md transition-colors flex items-center justify-center gap-2">
+
+              <span id="submit-label">Submit Complaint</span>
+
+              <svg id="submit-spinner" class="hidden animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+              </svg>
+
+            </button>
+
+            <p class="text-xs text-ink-400 text-center leading-relaxed">
+              By submitting, you agree that your details are shared with our office for the sole purpose of resolving this issue.
+            </p>
+
+          </form>
+
+          <div id="success-state" class="hidden text-center py-6">
+
+            <div class="w-14 h-14 rounded-full bg-forest-100 text-forest flex items-center justify-center mx-auto mb-5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+
+            <h3 class="font-display text-xl text-navy-900 mb-2">
+              Your complaint has been logged
+            </h3>
+
+            <p class="text-sm text-ink-600 max-w-sm mx-auto">
+              Reference number
+              <span id="ref-number" class="font-semibold text-navy-900"></span>.
+              Our team will call you within 3&ndash;5 working days.
+              Please keep this number for follow-up.
+            </p>
+
+            <button id="reset-form-btn" class="mt-6 text-sm font-semibold text-saffron-600 hover:text-saffron-700">
+              Submit another complaint
+            </button>
+
+          </div>
+
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-```
 
   </section>
 
   <div id="work-modal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-end sm:items-center justify-center p-0 sm:p-6">
 
-```
-<div class="bg-paper-100 w-full sm:max-w-2xl sm:rounded-xl max-h-[92vh] overflow-y-auto rounded-t-xl">
+    <div class="bg-paper-100 w-full sm:max-w-2xl sm:rounded-xl max-h-[92vh] overflow-y-auto rounded-t-xl">
 
-  <div class="relative">
+      <div class="relative">
 
-    <img id="modal-img" src="" alt="" class="w-full h-56 sm:h-72 object-cover">
+        <img id="modal-img" src="" alt="" class="w-full h-56 sm:h-72 object-cover">
 
-    <button id="modal-close" aria-label="Close details"
-      class="absolute top-4 right-4 w-9 h-9 rounded-full bg-navy-900/80 text-white flex items-center justify-center">
+        <button id="modal-close" aria-label="Close details"
+          class="absolute top-4 right-4 w-9 h-9 rounded-full bg-navy-900/80 text-white flex items-center justify-center">
 
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-      </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
 
-    </button>
+        </button>
 
-  </div>
+      </div>
 
-  <div class="p-6 md:p-8">
+      <div class="p-6 md:p-8">
 
-    <span id="modal-category" class="inline-block text-xs font-semibold text-saffron-600 mb-2"></span>
+        <span id="modal-category" class="inline-block text-xs font-semibold text-saffron-600 mb-2"></span>
 
-    <h3 id="modal-title" class="font-display text-2xl text-navy-900 mb-2"></h3>
+        <h3 id="modal-title" class="font-display text-2xl text-navy-900 mb-2"></h3>
 
-    <p id="modal-meta" class="text-sm text-ink-400 mb-5"></p>
+        <p id="modal-meta" class="text-sm text-ink-400 mb-5"></p>
 
-    <p id="modal-description" class="text-ink-600 leading-relaxed"></p>
+        <p id="modal-description" class="text-ink-600 leading-relaxed"></p>
 
-  </div>
+      </div>
 
-</div>
-```
+    </div>
 
   </div>
 
@@ -512,98 +506,94 @@
 
   <div class="max-w-6xl mx-auto px-5 md:px-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
 
-```
-<div class="lg:col-span-1">
-  <p class="font-display text-xl text-white mb-3">Dipak Chatterjee</p>
-  <p class="text-sm leading-relaxed">
-    Social worker, educationist, and community leader based in Chanchal, North Malda.
-  </p>
-</div>
+    <div class="lg:col-span-1">
+      <p class="font-display text-xl text-white mb-3">Dipak Chatterjee</p>
+      <p class="text-sm leading-relaxed">
+        Social worker, educationist, and community leader based in Chanchal, North Malda.
+      </p>
+    </div>
 
-<div>
-  <p class="text-white font-semibold text-sm mb-4">Office</p>
+    <div>
+      <p class="text-white font-semibold text-sm mb-4">Office</p>
 
-  <address class="not-italic text-sm space-y-2 leading-relaxed">
-    <p>
-      Community Service Office<br>
-      Chanchal<br>
-      Malda 732123, West Bengal
-    </p>
+      <address class="not-italic text-sm space-y-2 leading-relaxed">
+        <p>
+          Community Service Office<br>
+          Chanchal<br>
+          Malda 732123, West Bengal
+        </p>
 
-    <p>
-      <a href="tel:+917908995005" class="hover:text-white">+91 79089 95005</a>
-    </p>
+        <p>
+          <a href="tel:+917908995005" class="hover:text-white">+91 79089 95005</a>
+        </p>
 
-    <p>
-      <a href="mailto:dipak.chatterjee304@gmail.com" class="hover:text-white">
-        dipak.chatterjee304@gmail.com
-      </a>
-    </p>
-  </address>
-</div>
+        <p>
+          <a href="mailto:dipak.chatterjee304@gmail.com" class="hover:text-white">
+            dipak.chatterjee304@gmail.com
+          </a>
+        </p>
+      </address>
+    </div>
 
-<div>
-  <p class="text-white font-semibold text-sm mb-4">Office Hours</p>
+    <div>
+      <p class="text-white font-semibold text-sm mb-4">Office Hours</p>
 
-  <ul class="text-sm space-y-2">
-    <li class="flex justify-between gap-6">
-      <span>Mon &ndash; Fri</span>
-      <span>10:00 &ndash; 17:00</span>
-    </li>
+      <ul class="text-sm space-y-2">
+        <li class="flex justify-between gap-6">
+          <span>Mon &ndash; Fri</span>
+          <span>10:00 &ndash; 17:00</span>
+        </li>
 
-    <li class="flex justify-between gap-6">
-      <span>Saturday</span>
-      <span>10:00 &ndash; 13:00</span>
-    </li>
+        <li class="flex justify-between gap-6">
+          <span>Saturday</span>
+          <span>10:00 &ndash; 13:00</span>
+        </li>
 
-    <li class="flex justify-between gap-6">
-      <span>Sunday</span>
-      <span>Closed</span>
-    </li>
-  </ul>
-</div>
+        <li class="flex justify-between gap-6">
+          <span>Sunday</span>
+          <span>Closed</span>
+        </li>
+      </ul>
+    </div>
 
-<div>
-  <p class="text-white font-semibold text-sm mb-4">Quick Links</p>
+    <div>
+      <p class="text-white font-semibold text-sm mb-4">Quick Links</p>
 
-  <ul class="text-sm space-y-2">
-    <li><a href="#about" class="hover:text-white">About</a></li>
-    <li><a href="#works" class="hover:text-white">Notable Works</a></li>
-    <li><a href="#public-life" class="hover:text-white">Public Life</a></li>
-    <li><a href="#grievance" class="hover:text-white">Submit a Complaint</a></li>
-  </ul>
+      <ul class="text-sm space-y-2">
+        <li><a href="#about" class="hover:text-white">About</a></li>
+        <li><a href="#works" class="hover:text-white">Notable Works</a></li>
+        <li><a href="#public-life" class="hover:text-white">Public Life</a></li>
+        <li><a href="#grievance" class="hover:text-white">Submit a Complaint</a></li>
+      </ul>
 
-  <p class="text-white font-semibold text-sm mt-6 mb-3">Follow</p>
+      <p class="text-white font-semibold text-sm mt-6 mb-3">Follow</p>
 
-  <div class="flex gap-3">
-    <a href="https://www.facebook.com/dipak.chatterjee.180"
-      target="_blank"
-      rel="noopener noreferrer"
-      aria-label="Facebook"
-      class="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10">
+      <div class="flex gap-3">
+        <a href="https://www.facebook.com/dipak.chatterjee.180"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Facebook"
+          class="w-9 h-9 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10">
 
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M22 12a10 10 0 10-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.1 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0022 12z"/>
-      </svg>
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M22 12a10 10 0 10-11.56 9.88v-6.99H7.9V12h2.54V9.8c0-2.5 1.49-3.89 3.77-3.89 1.1 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56V12h2.78l-.44 2.89h-2.34v6.99A10 10 0 0022 12z"/>
+          </svg>
 
-    </a>
-  </div>
-</div>
-```
+        </a>
+      </div>
+    </div>
 
   </div>
 
   <div class="max-w-6xl mx-auto px-5 md:px-8 pt-6 border-t border-white/10 flex flex-col sm:flex-row gap-3 justify-between text-xs text-paper-100/50">
 
-```
-<p>
-  &copy; <span id="year"></span> Dipak Chatterjee. All rights reserved.
-</p>
+    <p>
+      &copy; <span id="year"></span> Dipak Chatterjee. All rights reserved.
+    </p>
 
-<p>
-  This is an official citizen-service portal. Complaints are handled confidentially.
-</p>
-```
+    <p>
+      This is an official citizen-service portal. Complaints are handled confidentially.
+    </p>
 
   </div>
 </footer>
