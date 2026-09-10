@@ -83,16 +83,6 @@
     background: #DDD6C5;
     border-radius: 4px;
   }
-
-  .img-fallback {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #EDE7D8;
-    color: #A76F22;
-    font-family: 'Fraunces', serif;
-    font-weight: 600;
-  }
 </style>
 
 </head>
@@ -106,8 +96,7 @@
 
     <a href="#top" class="flex items-center gap-3 shrink-0">
       <span class="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden shrink-0 border border-line">
-        <img src="./images/dipak_chatterjee.jpg" alt="" class="w-full h-full object-cover object-top"
-          onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('span'),{className:'img-fallback w-full h-full text-xs',textContent:'DC'}));">
+        <img src="./images/dipak_chatterjee.jpg" alt="" class="w-full h-full object-cover object-top">
       </span>
 
       <span class="leading-tight">
@@ -202,8 +191,7 @@
           <img
             src="./images/dipak_chatterjee.jpg"
             alt="Portrait of Dipak Chatterjee"
-            class="relative w-full rounded-lg object-cover aspect-[4/5] shadow-[0_18px_40px_-16px_rgba(21,31,51,0.35)]"
-            onerror="this.onerror=null;this.classList.add('img-fallback');this.removeAttribute('src');this.alt='';this.insertAdjacentHTML('afterend','<p class=&quot;sr-only&quot;>Portrait of Dipak Chatterjee</p>');this.style.minHeight='320px';this.replaceWith(Object.assign(document.createElement('div'),{className:'relative w-full rounded-lg aspect-[4/5] img-fallback shadow-[0_18px_40px_-16px_rgba(21,31,51,0.35)]',innerHTML:'<span class=&quot;text-lg&quot;>Portrait unavailable</span>'}));">
+            class="relative w-full rounded-lg object-cover aspect-[4/5] shadow-[0_18px_40px_-16px_rgba(21,31,51,0.35)]">
 
           <div class="relative -mt-8 mr-6 ml-auto w-max bg-navy-900 text-paper-100 px-5 py-3 rounded-md shadow-lg hidden sm:block">
             <p class="text-xs text-paper-100/70">Chanchal, North Malda</p>
