@@ -14,9 +14,86 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<!-- Precompiled, production-ready Tailwind build (replaces the cdn.tailwindcss.com
-     script, which Tailwind explicitly warns against using in production). -->
-<link rel="stylesheet" href="./css/styles.css">
+<!-- Tailwind (CDN build, configured with our design tokens below) -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          navy:   { 900:'#151F33', 800:'#1C2A45', 700:'#24365C', 600:'#334671' },
+          paper:  { DEFAULT:'#F6F3EC', 100:'#FBF9F4' },
+          ink:    { DEFAULT:'#232A36', 600:'#4C5566', 400:'#7B8494' },
+          saffron:{ DEFAULT:'#C1832B', 600:'#A76F22', 100:'#F4E4C6' },
+          forest: { DEFAULT:'#2F6B4F', 100:'#DDEBE3' },
+          line:   '#DDD6C5',
+          rust:   '#B44B3D',
+        },
+        fontFamily: {
+          serif: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+          sans:  ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        },
+      }
+    }
+  }
+</script>
+
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', sans-serif; background:#F6F3EC; color:#232A36; }
+  .font-display { font-family: 'Fraunces', serif; }
+
+  .ledger-lines {
+    background-image: repeating-linear-gradient(to bottom, transparent, transparent 27px, rgba(35,42,54,0.05) 28px);
+  }
+
+  a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+    outline: 2px solid #C1832B;
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  #mobile-menu { transition: transform 0.3s ease, opacity 0.3s ease; }
+
+  @keyframes frame-in {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .frame-in { animation: frame-in 0.7s ease-out both; }
+
+  .work-thumb {
+    aspect-ratio: 4/3;
+    object-fit: cover;
+  }
+
+  .modal-backdrop { background: rgba(21,31,51,0.72); }
+
+  .filter-scroll::-webkit-scrollbar { height: 4px; }
+  .filter-scroll::-webkit-scrollbar-thumb {
+    background: #DDD6C5;
+    border-radius: 4px;
+  }
+
+  .img-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #EDE7D8;
+    color: #A76F22;
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+  }
+</style>
 
 </head>
 
