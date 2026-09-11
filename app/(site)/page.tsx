@@ -97,8 +97,8 @@ export default async function HomePage() {
 
       {/* Desktop hero — unchanged side-by-side layout. */}
       <section className="hidden md:block ledger-lines border-b border-line dark:border-white/10">
-        <div className="max-w-6xl mx-auto px-5 md:px-8 pt-12 md:pt-20 pb-14 md:pb-24 grid md:grid-cols-[1.1fr_0.9fr] gap-12 md:gap-10 items-center">
-          <div className="flex flex-col justify-center h-full">
+        <div className="max-w-6xl mx-auto px-5 md:px-8 pt-12 md:pt-20 pb-14 md:pb-24 grid md:grid-cols-[1.1fr_0.9fr] gap-12 md:gap-10 items-start">
+          <div>
             <h1 className="font-display text-4xl sm:text-5xl md:text-[3.4rem] leading-[1.08] text-navy-900 dark:text-white">
               {headline}
             </h1>
@@ -114,25 +114,23 @@ export default async function HomePage() {
             <OrganizationLogos organizations={orgs} />
           </div>
 
-          <div className="flex items-center justify-center h-full">
-            <div className="relative w-full max-w-sm mx-auto md:max-w-none">
-              <div className="absolute -inset-3 border border-[var(--theme-primary)]/60 rounded-lg hidden sm:block" />
-              <div className="relative w-full rounded-lg aspect-[4/5] shadow-[0_18px_40px_-16px_rgba(21,31,51,0.35)] bg-navy-800 overflow-hidden flex items-center justify-center">
-                {s?.hero_image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={s.hero_image_url}
-                    alt="Portrait of Dipak Chatterjee"
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="font-display text-6xl text-paper-100/30">DC</span>
-                )}
-              </div>
-              <div className="relative -mt-8 mr-6 ml-auto w-max bg-[var(--theme-secondary)] text-paper-100 px-5 py-3 rounded-md shadow-lg hidden sm:block">
-                <p className="text-xs text-paper-100/70">Chanchal, North Malda</p>
-                <p className="font-display text-sm">Community Leader</p>
-              </div>
+          <div className="relative w-full max-w-sm mx-auto md:max-w-none">
+            <div className="absolute -inset-3 border border-[var(--theme-primary)]/60 rounded-lg hidden sm:block" />
+            <div className="relative w-full rounded-lg aspect-[4/5] shadow-[0_18px_40px_-16px_rgba(21,31,51,0.35)] bg-navy-800 overflow-hidden flex items-center justify-center">
+              {s?.hero_image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={s.hero_image_url}
+                  alt="Portrait of Dipak Chatterjee"
+                  className="w-full h-full object-cover object-top"
+                />
+              ) : (
+                <span className="font-display text-6xl text-paper-100/30">DC</span>
+              )}
+            </div>
+            <div className="relative -mt-8 mr-6 ml-auto w-max bg-[var(--theme-secondary)] text-paper-100 px-5 py-3 rounded-md shadow-lg hidden sm:block">
+              <p className="text-xs text-paper-100/70">Chanchal, North Malda</p>
+              <p className="font-display text-sm">Community Leader</p>
             </div>
           </div>
         </div>

@@ -26,7 +26,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Plus, Trash2 } from "lucide-react";
+import { Eye, EyeOff, GripVertical, Loader2, Plus, Trash2 } from "lucide-react";
 import DndListSkeleton from "@/components/admin/DndListSkeleton";
 import SocialIcon from "@/components/SocialIcon";
 import {
@@ -37,7 +37,13 @@ import {
   type HeaderActionPosition,
   type HeaderActionStyle,
 } from "@/types/domain";
-import { createHeaderAction, deleteHeaderAction, reorderHeaderActions, updateHeaderAction } from "./header-actions";
+import {
+  createHeaderAction,
+  deleteHeaderAction,
+  type HeaderActionPatch,
+  reorderHeaderActions,
+  updateHeaderAction,
+} from "./header-actions";
 
 const ICON_OPTIONS = Object.keys(HEADER_ACTION_ICON_LABELS) as HeaderActionIcon[];
 const STYLE_OPTIONS = Object.keys(HEADER_ACTION_STYLE_LABELS) as HeaderActionStyle[];
@@ -45,6 +51,7 @@ const STYLE_OPTIONS = Object.keys(HEADER_ACTION_STYLE_LABELS) as HeaderActionSty
 export default function HeaderActionsManager({ actions }: { actions: HeaderAction[] }) {
   const [items, setItems] = useState(actions);
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   // See SocialLinksManager for why both an explicit DndContext `id` and
   // a mount-gate are used together to fully eliminate the
@@ -64,16 +71,28 @@ export default function HeaderActionsManager({ actions }: { actions: HeaderActio
     const newIndex = items.findIndex((a) => a.id === over.id);
     const reordered = arrayMove(items, oldIndex, newIndex);
     setItems(reordered);
+    setError(null);
     startTransition(async () => {
-      await reorderHeaderActions(reordered.map((a) => a.id));
+      try {
+        await reorderHeaderActions(reordered.map((a) => a.id));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to save the new order.");
+      }
     });
   }
 
   function handleDelete(id: string) {
     if (!confirm("Remove this header action?")) return;
-    setItems((prev) => prev.filter((a) => a.id !== id));
+    const prev = items;
+    setItems((cur) => cur.filter((a) => a.id !== id));
+    setError(null);
     startTransition(async () => {
-      await deleteHeaderAction(id);
+      try {
+        await deleteHeaderAction(id);
+      } catch (err) {
+        setItems(prev);
+        setError(err instanceof Error ? err.message : "Failed to delete.");
+      }
     });
   }
 
@@ -82,8 +101,13 @@ export default function HeaderActionsManager({ actions }: { actions: HeaderActio
   }
 
   async function handleAdd() {
-    const created = await createHeaderAction({ label: "New Action", url: "#" });
-    setItems((prev) => [...prev, created]);
+    setError(null);
+    try {
+      const created = await createHeaderAction({ label: "New Action", url: "#" });
+      setItems((prev) => [...prev, created]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add header action.");
+    }
   }
 
   return (
@@ -105,6 +129,12 @@ export default function HeaderActionsManager({ actions }: { actions: HeaderActio
         the label blank on an icon action for an icon-only button (e.g. &ldquo;Follow on
         Facebook&rdquo;).
       </p>
+
+      {error && (
+        <p className="text-xs text-rust mb-3" role="alert">
+          {error}
+        </p>
+      )}
 
       {items.length === 0 ? (
         <div className="border border-dashed border-line rounded-lg p-6 text-center text-sm text-ink-400">
@@ -128,6 +158,7 @@ export default function HeaderActionsManager({ actions }: { actions: HeaderActio
                   disabled={isPending}
                   onDelete={() => handleDelete(action.id)}
                   onUpdated={(patch) => handleUpdated(action.id, patch)}
+                  onError={setError}
                 />
               ))}
             </ul>
@@ -143,11 +174,13 @@ function SortableActionRow({
   disabled,
   onDelete,
   onUpdated,
+  onError,
 }: {
   action: HeaderAction;
   disabled: boolean;
   onDelete: () => void;
   onUpdated: (patch: Partial<HeaderAction>) => void;
+  onError: (message: string | null) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: action.id,
@@ -159,26 +192,21 @@ function SortableActionRow({
 
   const style = { transform: CSS.Transform.toString(transform), transition };
 
-  function save(patch: {
-    label?: string;
-    url?: string;
-    icon?: HeaderActionIcon;
-    style?: HeaderActionStyle;
-    position?: HeaderActionPosition;
-    bg_color?: string | null;
-    text_color?: string | null;
-  }) {
-    updateHeaderAction(action.id, patch).catch((err) =>
-      alert(err instanceof Error ? err.message : "Failed to save.")
-    );
+  function save(patch: HeaderActionPatch) {
+    onError(null);
     onUpdated(patch);
+    updateHeaderAction(action.id, patch).catch((err) =>
+      onError(err instanceof Error ? err.message : "Failed to save.")
+    );
   }
 
   return (
     <li
       ref={setNodeRef}
       style={style}
-      className={`rounded-md border border-line bg-white p-3 ${isDragging ? "opacity-60" : ""}`}
+      className={`rounded-md border border-line bg-white p-3 ${isDragging ? "opacity-60" : ""} ${
+        action.is_visible === false ? "opacity-50" : ""
+      }`}
     >
       <div className="flex flex-wrap items-center gap-3">
         <button
@@ -189,6 +217,17 @@ function SortableActionRow({
           className="shrink-0 text-ink-400 hover:text-ink cursor-grab active:cursor-grabbing touch-none"
         >
           <GripVertical className="w-4 h-4" />
+        </button>
+
+        <button
+          type="button"
+          onClick={() => save({ is_visible: !(action.is_visible ?? true) })}
+          aria-label={action.is_visible === false ? "Show action" : "Hide action"}
+          aria-pressed={action.is_visible !== false}
+          title={action.is_visible === false ? "Hidden — click to show" : "Visible — click to hide"}
+          className="shrink-0 text-ink-400 hover:text-navy-900"
+        >
+          {action.is_visible === false ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
         </button>
 
         {action.icon !== "none" && (
@@ -220,7 +259,7 @@ function SortableActionRow({
           aria-label="Delete action"
           className="shrink-0 text-ink-400 hover:text-rust disabled:opacity-60"
         >
-          <Trash2 className="w-4 h-4" />
+          {disabled ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
         </button>
       </div>
 

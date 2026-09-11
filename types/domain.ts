@@ -19,6 +19,7 @@ export type SocialLink = Tables<"social_links">;
 export type FooterBlock = Tables<"footer_blocks">;
 export type FooterLink = Tables<"footer_links">;
 export type HeaderAction = Tables<"header_actions">;
+export type NavLink = Tables<"nav_links">;
 
 export type FeatureType = Feature["type"];
 export type MediaKind = FeatureMedia["kind"];

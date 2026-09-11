@@ -6,7 +6,7 @@
 // its own layout, chrome, and fixed branding.
 
 import { createClient } from "@/utils/supabase/server";
-import type { FooterBlockWithLinks, HeaderAction, SiteSettings, SocialLink } from "@/types/domain";
+import type { FooterBlockWithLinks, HeaderAction, NavLink, SiteSettings, SocialLink } from "@/types/domain";
 import { darken } from "@/lib/color";
 import SiteHeader from "@/components/site/SiteHeader";
 import SiteFooter from "@/components/site/SiteFooter";
@@ -14,7 +14,7 @@ import SiteFooter from "@/components/site/SiteFooter";
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
 
-  const [{ data: settings }, { data: footerBlocks }, { data: socialLinks }, { data: headerActions }] =
+  const [{ data: settings }, { data: footerBlocks }, { data: socialLinks }, { data: navLinks }, { data: headerActions }] =
     await Promise.all([
       supabase
         .from("site_settings")
@@ -29,6 +29,12 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         .order("display_order", { ascending: true })
         .order("display_order", { foreignTable: "footer_links", ascending: true }),
       supabase.from("social_links").select("*").order("display_order", { ascending: true }),
+      // Visibility is filtered client-side in SiteHeader (`!== false`),
+      // not with `.eq("is_visible", true)` here: that keeps this query
+      // resilient if the is_visible column/nav_links table itself isn't
+      // live yet on this database (a plain `select("*")` degrades to
+      // omitting the column rather than erroring on an unknown one).
+      supabase.from("nav_links").select("*").order("display_order", { ascending: true }),
       supabase.from("header_actions").select("*").order("display_order", { ascending: true }),
     ]);
 
@@ -71,6 +77,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         avatarUrl={s?.avatar_url}
         name={s?.header_name}
         subtitle={s?.header_subtitle}
+        navLinks={(navLinks as NavLink[]) ?? []}
         actions={(headerActions as HeaderAction[]) ?? []}
       />
       {children}

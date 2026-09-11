@@ -10,7 +10,7 @@ import type { Organization } from "@/types/domain";
 
 function OrgCard({ org }: { org: Organization }) {
   const content = (
-    <div className="flex flex-col items-center text-center gap-3 p-4 rounded-lg border border-line dark:border-white/10 bg-white dark:bg-navy-800 h-full">
+    <div className="w-28 md:w-32 flex flex-col items-center text-center gap-3 p-4 rounded-lg border border-line dark:border-white/10 bg-white dark:bg-navy-800">
       <span className="w-20 h-20 md:w-24 md:h-24 rounded-lg overflow-hidden shrink-0 bg-white flex items-center justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={org.logo_url} alt={org.name} className="w-full h-full object-contain p-2" />
@@ -27,14 +27,14 @@ function OrgCard({ org }: { org: Organization }) {
         target="_blank"
         rel="noopener noreferrer"
         aria-label={org.name}
-        className="hover:border-[var(--theme-primary)]/50 hover:shadow-md rounded-lg transition-colors"
+        className="shrink-0 hover:border-[var(--theme-primary)]/50 hover:shadow-md rounded-lg transition-colors"
       >
         {content}
       </a>
     );
   }
 
-  return content;
+  return <div className="shrink-0">{content}</div>;
 }
 
 export default function OrganizationLogos({
@@ -50,7 +50,7 @@ export default function OrganizationLogos({
   return (
     <div className="mt-10">
       <p className={`text-xs font-medium mb-4 ${labelClassName}`}>Organizations Worked With</p>
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+      <div className="flex flex-row flex-wrap items-center justify-center gap-6 md:gap-10">
         {organizations.map((org) => (
           <OrgCard key={org.id} org={org} />
         ))}

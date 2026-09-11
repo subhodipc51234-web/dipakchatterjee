@@ -278,6 +278,7 @@ export type Database = {
           display_order: number
           icon: string
           id: string
+          is_visible: boolean
           label: string
           position: string
           style: string
@@ -290,6 +291,7 @@ export type Database = {
           display_order?: number
           icon?: string
           id?: string
+          is_visible?: boolean
           label?: string
           position?: string
           style?: string
@@ -302,10 +304,38 @@ export type Database = {
           display_order?: number
           icon?: string
           id?: string
+          is_visible?: boolean
           label?: string
           position?: string
           style?: string
           text_color?: string | null
+          url?: string
+        }
+        Relationships: []
+      }
+      nav_links: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          is_visible: boolean
+          label: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          label?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          is_visible?: boolean
+          label?: string
           url?: string
         }
         Relationships: []

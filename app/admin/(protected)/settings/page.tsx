@@ -1,6 +1,14 @@
 // app/admin/(protected)/settings/page.tsx
 import { createClient } from "@/utils/supabase/server";
-import type { CtaButton, FooterBlockWithLinks, HeaderAction, Organization, SiteSettings, SocialLink } from "@/types/domain";
+import type {
+  CtaButton,
+  FooterBlockWithLinks,
+  HeaderAction,
+  NavLink,
+  Organization,
+  SiteSettings,
+  SocialLink,
+} from "@/types/domain";
 import SiteImageUploader from "./SiteImageUploader";
 import LandingForm from "./LandingForm";
 import OrganizationsManager from "./OrganizationsManager";
@@ -10,6 +18,7 @@ import BrandingTextForm from "./BrandingTextForm";
 import FooterBlocksManager from "./FooterBlocksManager";
 import SocialLinksManager from "./SocialLinksManager";
 import HeaderActionsManager from "./HeaderActionsManager";
+import NavLinksManager from "./NavLinksManager";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -20,6 +29,7 @@ export default async function SettingsPage() {
     { data: ctaButtons },
     { data: footerBlocks },
     { data: socialLinks },
+    { data: navLinks },
     { data: headerActions },
   ] = await Promise.all([
     supabase.from("site_settings").select("*").eq("id", "default").single(),
@@ -31,6 +41,7 @@ export default async function SettingsPage() {
       .order("display_order", { ascending: true })
       .order("display_order", { foreignTable: "footer_links", ascending: true }),
     supabase.from("social_links").select("*").order("display_order", { ascending: true }),
+    supabase.from("nav_links").select("*").order("display_order", { ascending: true }),
     supabase.from("header_actions").select("*").order("display_order", { ascending: true }),
   ]);
 
@@ -51,6 +62,8 @@ export default async function SettingsPage() {
         <LandingForm settings={s} />
 
         <BrandingTextForm settings={s} />
+
+        <NavLinksManager links={(navLinks as NavLink[]) ?? []} />
 
         <HeaderActionsManager actions={(headerActions as HeaderAction[]) ?? []} />
 

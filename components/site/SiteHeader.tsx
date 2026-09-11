@@ -4,12 +4,17 @@
 // mobile menu toggle needs interactivity, so this is the one client
 // component in the site shell.
 //
-// Action buttons/links (originally just a fixed "Submit a Complaint")
-// are dashboard-managed (Settings -> Header Actions): each has an icon,
-// a style (solid/outline/text-link), and a left/right position. The
-// inline actions and the hamburger/drawer are mutually exclusive by
-// breakpoint (`lg:flex` vs `lg:hidden`) so they're never both stacked in
-// the header row on tablet-width screens.
+// Both the primary nav row ("About", "Public Life", ...) and the action
+// buttons/links (originally just a fixed "Submit a Complaint") are
+// dashboard-managed (Settings -> Primary Nav Links / Header Actions):
+// nav links have a label, a URL, and a visibility toggle; actions
+// additionally have an icon, a style (solid/outline/text-link), a
+// left/right position, and optional background/text color overrides.
+// Both are filtered to only their visible rows here, so a hidden one
+// disappears from the header without needing to be deleted. The inline
+// actions and the hamburger/drawer are mutually exclusive by breakpoint
+// (`lg:flex` vs `lg:hidden`) so they're never both stacked in the header
+// row on tablet-width screens.
 
 "use client";
 
@@ -18,16 +23,18 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import SocialIcon from "@/components/SocialIcon";
-import { HEADER_ACTION_ICON_LABELS, type HeaderAction } from "@/types/domain";
+import { HEADER_ACTION_ICON_LABELS, type HeaderAction, type NavLink } from "@/types/domain";
 
-// Root-relative ("/#about", not "#about") so these work identically
-// whether clicked from the homepage or any other page — see
-// handleAnchorClick below for the same-page smooth-scroll case.
-const NAV_LINKS = [
-  { href: "/#about", label: "About" },
-  { href: "/#public-life", label: "Public Life" },
-  { href: "/#works", label: "Notable Works" },
-  { href: "/#contact", label: "Contact" },
+// Safety net, not the primary data source: only rendered if the
+// dashboard-managed nav_links table comes back empty (e.g. its
+// migration hasn't reached this database yet, or every row was
+// deleted) — root-relative so these work identically whether clicked
+// from the homepage or any other page, same as a real nav_links row.
+const FALLBACK_NAV_LINKS: Pick<NavLink, "id" | "label" | "url" | "is_visible">[] = [
+  { id: "fallback-about", label: "About", url: "/#about", is_visible: true },
+  { id: "fallback-public-life", label: "Public Life", url: "/#public-life", is_visible: true },
+  { id: "fallback-works", label: "Notable Works", url: "/#works", is_visible: true },
+  { id: "fallback-contact", label: "Contact", url: "/#contact", is_visible: true },
 ];
 
 const DEFAULT_NAME = "Dipak Chatterjee";
@@ -77,17 +84,25 @@ export default function SiteHeader({
   avatarUrl,
   name,
   subtitle,
+  navLinks = [],
   actions = [],
 }: {
   avatarUrl?: string | null;
   name?: string | null;
   subtitle?: string | null;
+  navLinks?: NavLink[];
   actions?: HeaderAction[];
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
-  const leftActions = actions.filter((a) => a.position === "left");
-  const rightActions = actions.filter((a) => a.position === "right");
+  // `!== false` (not `=== true`) so a row is treated as visible when
+  // is_visible comes back `undefined` — the shape a plain `select("*")`
+  // returns if that column's migration hasn't reached this database yet.
+  const visibleNavLinksFromDb = navLinks.filter((l) => l.is_visible !== false);
+  const visibleNavLinks = visibleNavLinksFromDb.length > 0 ? visibleNavLinksFromDb : FALLBACK_NAV_LINKS;
+  const visibleActions = actions.filter((a) => a.is_visible !== false);
+  const leftActions = visibleActions.filter((a) => a.position === "left");
+  const rightActions = visibleActions.filter((a) => a.position === "right");
 
   // Shared by every nav link, action link, and the logo: on the
   // homepage, a same-page "/#section" link should smoothly scroll
@@ -153,11 +168,11 @@ export default function SiteHeader({
         )}
 
         <div className="hidden lg:flex items-center gap-8 text-sm text-ink-600 dark:text-paper-100/70 font-medium">
-          {NAV_LINKS.map((link) => (
+          {visibleNavLinks.map((link) => (
             <a
-              key={link.href}
-              href={link.href}
-              onClick={(e) => handleAnchorClick(e, link.href)}
+              key={link.id}
+              href={link.url}
+              onClick={(e) => handleAnchorClick(e, link.url)}
               className="hover:text-navy-900 dark:hover:text-white"
             >
               {link.label}
@@ -202,20 +217,20 @@ export default function SiteHeader({
           className="lg:hidden relative z-10 border-t border-line dark:border-white/10 bg-paper-100 dark:bg-navy-900 max-h-[calc(100vh-4rem)] overflow-y-auto"
         >
           <div className="px-5 py-4 flex flex-col gap-1 text-ink-600 dark:text-paper-100/70 font-medium">
-            {NAV_LINKS.map((link) => (
+            {visibleNavLinks.map((link) => (
               <a
-                key={link.href}
-                href={link.href}
+                key={link.id}
+                href={link.url}
                 onClick={(e) => {
                   setMenuOpen(false);
-                  handleAnchorClick(e, link.href);
+                  handleAnchorClick(e, link.url);
                 }}
                 className="py-3 border-b border-line/70 dark:border-white/10 last:border-b-0 touch-manipulation"
               >
                 {link.label}
               </a>
             ))}
-            {actions.map((action) => (
+            {visibleActions.map((action) => (
               <a
                 key={action.id}
                 href={action.url}
