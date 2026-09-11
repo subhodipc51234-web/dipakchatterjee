@@ -59,6 +59,7 @@ export default function FooterBlocksManager({ blocks }: { blocks: FooterBlockWit
   const [isPending, startTransition] = useTransition();
   const [newType, setNewType] = useState<FooterBlockType>("custom_content");
   const [adding, setAdding] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // See SocialLinksManager for why both an explicit DndContext `id` and
   // a mount-gate are used together to fully eliminate the
@@ -78,16 +79,28 @@ export default function FooterBlocksManager({ blocks }: { blocks: FooterBlockWit
     const newIndex = items.findIndex((b) => b.id === over.id);
     const reordered = arrayMove(items, oldIndex, newIndex);
     setItems(reordered);
+    setError(null);
     startTransition(async () => {
-      await reorderFooterBlocks(reordered.map((b) => b.id));
+      try {
+        await reorderFooterBlocks(reordered.map((b) => b.id));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to save the new order.");
+      }
     });
   }
 
   function handleDelete(id: string) {
     if (!confirm("Remove this footer block?")) return;
-    setItems((prev) => prev.filter((b) => b.id !== id));
+    const prev = items;
+    setItems((cur) => cur.filter((b) => b.id !== id));
+    setError(null);
     startTransition(async () => {
-      await deleteFooterBlock(id);
+      try {
+        await deleteFooterBlock(id);
+      } catch (err) {
+        setItems(prev);
+        setError(err instanceof Error ? err.message : "Failed to delete.");
+      }
     });
   }
 
@@ -114,6 +127,12 @@ export default function FooterBlocksManager({ blocks }: { blocks: FooterBlockWit
         These columns render to the right of the brand block in the public footer, in order.
         Drag to reorder. Changes apply immediately, on desktop and mobile.
       </p>
+
+      {error && (
+        <p className="text-xs text-rust mb-3" role="alert">
+          {error}
+        </p>
+      )}
 
       {items.length === 0 ? (
         <div className="border border-dashed border-line rounded-lg p-6 text-center text-sm text-ink-400 mb-5">

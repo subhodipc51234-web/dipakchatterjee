@@ -33,6 +33,7 @@ export default function CtaButtonsManager({
 }) {
   const [items, setItems] = useState(buttons);
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   // See SocialLinksManager for why both an explicit DndContext `id` and
   // a mount-gate are used together to fully eliminate the
@@ -52,16 +53,28 @@ export default function CtaButtonsManager({
     const newIndex = items.findIndex((b) => b.id === over.id);
     const reordered = arrayMove(items, oldIndex, newIndex);
     setItems(reordered);
+    setError(null);
     startTransition(async () => {
-      await reorderCtaButtons(reordered.map((b) => b.id));
+      try {
+        await reorderCtaButtons(reordered.map((b) => b.id));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to save the new order.");
+      }
     });
   }
 
   function handleDelete(id: string) {
     if (!confirm("Remove this CTA button from the homepage?")) return;
-    setItems((prev) => prev.filter((b) => b.id !== id));
+    const prev = items;
+    setItems((cur) => cur.filter((b) => b.id !== id));
+    setError(null);
     startTransition(async () => {
-      await deleteCtaButton(id);
+      try {
+        await deleteCtaButton(id);
+      } catch (err) {
+        setItems(prev);
+        setError(err instanceof Error ? err.message : "Failed to delete.");
+      }
     });
   }
 
@@ -70,8 +83,13 @@ export default function CtaButtonsManager({
   }
 
   async function handleAdd() {
-    const created = await createCtaButton({ label: "New Button", url: "#" });
-    setItems((prev) => [...prev, created]);
+    setError(null);
+    try {
+      const created = await createCtaButton({ label: "New Button", url: "#" });
+      setItems((prev) => [...prev, created]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add CTA button.");
+    }
   }
 
   return (
@@ -91,6 +109,12 @@ export default function CtaButtonsManager({
       <p className="text-xs text-ink-400 mb-5">
         Shown in the hero, in order. Each defaults to Main Theme Color unless overridden.
       </p>
+
+      {error && (
+        <p className="text-xs text-rust mb-3" role="alert">
+          {error}
+        </p>
+      )}
 
       {items.length === 0 ? (
         <div className="border border-dashed border-line rounded-lg p-6 text-center text-sm text-ink-400">

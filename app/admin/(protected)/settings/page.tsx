@@ -17,8 +17,7 @@ import CtaButtonsManager from "./CtaButtonsManager";
 import BrandingTextForm from "./BrandingTextForm";
 import FooterBlocksManager from "./FooterBlocksManager";
 import SocialLinksManager from "./SocialLinksManager";
-import HeaderActionsManager from "./HeaderActionsManager";
-import NavLinksManager from "./NavLinksManager";
+import HeaderNavigationManager from "./HeaderNavigationManager";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -63,9 +62,11 @@ export default async function SettingsPage() {
 
         <BrandingTextForm settings={s} />
 
-        <NavLinksManager links={(navLinks as NavLink[]) ?? []} />
-
-        <HeaderActionsManager actions={(headerActions as HeaderAction[]) ?? []} />
+        <HeaderNavigationManager
+          navLinks={(navLinks as NavLink[]) ?? []}
+          headerActions={(headerActions as HeaderAction[]) ?? []}
+          themePrimary={themePrimary}
+        />
 
         <FooterBlocksManager blocks={(footerBlocks as FooterBlockWithLinks[]) ?? []} />
 
@@ -91,7 +92,10 @@ export default async function SettingsPage() {
           previewClassName="w-16 h-16 rounded-full"
         />
 
-        <OrganizationsManager organizations={(organizations as Organization[]) ?? []} />
+        <OrganizationsManager
+          organizations={(organizations as Organization[]) ?? []}
+          orgMaxPerRow={s?.org_max_per_row ?? 6}
+        />
       </div>
     </div>
   );

@@ -5,6 +5,14 @@
 // logo, enlarged, with the organization name directly beneath it
 // (role/designation is intentionally not shown here, even though the
 // field still exists on the row for internal/admin reference).
+//
+// On mobile, cards are a plain flex-wrap row: however many fit at each
+// card's own width wrap naturally. On desktop (md+), the container
+// switches to a CSS grid with exactly `min(count, maxPerRow)` columns
+// sized to content (Settings -> Affiliated Organizations controls
+// maxPerRow) — that strictly fills one row up to the threshold before
+// the grid's own auto-wrapping starts a new row, rather than wrapping
+// whenever the viewport happens to run out of width.
 
 import type { Organization } from "@/types/domain";
 
@@ -39,18 +47,26 @@ function OrgCard({ org }: { org: Organization }) {
 
 export default function OrganizationLogos({
   organizations,
+  maxPerRow = 6,
   labelClassName = "text-ink-400 dark:text-paper-100/50",
 }: {
   organizations: Organization[];
+  /** Max cards kept on one row on desktop before wrapping — Settings -> Affiliated Organizations. */
+  maxPerRow?: number;
   /** Override when embedded somewhere that's always on a dark background (e.g. the mobile hero photo overlay), independent of the site's light/dark toggle. */
   labelClassName?: string;
 }) {
   if (organizations.length === 0) return null;
 
+  const columns = Math.max(1, Math.min(organizations.length, maxPerRow));
+
   return (
     <div className="mt-10">
       <p className={`text-xs font-medium mb-4 ${labelClassName}`}>Organizations Worked With</p>
-      <div className="flex flex-row flex-wrap items-center justify-center gap-6 md:gap-10">
+      <div
+        className="flex flex-row flex-wrap items-center justify-center gap-6 md:grid md:gap-10"
+        style={{ gridTemplateColumns: `repeat(${columns}, max-content)` }}
+      >
         {organizations.map((org) => (
           <OrgCard key={org.id} org={org} />
         ))}

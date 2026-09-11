@@ -40,6 +40,7 @@ const PLATFORMS = Object.keys(SOCIAL_PLATFORM_LABELS);
 export default function SocialLinksManager({ links }: { links: SocialLink[] }) {
   const [items, setItems] = useState(links);
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   // @dnd-kit assigns each DndContext's aria-describedby id from a
   // module-scoped counter shared across concurrent server requests, so
@@ -64,17 +65,29 @@ export default function SocialLinksManager({ links }: { links: SocialLink[] }) {
     const newIndex = items.findIndex((l) => l.id === over.id);
     const reordered = arrayMove(items, oldIndex, newIndex);
     setItems(reordered);
+    setError(null);
 
     startTransition(async () => {
-      await reorderSocialLinks(reordered.map((l) => l.id));
+      try {
+        await reorderSocialLinks(reordered.map((l) => l.id));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to save the new order.");
+      }
     });
   }
 
   function handleDelete(id: string) {
     if (!confirm("Remove this social link?")) return;
-    setItems((prev) => prev.filter((l) => l.id !== id));
+    const prev = items;
+    setItems((cur) => cur.filter((l) => l.id !== id));
+    setError(null);
     startTransition(async () => {
-      await deleteSocialLink(id);
+      try {
+        await deleteSocialLink(id);
+      } catch (err) {
+        setItems(prev);
+        setError(err instanceof Error ? err.message : "Failed to delete.");
+      }
     });
   }
 
@@ -88,6 +101,12 @@ export default function SocialLinksManager({ links }: { links: SocialLink[] }) {
       <p className="text-xs text-ink-400 mb-5">
         Shown in the footer&rsquo;s Follow block. Drag to reorder.
       </p>
+
+      {error && (
+        <p className="text-xs text-rust mb-3" role="alert">
+          {error}
+        </p>
+      )}
 
       {items.length > 0 && !mounted && <DndListSkeleton count={items.length} />}
 

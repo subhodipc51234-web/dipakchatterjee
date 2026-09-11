@@ -12,6 +12,8 @@ import { updateLandingContent } from "./actions";
 const landingSchema = z.object({
   hero_headline: z.string().trim().max(300).optional(),
   hero_body: z.string().trim().max(2000).optional(),
+  hero_badge_subtitle: z.string().trim().max(100).optional(),
+  hero_badge_title: z.string().trim().max(100).optional(),
 });
 
 type LandingFormValues = z.infer<typeof landingSchema>;
@@ -30,6 +32,8 @@ export default function LandingForm({ settings }: { settings: SiteSettings | nul
     defaultValues: {
       hero_headline: settings?.hero_headline ?? "",
       hero_body: settings?.hero_body ?? "",
+      hero_badge_subtitle: settings?.hero_badge_subtitle ?? "",
+      hero_badge_title: settings?.hero_badge_title ?? "",
     },
   });
 
@@ -41,6 +45,8 @@ export default function LandingForm({ settings }: { settings: SiteSettings | nul
         await updateLandingContent({
           hero_headline: values.hero_headline ?? "",
           hero_body: values.hero_body ?? "",
+          hero_badge_subtitle: values.hero_badge_subtitle ?? "",
+          hero_badge_title: values.hero_badge_title ?? "",
         });
         setSaved(true);
       } catch (err) {
@@ -87,6 +93,41 @@ export default function LandingForm({ settings }: { settings: SiteSettings | nul
           />
           {errors.hero_body && <p className="text-xs text-rust mt-1.5">{errors.hero_body.message}</p>}
         </div>
+
+        <div className="grid sm:grid-cols-2 gap-5">
+          <div>
+            <label htmlFor="hero_badge_subtitle" className="block text-sm font-medium text-navy-900 mb-1.5">
+              Photo badge location
+            </label>
+            <input
+              id="hero_badge_subtitle"
+              {...register("hero_badge_subtitle")}
+              placeholder="e.g. Chanchal, North Malda"
+              className="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none"
+            />
+            {errors.hero_badge_subtitle && (
+              <p className="text-xs text-rust mt-1.5">{errors.hero_badge_subtitle.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label htmlFor="hero_badge_title" className="block text-sm font-medium text-navy-900 mb-1.5">
+              Photo badge role
+            </label>
+            <input
+              id="hero_badge_title"
+              {...register("hero_badge_title")}
+              placeholder="e.g. Community Leader"
+              className="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none"
+            />
+            {errors.hero_badge_title && (
+              <p className="text-xs text-rust mt-1.5">{errors.hero_badge_title.message}</p>
+            )}
+          </div>
+        </div>
+        <p className="text-xs text-ink-400 -mt-3">
+          Shown on the small floating card over the corner of the hero photo (desktop only).
+        </p>
 
         {serverError && (
           <p className="text-sm text-rust" role="alert">

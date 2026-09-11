@@ -48,7 +48,14 @@ import {
 const ICON_OPTIONS = Object.keys(HEADER_ACTION_ICON_LABELS) as HeaderActionIcon[];
 const STYLE_OPTIONS = Object.keys(HEADER_ACTION_STYLE_LABELS) as HeaderActionStyle[];
 
-export default function HeaderActionsManager({ actions }: { actions: HeaderAction[] }) {
+export default function HeaderActionsManager({
+  actions,
+  themePrimary = "#C1832B",
+}: {
+  actions: HeaderAction[];
+  /** Site's default theme color (Settings -> Color & theme) — shown as the color picker's starting swatch until an action gets its own override. */
+  themePrimary?: string;
+}) {
   const [items, setItems] = useState(actions);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -111,9 +118,9 @@ export default function HeaderActionsManager({ actions }: { actions: HeaderActio
   }
 
   return (
-    <div className="bg-white border border-line rounded-xl p-6 md:p-8">
+    <div>
       <div className="flex items-center justify-between mb-1">
-        <p className="text-sm font-semibold text-navy-900">Header Actions</p>
+        <p className="text-sm font-semibold text-navy-900">Header Actions &amp; Buttons</p>
         <button
           type="button"
           onClick={() => startTransition(handleAdd)}
@@ -156,6 +163,7 @@ export default function HeaderActionsManager({ actions }: { actions: HeaderActio
                   key={action.id}
                   action={action}
                   disabled={isPending}
+                  themePrimary={themePrimary}
                   onDelete={() => handleDelete(action.id)}
                   onUpdated={(patch) => handleUpdated(action.id, patch)}
                   onError={setError}
@@ -172,12 +180,14 @@ export default function HeaderActionsManager({ actions }: { actions: HeaderActio
 function SortableActionRow({
   action,
   disabled,
+  themePrimary,
   onDelete,
   onUpdated,
   onError,
 }: {
   action: HeaderAction;
   disabled: boolean;
+  themePrimary: string;
   onDelete: () => void;
   onUpdated: (patch: Partial<HeaderAction>) => void;
   onError: (message: string | null) => void;
@@ -308,9 +318,10 @@ function SortableActionRow({
 
         <label className="flex items-center gap-1.5 text-xs text-ink-600">
           Background
+          {/* Shows the site's default theme color until this action gets its own override — not white, so the swatch reflects what's actually rendered right now. */}
           <input
             type="color"
-            value={bgColor || "#ffffff"}
+            value={bgColor || themePrimary}
             onChange={(e) => {
               setBgColor(e.target.value);
               save({ bg_color: e.target.value });
@@ -321,9 +332,10 @@ function SortableActionRow({
 
         <label className="flex items-center gap-1.5 text-xs text-ink-600">
           Text
+          {/* White is the default text color on the theme-colored solid button style, so that's the swatch shown until overridden. */}
           <input
             type="color"
-            value={textColor || "#000000"}
+            value={textColor || "#ffffff"}
             onChange={(e) => {
               setTextColor(e.target.value);
               save({ text_color: e.target.value });

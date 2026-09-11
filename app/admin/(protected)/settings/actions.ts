@@ -44,6 +44,8 @@ export async function updateSiteImage(
 export type LandingContentInput = {
   hero_headline: string;
   hero_body: string;
+  hero_badge_subtitle: string;
+  hero_badge_title: string;
 };
 
 export async function updateLandingContent(input: LandingContentInput) {
@@ -54,8 +56,26 @@ export async function updateLandingContent(input: LandingContentInput) {
     .update({
       hero_headline: input.hero_headline || null,
       hero_body: input.hero_body || null,
+      hero_badge_subtitle: input.hero_badge_subtitle || null,
+      hero_badge_title: input.hero_badge_title || null,
       updated_at: new Date().toISOString(),
     })
+    .eq("id", "default");
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/settings");
+  revalidatePath("/");
+}
+
+export async function updateOrgMaxPerRow(value: number) {
+  const { supabase } = await requireAdmin();
+
+  const clamped = Math.min(12, Math.max(2, Math.round(value)));
+
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ org_max_per_row: clamped, updated_at: new Date().toISOString() })
     .eq("id", "default");
 
   if (error) throw new Error(error.message);

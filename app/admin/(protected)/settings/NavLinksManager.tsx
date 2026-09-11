@@ -96,9 +96,9 @@ export default function NavLinksManager({ links }: { links: NavLink[] }) {
   }
 
   return (
-    <div className="bg-white border border-line rounded-xl p-6 md:p-8">
+    <div>
       <div className="flex items-center justify-between mb-1">
-        <p className="text-sm font-semibold text-navy-900">Primary Nav Links</p>
+        <p className="text-sm font-semibold text-navy-900">Navigation Links</p>
         <button
           type="button"
           onClick={() => startTransition(handleAdd)}

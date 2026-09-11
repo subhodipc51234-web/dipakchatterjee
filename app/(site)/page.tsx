@@ -27,6 +27,8 @@ import RevealOnScroll from "@/components/RevealOnScroll";
 const FALLBACK_HEADLINE = "A life spent teaching, organising, and showing up when it matters.";
 const FALLBACK_BODY =
   "Dipak Chatterjee has spent over two decades as a schoolteacher and headmaster in Chanchal, North Malda, alongside a parallel life of community organising. This is his record of work, and a direct line for anyone who needs help.";
+const FALLBACK_BADGE_SUBTITLE = "Chanchal, North Malda";
+const FALLBACK_BADGE_TITLE = "Community Leader";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -55,6 +57,9 @@ export default async function HomePage() {
   const headline = s?.hero_headline || FALLBACK_HEADLINE;
   const body = s?.hero_body || FALLBACK_BODY;
   const themePrimary = s?.theme_primary_color || "#C1832B";
+  const badgeSubtitle = s?.hero_badge_subtitle || FALLBACK_BADGE_SUBTITLE;
+  const badgeTitle = s?.hero_badge_title || FALLBACK_BADGE_TITLE;
+  const orgMaxPerRow = s?.org_max_per_row ?? 6;
   const orgs = (organizations as Organization[]) ?? [];
   const ctas = (ctaButtons as CtaButton[]) ?? [];
 
@@ -91,7 +96,7 @@ export default async function HomePage() {
             <CtaButtonGroup buttons={ctas} themePrimary={themePrimary} />
           </div>
 
-          <OrganizationLogos organizations={orgs} />
+          <OrganizationLogos organizations={orgs} maxPerRow={orgMaxPerRow} />
         </div>
       </section>
 
@@ -111,7 +116,7 @@ export default async function HomePage() {
               <CtaButtonGroup buttons={ctas} themePrimary={themePrimary} />
             </div>
 
-            <OrganizationLogos organizations={orgs} />
+            <OrganizationLogos organizations={orgs} maxPerRow={orgMaxPerRow} />
           </div>
 
           <div className="relative w-full max-w-sm mx-auto md:max-w-none">
@@ -129,8 +134,8 @@ export default async function HomePage() {
               )}
             </div>
             <div className="relative -mt-8 mr-6 ml-auto w-max bg-[var(--theme-secondary)] text-paper-100 px-5 py-3 rounded-md shadow-lg hidden sm:block">
-              <p className="text-xs text-paper-100/70">Chanchal, North Malda</p>
-              <p className="font-display text-sm">Community Leader</p>
+              <p className="text-xs text-paper-100/70">{badgeSubtitle}</p>
+              <p className="font-display text-sm">{badgeTitle}</p>
             </div>
           </div>
         </div>

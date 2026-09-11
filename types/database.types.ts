@@ -490,6 +490,8 @@ export type Database = {
           gallery_interval_ms: number
           header_name: string | null
           header_subtitle: string | null
+          hero_badge_subtitle: string | null
+          hero_badge_title: string | null
           hero_body: string | null
           hero_cta_label: string | null
           hero_cta_url: string | null
@@ -502,6 +504,7 @@ export type Database = {
           office_email: string | null
           office_hours_enabled: boolean
           office_hours_text: string | null
+          org_max_per_row: number
           theme_primary_color: string
           theme_secondary_color: string
           updated_at: string
@@ -516,6 +519,8 @@ export type Database = {
           gallery_interval_ms?: number
           header_name?: string | null
           header_subtitle?: string | null
+          hero_badge_subtitle?: string | null
+          hero_badge_title?: string | null
           hero_body?: string | null
           hero_cta_label?: string | null
           hero_cta_url?: string | null
@@ -528,6 +533,7 @@ export type Database = {
           office_email?: string | null
           office_hours_enabled?: boolean
           office_hours_text?: string | null
+          org_max_per_row?: number
           theme_primary_color?: string
           theme_secondary_color?: string
           updated_at?: string
@@ -542,6 +548,8 @@ export type Database = {
           gallery_interval_ms?: number
           header_name?: string | null
           header_subtitle?: string | null
+          hero_badge_subtitle?: string | null
+          hero_badge_title?: string | null
           hero_body?: string | null
           hero_cta_label?: string | null
           hero_cta_url?: string | null
@@ -554,6 +562,7 @@ export type Database = {
           office_email?: string | null
           office_hours_enabled?: boolean
           office_hours_text?: string | null
+          org_max_per_row?: number
           theme_primary_color?: string
           theme_secondary_color?: string
           updated_at?: string

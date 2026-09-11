@@ -23,28 +23,87 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Loader2, Trash2, UploadCloud } from "lucide-react";
+import { GripVertical, Loader2, Save, Trash2, UploadCloud } from "lucide-react";
 import {
   createOrganization,
   deleteOrganization,
   reorderOrganizations,
   replaceOrganizationLogo,
+  updateOrgMaxPerRow,
   updateOrganization,
 } from "./actions";
 
 const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_PER_ROW_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 function sanitizeFilename(name: string) {
   return name.replace(/[^a-zA-Z0-9.-]/g, "_").toLowerCase();
 }
 
+function MaxPerRowControl({ initialValue }: { initialValue: number }) {
+  const [value, setValue] = useState(initialValue);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function save(next: number) {
+    setValue(next);
+    setSaved(false);
+    setError(null);
+    startTransition(async () => {
+      try {
+        await updateOrgMaxPerRow(next);
+        setSaved(true);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to save.");
+      }
+    });
+  }
+
+  return (
+    <div className="flex items-center gap-3 mb-5 p-3 rounded-md border border-line bg-paper-100">
+      <label htmlFor="org-max-per-row" className="text-sm font-medium text-navy-900 shrink-0">
+        Max items per row before wrap (desktop)
+      </label>
+      <select
+        id="org-max-per-row"
+        value={value}
+        onChange={(e) => save(Number(e.target.value))}
+        disabled={isPending}
+        className="rounded border border-line bg-white px-2.5 py-1.5 text-sm text-ink focus:border-saffron focus:outline-none disabled:opacity-60"
+      >
+        {MAX_PER_ROW_OPTIONS.map((n) => (
+          <option key={n} value={n}>
+            {n}
+          </option>
+        ))}
+      </select>
+
+      {isPending ? (
+        <Loader2 className="w-3.5 h-3.5 animate-spin text-saffron-600" />
+      ) : (
+        <Save className="w-3.5 h-3.5 text-ink-300" />
+      )}
+      {saved && !isPending && <span className="text-xs text-forest">Saved.</span>}
+      {error && (
+        <span className="text-xs text-rust" role="alert">
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export default function OrganizationsManager({
   organizations,
+  orgMaxPerRow,
 }: {
   organizations: Organization[];
+  orgMaxPerRow: number;
 }) {
   const [items, setItems] = useState(organizations);
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   // See SocialLinksManager for why both an explicit DndContext `id` and
   // a mount-gate are used together to fully eliminate the
@@ -65,17 +124,29 @@ export default function OrganizationsManager({
     const newIndex = items.findIndex((o) => o.id === over.id);
     const reordered = arrayMove(items, oldIndex, newIndex);
     setItems(reordered);
+    setError(null);
 
     startTransition(async () => {
-      await reorderOrganizations(reordered.map((o) => o.id));
+      try {
+        await reorderOrganizations(reordered.map((o) => o.id));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to save the new order.");
+      }
     });
   }
 
   function handleDelete(id: string) {
     if (!confirm("Remove this organization's logo from the homepage?")) return;
-    setItems((prev) => prev.filter((o) => o.id !== id));
+    const prev = items;
+    setItems((cur) => cur.filter((o) => o.id !== id));
+    setError(null);
     startTransition(async () => {
-      await deleteOrganization(id);
+      try {
+        await deleteOrganization(id);
+      } catch (err) {
+        setItems(prev);
+        setError(err instanceof Error ? err.message : "Failed to delete.");
+      }
     });
   }
 
@@ -89,6 +160,14 @@ export default function OrganizationsManager({
       <p className="text-xs text-ink-400 mb-5">
         Logos shown in a row beneath the hero CTA button. Drag to reorder.
       </p>
+
+      <MaxPerRowControl initialValue={orgMaxPerRow} />
+
+      {error && (
+        <p className="text-xs text-rust mb-3" role="alert">
+          {error}
+        </p>
+      )}
 
       {items.length > 0 && !mounted && <DndListSkeleton count={items.length} rowHeight={64} />}
 
