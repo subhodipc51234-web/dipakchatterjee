@@ -100,6 +100,7 @@ export async function createOrganization(input: {
   logo_url: string;
   logo_path: string;
   external_url?: string;
+  designation?: string;
 }) {
   const { supabase } = await requireAdmin();
 
@@ -114,6 +115,7 @@ export async function createOrganization(input: {
       logo_url: input.logo_url,
       logo_path: input.logo_path,
       external_url: input.external_url || null,
+      designation: input.designation || null,
       display_order: count ?? 0,
     })
     .select("id, display_order, created_at")
@@ -129,13 +131,14 @@ export async function createOrganization(input: {
 
 export async function updateOrganization(
   id: string,
-  input: { name?: string; external_url?: string }
+  input: { name?: string; external_url?: string; designation?: string }
 ) {
   const { supabase } = await requireAdmin();
 
-  const patch: { name?: string; external_url?: string | null } = {};
+  const patch: { name?: string; external_url?: string | null; designation?: string | null } = {};
   if (input.name !== undefined) patch.name = input.name;
   if (input.external_url !== undefined) patch.external_url = input.external_url || null;
+  if (input.designation !== undefined) patch.designation = input.designation || null;
 
   const { error } = await supabase.from("organizations").update(patch).eq("id", id);
   if (error) throw new Error(error.message);

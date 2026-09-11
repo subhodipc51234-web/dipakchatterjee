@@ -52,7 +52,7 @@ export type Database = {
       complaints: {
         Row: {
           contact_email: string | null
-          contact_phone: string
+          contact_phone: string | null
           created_at: string
           description: string
           expires_at: string
@@ -65,7 +65,7 @@ export type Database = {
         }
         Insert: {
           contact_email?: string | null
-          contact_phone: string
+          contact_phone?: string | null
           created_at?: string
           description: string
           expires_at: string
@@ -78,7 +78,7 @@ export type Database = {
         }
         Update: {
           contact_email?: string | null
-          contact_phone?: string
+          contact_phone?: string | null
           created_at?: string
           description?: string
           expires_at?: string
@@ -307,6 +307,7 @@ export type Database = {
       organizations: {
         Row: {
           created_at: string
+          designation: string | null
           display_order: number
           external_url: string | null
           id: string
@@ -316,6 +317,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          designation?: string | null
           display_order?: number
           external_url?: string | null
           id?: string
@@ -325,6 +327,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          designation?: string | null
           display_order?: number
           external_url?: string | null
           id?: string

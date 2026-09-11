@@ -150,9 +150,13 @@ export default function ComplaintDetailModal({
           <div className="grid sm:grid-cols-2 gap-x-6 gap-y-3 text-sm text-ink-600">
             <p className="flex items-center gap-2">
               <Phone className="w-4 h-4 text-ink-400 shrink-0" />
-              <a href={`tel:${complaint.contact_phone}`} className="hover:text-saffron-600 font-medium">
-                {complaint.contact_phone}
-              </a>
+              {complaint.contact_phone ? (
+                <a href={`tel:${complaint.contact_phone}`} className="hover:text-saffron-600 font-medium">
+                  {complaint.contact_phone}
+                </a>
+              ) : (
+                <span className="text-ink-400 italic">Not provided</span>
+              )}
             </p>
             <p className="flex items-center gap-2">
               <Clock className="w-4 h-4 text-ink-400 shrink-0" />

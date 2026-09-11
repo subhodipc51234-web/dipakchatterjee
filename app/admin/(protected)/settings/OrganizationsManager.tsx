@@ -129,6 +129,7 @@ function SortableOrgRow({
   const supabase = createClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(org.name);
+  const [designation, setDesignation] = useState(org.designation ?? "");
   const [url, setUrl] = useState(org.external_url ?? "");
   const [logoUrl, setLogoUrl] = useState(org.logo_url);
   const [replacing, setReplacing] = useState(false);
@@ -213,24 +214,35 @@ function SortableOrgRow({
         }}
       />
 
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        onBlur={() => name !== org.name && startTransition(() => updateOrganization(org.id, { name }))}
-        placeholder="Organization name"
-        className="flex-1 min-w-0 rounded border border-line bg-white px-2.5 py-1.5 text-sm text-ink focus:border-saffron focus:outline-none"
-      />
-
-      <input
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        onBlur={() =>
-          url !== (org.external_url ?? "") &&
-          startTransition(() => updateOrganization(org.id, { external_url: url }))
-        }
-        placeholder="https:// (optional link)"
-        className="flex-1 min-w-0 rounded border border-line bg-white px-2.5 py-1.5 text-xs text-ink-600 focus:border-saffron focus:outline-none"
-      />
+      <div className="flex-1 min-w-0 grid sm:grid-cols-2 gap-2">
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={() => name !== org.name && startTransition(() => updateOrganization(org.id, { name }))}
+          placeholder="Organization name"
+          className="rounded border border-line bg-white px-2.5 py-1.5 text-sm text-ink focus:border-saffron focus:outline-none"
+        />
+        <input
+          value={designation}
+          onChange={(e) => setDesignation(e.target.value)}
+          onBlur={() =>
+            designation !== (org.designation ?? "") &&
+            startTransition(() => updateOrganization(org.id, { designation }))
+          }
+          placeholder="Role / designation (optional)"
+          className="rounded border border-line bg-white px-2.5 py-1.5 text-sm text-ink focus:border-saffron focus:outline-none"
+        />
+        <input
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onBlur={() =>
+            url !== (org.external_url ?? "") &&
+            startTransition(() => updateOrganization(org.id, { external_url: url }))
+          }
+          placeholder="https:// (optional link)"
+          className="sm:col-span-2 rounded border border-line bg-white px-2.5 py-1.5 text-xs text-ink-600 focus:border-saffron focus:outline-none"
+        />
+      </div>
 
       <button
         type="button"
@@ -252,6 +264,7 @@ function SortableOrgRow({
 function AddOrganizationForm({ onAdded }: { onAdded: (org: Organization) => void }) {
   const supabase = createClient();
   const [name, setName] = useState("");
+  const [designation, setDesignation] = useState("");
   const [externalUrl, setExternalUrl] = useState("");
   const [pendingLogo, setPendingLogo] = useState<{
     file: File;
@@ -314,6 +327,7 @@ function AddOrganizationForm({ onAdded }: { onAdded: (org: Organization) => void
         logo_url: pendingLogo.publicUrl,
         logo_path: pendingLogo.path,
         external_url: externalUrl.trim(),
+        designation: designation.trim(),
       });
       onAdded({
         id: created.id,
@@ -321,12 +335,14 @@ function AddOrganizationForm({ onAdded }: { onAdded: (org: Organization) => void
         logo_url: pendingLogo.publicUrl,
         logo_path: pendingLogo.path,
         external_url: externalUrl.trim() || null,
+        designation: designation.trim() || null,
         display_order: created.display_order,
         created_at: created.created_at,
       });
       URL.revokeObjectURL(pendingLogo.previewUrl);
       setPendingLogo(null);
       setName("");
+      setDesignation("");
       setExternalUrl("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add organization.");
@@ -362,6 +378,12 @@ function AddOrganizationForm({ onAdded }: { onAdded: (org: Organization) => void
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Organization name"
+            className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:border-saffron focus:outline-none"
+          />
+          <input
+            value={designation}
+            onChange={(e) => setDesignation(e.target.value)}
+            placeholder="Role / designation (optional)"
             className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:border-saffron focus:outline-none"
           />
           <input

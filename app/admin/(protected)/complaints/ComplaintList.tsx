@@ -214,13 +214,17 @@ export default function ComplaintList({ complaints }: { complaints: ComplaintRow
                 <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2 mt-4 text-sm text-ink-600">
                   <p className="flex items-center gap-2">
                     <Phone className="w-4 h-4 text-ink-400 shrink-0" />
-                    <a
-                      href={`tel:${complaint.contact_phone}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="hover:text-saffron-600"
-                    >
-                      {complaint.contact_phone}
-                    </a>
+                    {complaint.contact_phone ? (
+                      <a
+                        href={`tel:${complaint.contact_phone}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="hover:text-saffron-600"
+                      >
+                        {complaint.contact_phone}
+                      </a>
+                    ) : (
+                      <span className="text-ink-400 italic">Not provided</span>
+                    )}
                   </p>
                   <p className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-ink-400 shrink-0" />

@@ -23,7 +23,11 @@ const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 
 const formSchema = z.object({
   description: z.string().trim().min(20, "Please describe the issue in at least 20 characters.").max(5000),
-  contact_phone: z.string().trim().min(6, "Please enter a valid phone number.").max(20),
+  contact_phone: z
+    .string()
+    .trim()
+    .max(20)
+    .refine((v) => v === "" || v.length >= 6, "Please enter a valid phone number, or leave this blank."),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -152,7 +156,7 @@ export default function ComplaintForm() {
 
       <div>
         <label htmlFor="contact_phone" className="block text-sm font-medium text-navy-900 dark:text-white mb-1.5">
-          Phone Number <span className="text-rust">*</span>
+          Phone Number <span className="text-ink-400 font-normal">(optional)</span>
         </label>
         <input
           id="contact_phone"

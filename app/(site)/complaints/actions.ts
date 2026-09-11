@@ -20,7 +20,11 @@ const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
 
 const complaintSchema = z.object({
   description: z.string().trim().min(20, "Please provide at least 20 characters").max(5000),
-  contact_phone: z.string().trim().min(6, "Enter a valid phone number").max(20),
+  contact_phone: z
+    .string()
+    .trim()
+    .max(20)
+    .refine((v) => v === "" || v.length >= 6, "Enter a valid phone number, or leave it blank"),
 });
 
 function sanitizeFilename(name: string) {
@@ -76,7 +80,7 @@ export async function submitComplaint(formData: FormData): Promise<SubmitComplai
     .from("complaints")
     .insert({
       description: parsed.data.description,
-      contact_phone: parsed.data.contact_phone,
+      contact_phone: parsed.data.contact_phone || null,
       expires_at: expiresAt,
     })
     .select("id")
