@@ -7,14 +7,18 @@ services:
     # the standalone bundle on its own — copy it manually or all CSS/JS
     # assets 404. There's no public/ directory in this project yet; add
     # `cp -r public .next/standalone/public` here too if one is added later.
-    buildCommand: npm install && npm run build && cp -r .next/static .next/standalone/.next/static
+    # --include=dev is required: NODE_ENV=production makes plain `npm
+    # install` skip devDependencies, but @tailwindcss/postcss, tailwindcss,
+    # postcss, and typescript (all devDependencies) are needed to run
+    # `next build` itself, not just at runtime.
+    buildCommand: npm install --include=dev && npm run build && cp -r .next/static .next/standalone/.next/static
     startCommand: node .next/standalone/server.js
     healthCheckPath: /
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3000
+      # Render assigns its own PORT and routes to whatever the app
+      # actually listens on; server.js already reads process.env.PORT.
       # Required for the app to boot — utils/supabase/server.ts and
       # middleware.ts read these with a non-null assertion.
       - key: NEXT_PUBLIC_SUPABASE_URL
