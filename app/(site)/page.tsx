@@ -23,6 +23,7 @@ import PostsFeed from "@/components/posts/PostsFeed";
 import OrganizationLogos from "@/components/OrganizationLogos";
 import CtaButtonGroup from "@/components/CtaButtonGroup";
 import RevealOnScroll from "@/components/RevealOnScroll";
+import ExpandableBio from "@/components/ExpandableBio";
 
 const FALLBACK_HEADLINE = "A life spent teaching, organising, and showing up when it matters.";
 const FALLBACK_BODY =
@@ -90,7 +91,7 @@ export default async function HomePage() {
         </div>
 
         <div className="px-5 pt-6 pb-10 bg-paper-100 dark:bg-navy-900">
-          <p className="text-ink-600 dark:text-paper-100/70 text-base leading-relaxed">{body}</p>
+          <ExpandableBio text={body} />
 
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
             <CtaButtonGroup buttons={ctas} themePrimary={themePrimary} />
@@ -108,9 +109,11 @@ export default async function HomePage() {
               {headline}
             </h1>
 
-            <p className="mt-6 text-ink-600 dark:text-paper-100/70 text-base md:text-lg max-w-xl leading-relaxed">
-              {body}
-            </p>
+            <ExpandableBio
+              text={body}
+              className="mt-6 max-w-xl"
+              textClassName="text-ink-600 dark:text-paper-100/70 text-base md:text-lg leading-relaxed"
+            />
 
             <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
               <CtaButtonGroup buttons={ctas} themePrimary={themePrimary} />
