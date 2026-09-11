@@ -1,0 +1,27 @@
+node_modules
+.claude/settings.local.json
+
+# Env files — never commit secrets (Supabase service-role key, etc.)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Next.js build output
+.next/
+out/
+build/
+
+# TypeScript build cache
+*.tsbuildinfo
+next-env.d.ts
+
+# Editor/OS
+.vscode/
+.DS_Store
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/
+

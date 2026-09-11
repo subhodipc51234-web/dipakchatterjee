@@ -1,0 +1,88 @@
+// components/posts/PostsFeed.tsx
+//
+// Chronological feed, styled after the original "Notable Works" section
+// (dark navy band, card grid). Each post's first media item renders
+// through MediaPlayer, carrying the post's external_link as the
+// "View original on Facebook" action.
+
+import Link from "next/link";
+import MediaPlayer from "@/components/MediaPlayer";
+import RevealOnScroll from "@/components/RevealOnScroll";
+import type { PostWithMedia } from "@/types/domain";
+
+const EXCERPT_LENGTH = 140;
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+function excerpt(body: string) {
+  if (body.length <= EXCERPT_LENGTH) return body;
+  return `${body.slice(0, EXCERPT_LENGTH).trimEnd()}…`;
+}
+
+function PostCard({ post }: { post: PostWithMedia }) {
+  const media = post.post_media[0];
+
+  return (
+    <article className="h-full bg-black/20 border border-white/10 rounded-lg overflow-hidden flex flex-col">
+      {media && (
+        <MediaPlayer
+          kind={media.kind}
+          src={media.public_url}
+          className="[&_figcaption]:hidden"
+        />
+      )}
+
+      <div className="p-5 flex-1 flex flex-col">
+        <p className="text-xs text-[var(--theme-primary)] font-semibold">{formatDate(post.published_at)}</p>
+
+        {post.title && (
+          <h3 className="font-display text-xl text-white mt-2">{post.title}</h3>
+        )}
+
+        {post.body && (
+          <p className="mt-3 text-sm text-paper-100/70 leading-relaxed">{excerpt(post.body)}</p>
+        )}
+
+        <Link
+          href={`/posts/${post.id}`}
+          className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--theme-primary)] hover:underline"
+        >
+          Read More <span aria-hidden="true">&rarr;</span>
+        </Link>
+      </div>
+    </article>
+  );
+}
+
+export default function PostsFeed({ posts }: { posts: PostWithMedia[] }) {
+  return (
+    <section id="works" className="py-16 md:py-24 bg-[var(--theme-secondary)]">
+      <div className="max-w-6xl mx-auto px-5 md:px-8">
+        <div className="mb-10">
+          <p className="text-[var(--theme-primary)] font-semibold text-sm mb-3">Notable Works</p>
+          <h2 className="font-display text-3xl md:text-4xl text-white leading-tight max-w-xl">
+            A record of service, community work, and public action.
+          </h2>
+        </div>
+
+        {posts.length === 0 ? (
+          <p className="text-paper-100/60 text-sm">Updates will appear here soon.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {posts.map((post, i) => (
+              <RevealOnScroll key={post.id} className="h-full" style={{ transitionDelay: `${Math.min(i, 4) * 75}ms` }}>
+                <PostCard post={post} />
+              </RevealOnScroll>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}

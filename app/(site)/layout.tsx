@@ -1,0 +1,78 @@
+// app/(site)/layout.tsx
+//
+// Wraps every public page (homepage, /posts/[id], /complaints, ...) with
+// the shared header/footer and the dynamic theme CSS variables. Route
+// group — adds no URL segment. Deliberately excludes /admin/*, which has
+// its own layout, chrome, and fixed branding.
+
+import { createClient } from "@/utils/supabase/server";
+import type { FooterBlockWithLinks, SiteSettings, SocialLink } from "@/types/domain";
+import { darken } from "@/lib/color";
+import SiteHeader from "@/components/site/SiteHeader";
+import SiteFooter from "@/components/site/SiteFooter";
+
+export default async function SiteLayout({ children }: { children: React.ReactNode }) {
+  const supabase = await createClient();
+
+  const [{ data: settings }, { data: footerBlocks }, { data: socialLinks }] = await Promise.all([
+    supabase
+      .from("site_settings")
+      .select(
+        "avatar_url, theme_primary_color, theme_secondary_color, header_name, header_subtitle, footer_tagline, footer_copyright_name, footer_note"
+      )
+      .eq("id", "default")
+      .single(),
+    supabase
+      .from("footer_blocks")
+      .select("*, footer_links(*)")
+      .order("display_order", { ascending: true })
+      .order("display_order", { foreignTable: "footer_links", ascending: true }),
+    supabase.from("social_links").select("*").order("display_order", { ascending: true }),
+  ]);
+
+  const s = settings as Pick<
+    SiteSettings,
+    | "avatar_url"
+    | "theme_primary_color"
+    | "theme_secondary_color"
+    | "header_name"
+    | "header_subtitle"
+    | "footer_tagline"
+    | "footer_copyright_name"
+    | "footer_note"
+  > | null;
+
+  const primary = s?.theme_primary_color || "#C1832B";
+  const secondary = s?.theme_secondary_color || "#151F33";
+
+  return (
+    <div
+      className="min-h-screen dark:bg-navy-900 dark:text-paper-100 transition-colors"
+      style={
+        {
+          "--theme-primary": primary,
+          "--theme-primary-hover": darken(primary, 0.15),
+          "--theme-secondary": secondary,
+          "--theme-secondary-hover": darken(secondary, 0.15),
+        } as React.CSSProperties
+      }
+    >
+      <a
+        href="#main"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:bg-navy-900 focus:text-white focus:px-4 focus:py-2 focus:rounded z-50"
+      >
+        Skip to content
+      </a>
+
+      <SiteHeader avatarUrl={s?.avatar_url} name={s?.header_name} subtitle={s?.header_subtitle} />
+      {children}
+      <SiteFooter
+        tagline={s?.footer_tagline}
+        copyrightName={s?.footer_copyright_name}
+        note={s?.footer_note}
+        blocks={(footerBlocks as FooterBlockWithLinks[]) ?? []}
+        socialLinks={(socialLinks as SocialLink[]) ?? []}
+      />
+    </div>
+  );
+}
