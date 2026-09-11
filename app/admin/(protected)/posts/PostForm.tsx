@@ -20,6 +20,14 @@ const postSchema = z.object({
     .optional()
     .or(z.literal("")),
   is_published: z.boolean(),
+  image_interval_seconds: z
+    .string()
+    .trim()
+    .refine((v) => v === "" || (Number(v) >= 1 && Number(v) <= 60), {
+      message: "Enter a number between 1 and 60, or leave blank.",
+    })
+    .optional()
+    .or(z.literal("")),
 });
 
 type PostFormValues = z.infer<typeof postSchema>;
@@ -54,6 +62,7 @@ export default function PostForm({
       published_at: toLocalDatetimeInputValue(post ? new Date(post.published_at) : new Date()),
       external_link: post?.external_link ?? "",
       is_published: post?.is_published ?? false,
+      image_interval_seconds: post?.image_interval_ms ? String(Math.round(post.image_interval_ms / 1000)) : "",
     },
   });
 
@@ -67,6 +76,9 @@ export default function PostForm({
           published_at: values.published_at ?? "",
           external_link: values.external_link ?? "",
           is_published: values.is_published,
+          image_interval_seconds: values.image_interval_seconds
+            ? Number(values.image_interval_seconds)
+            : null,
         });
       } catch (err) {
         setServerError(err instanceof Error ? err.message : "Something went wrong.");
@@ -139,6 +151,29 @@ export default function PostForm({
           className="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none resize-y"
         />
         {errors.body && <p className="text-xs text-rust mt-1.5">{errors.body.message}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="image_interval_seconds" className="block text-sm font-medium text-navy-900 mb-1.5">
+          Slideshow interval (seconds)
+        </label>
+        <input
+          id="image_interval_seconds"
+          type="number"
+          min={1}
+          max={60}
+          step={1}
+          placeholder="Default"
+          {...register("image_interval_seconds")}
+          className="w-32 rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none"
+        />
+        <p className="text-xs text-ink-400 mt-1.5">
+          How long each image shows before advancing, when this post has multiple images. Leave
+          blank to use the default speed.
+        </p>
+        {errors.image_interval_seconds && (
+          <p className="text-xs text-rust mt-1.5">{errors.image_interval_seconds.message}</p>
+        )}
       </div>
 
       <label className="flex items-center gap-2.5 text-sm text-navy-900 font-medium">

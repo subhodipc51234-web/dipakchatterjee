@@ -63,6 +63,16 @@ function actionAriaLabel(action: HeaderAction) {
   return undefined;
 }
 
+/** Admin-picked overrides (Settings -> Header Actions) on top of the solid/outline/link style classes. */
+function actionColorStyle(action: HeaderAction): React.CSSProperties | undefined {
+  if (!action.bg_color && !action.text_color) return undefined;
+  return {
+    backgroundColor: action.bg_color || undefined,
+    color: action.text_color || undefined,
+    borderColor: action.bg_color || undefined,
+  };
+}
+
 export default function SiteHeader({
   avatarUrl,
   name,
@@ -133,6 +143,7 @@ export default function SiteHeader({
                 rel={action.url.startsWith("http") ? "noopener noreferrer" : undefined}
                 aria-label={actionAriaLabel(action)}
                 onClick={(e) => handleAnchorClick(e, action.url)}
+                style={actionColorStyle(action)}
                 className={`inline-flex items-center gap-2 text-sm ${STYLE_CLASSES[action.style]}`}
               >
                 <ActionLabel action={action} />
@@ -165,6 +176,7 @@ export default function SiteHeader({
               rel={action.url.startsWith("http") ? "noopener noreferrer" : undefined}
               aria-label={actionAriaLabel(action)}
               onClick={(e) => handleAnchorClick(e, action.url)}
+              style={actionColorStyle(action)}
               className={`hidden lg:inline-flex items-center gap-2 text-sm ${STYLE_CLASSES[action.style]}`}
             >
               <ActionLabel action={action} />
@@ -214,6 +226,7 @@ export default function SiteHeader({
                   setMenuOpen(false);
                   handleAnchorClick(e, action.url);
                 }}
+                style={actionColorStyle(action)}
                 className={`mt-2 flex items-center justify-center gap-2 touch-manipulation ${MOBILE_STYLE_CLASSES[action.style]}`}
               >
                 <ActionLabel action={action} />

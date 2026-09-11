@@ -273,6 +273,7 @@ export type Database = {
       }
       header_actions: {
         Row: {
+          bg_color: string | null
           created_at: string
           display_order: number
           icon: string
@@ -280,9 +281,11 @@ export type Database = {
           label: string
           position: string
           style: string
+          text_color: string | null
           url: string
         }
         Insert: {
+          bg_color?: string | null
           created_at?: string
           display_order?: number
           icon?: string
@@ -290,9 +293,11 @@ export type Database = {
           label?: string
           position?: string
           style?: string
+          text_color?: string | null
           url: string
         }
         Update: {
+          bg_color?: string | null
           created_at?: string
           display_order?: number
           icon?: string
@@ -300,6 +305,7 @@ export type Database = {
           label?: string
           position?: string
           style?: string
+          text_color?: string | null
           url?: string
         }
         Relationships: []
@@ -382,6 +388,7 @@ export type Database = {
           created_by: string | null
           external_link: string | null
           id: string
+          image_interval_ms: number | null
           is_published: boolean
           published_at: string
           title: string | null
@@ -393,6 +400,7 @@ export type Database = {
           created_by?: string | null
           external_link?: string | null
           id?: string
+          image_interval_ms?: number | null
           is_published?: boolean
           published_at?: string
           title?: string | null
@@ -404,6 +412,7 @@ export type Database = {
           created_by?: string | null
           external_link?: string | null
           id?: string
+          image_interval_ms?: number | null
           is_published?: boolean
           published_at?: string
           title?: string | null

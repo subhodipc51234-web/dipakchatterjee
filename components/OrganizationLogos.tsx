@@ -1,9 +1,10 @@
 // components/OrganizationLogos.tsx
 //
 // Static, always-visible grid of affiliated organizations — no hover
-// expansion or collapsed state. Each card shows the full-color logo,
-// enlarged, with the name (bold) and role/designation (smaller,
-// secondary) directly beneath it.
+// expansion or collapsed state. Each card shows only the full-color
+// logo, enlarged, with the organization name directly beneath it
+// (role/designation is intentionally not shown here, even though the
+// field still exists on the row for internal/admin reference).
 
 import type { Organization } from "@/types/domain";
 
@@ -15,14 +16,7 @@ function OrgCard({ org }: { org: Organization }) {
         <img src={org.logo_url} alt={org.name} className="w-full h-full object-contain p-2" />
       </span>
 
-      <div>
-        <p className="text-sm font-bold text-navy-900 dark:text-white leading-tight">{org.name}</p>
-        {org.designation && (
-          <p className="text-xs text-ink-400 dark:text-paper-100/50 mt-1 leading-tight">
-            {org.designation}
-          </p>
-        )}
-      </div>
+      <p className="text-sm font-bold text-navy-900 dark:text-white leading-tight">{org.name}</p>
     </div>
   );
 
@@ -55,7 +49,7 @@ export default function OrganizationLogos({
 
   return (
     <div className="mt-10">
-      <p className={`text-xs font-medium mb-4 ${labelClassName}`}>Affiliated With</p>
+      <p className={`text-xs font-medium mb-4 ${labelClassName}`}>Organizations Worked With</p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {organizations.map((org) => (
           <OrgCard key={org.id} org={org} />

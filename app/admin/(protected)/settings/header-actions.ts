@@ -17,6 +17,8 @@ export async function createHeaderAction(input: {
   icon?: HeaderActionIcon;
   style?: HeaderActionStyle;
   position?: HeaderActionPosition;
+  bg_color?: string | null;
+  text_color?: string | null;
 }) {
   const { supabase } = await requireAdmin();
 
@@ -30,6 +32,8 @@ export async function createHeaderAction(input: {
       icon: input.icon ?? "none",
       style: input.style ?? "solid",
       position: input.position ?? "right",
+      bg_color: input.bg_color ?? null,
+      text_color: input.text_color ?? null,
       display_order: count ?? 0,
     })
     .select("*")
@@ -51,6 +55,8 @@ export async function updateHeaderAction(
     icon?: HeaderActionIcon;
     style?: HeaderActionStyle;
     position?: HeaderActionPosition;
+    bg_color?: string | null;
+    text_color?: string | null;
   }
 ) {
   const { supabase } = await requireAdmin();
@@ -61,12 +67,16 @@ export async function updateHeaderAction(
     icon?: HeaderActionIcon;
     style?: HeaderActionStyle;
     position?: HeaderActionPosition;
+    bg_color?: string | null;
+    text_color?: string | null;
   } = {};
   if (input.label !== undefined) patch.label = input.label;
   if (input.url !== undefined) patch.url = input.url;
   if (input.icon !== undefined) patch.icon = input.icon;
   if (input.style !== undefined) patch.style = input.style;
   if (input.position !== undefined) patch.position = input.position;
+  if (input.bg_color !== undefined) patch.bg_color = input.bg_color;
+  if (input.text_color !== undefined) patch.text_color = input.text_color;
 
   const { error } = await supabase.from("header_actions").update(patch).eq("id", id);
   if (error) throw new Error(error.message);

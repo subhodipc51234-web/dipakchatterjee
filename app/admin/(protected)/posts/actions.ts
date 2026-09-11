@@ -13,6 +13,8 @@ export type PostFormInput = {
   published_at: string;
   external_link: string;
   is_published: boolean;
+  /** Seconds between slides for this post's image carousel; empty/undefined to fall back to the carousel's built-in default. */
+  image_interval_seconds?: number | null;
 };
 
 export async function createPost(input: PostFormInput) {
@@ -28,6 +30,7 @@ export async function createPost(input: PostFormInput) {
       ...(input.published_at ? { published_at: new Date(input.published_at).toISOString() } : {}),
       external_link: input.external_link || null,
       is_published: input.is_published,
+      image_interval_ms: input.image_interval_seconds ? Math.round(input.image_interval_seconds * 1000) : null,
       created_by: user.id,
     })
     .select("id")
@@ -51,6 +54,7 @@ export async function updatePost(id: string, input: PostFormInput) {
       ...(input.published_at ? { published_at: new Date(input.published_at).toISOString() } : {}),
       external_link: input.external_link || null,
       is_published: input.is_published,
+      image_interval_ms: input.image_interval_seconds ? Math.round(input.image_interval_seconds * 1000) : null,
     })
     .eq("id", id);
 

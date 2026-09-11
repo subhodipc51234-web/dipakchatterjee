@@ -63,7 +63,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const attachedMedia = typedPost.post_media.length > 0 && (
     <div className="space-y-6">
       {images.length > 1 ? (
-        <PostImageCarousel images={images} />
+        <PostImageCarousel images={images} intervalMs={typedPost.image_interval_ms ?? undefined} />
       ) : (
         images.map((media, i) => (
           <MediaPlayer
@@ -85,10 +85,16 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
     </div>
   );
 
-  // Side-by-side only when there's a real embed to show — otherwise the
-  // original single-column article layout (embed's own responsive
-  // aspect ratio needs the extra width; plain text-only posts don't).
-  if (embed) {
+  // Side-by-side only when there's real media (an embed or attached
+  // images/video) to show on the right — otherwise the original
+  // single-column article layout (media needs the extra width; plain
+  // text-only posts don't). Text (title, metadata, description) is
+  // always the left column, media/embed always the right, per the
+  // desktop reading order; both stack to a single column on mobile via
+  // the unprefixed `grid` (no columns until `lg`).
+  const hasMedia = Boolean(embed) || typedPost.post_media.length > 0;
+
+  if (hasMedia) {
     return (
       <main className="bg-paper-100 dark:bg-navy-900 min-h-screen transition-colors">
         <article className="max-w-6xl mx-auto px-5 md:px-8 py-12 md:py-16">
@@ -102,23 +108,25 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
           {header}
 
-          <div className="mt-8 grid lg:grid-cols-[1.05fr_0.95fr] gap-8 lg:gap-12 items-start">
+          <div className="mt-8 grid lg:grid-cols-[0.95fr_1.05fr] gap-8 lg:gap-12 items-start">
             <div className="space-y-6">
-              <PostEmbed embed={embed} />
-              {attachedMedia}
+              {bodyContent}
+              {embed && typedPost.external_link && (
+                <a
+                  href={typedPost.external_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--theme-primary)] hover:opacity-80"
+                >
+                  View original
+                  <ExternalLink className="w-3.5 h-3.5" />
+                </a>
+              )}
             </div>
 
             <div className="space-y-6">
-              {bodyContent}
-              <a
-                href={typedPost.external_link ?? "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--theme-primary)] hover:opacity-80"
-              >
-                View original
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
+              {embed && <PostEmbed embed={embed} />}
+              {attachedMedia}
             </div>
           </div>
         </article>
@@ -139,11 +147,9 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
         {header}
 
-        {typedPost.post_media.length > 0 && <div className="mt-8">{attachedMedia}</div>}
-
         {bodyContent && <div className="mt-8">{bodyContent}</div>}
 
-        {typedPost.external_link && typedPost.post_media.length === 0 && (
+        {typedPost.external_link && (
           <a
             href={typedPost.external_link}
             target="_blank"

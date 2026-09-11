@@ -154,6 +154,8 @@ function SortableActionRow({
   });
   const [label, setLabel] = useState(action.label);
   const [url, setUrl] = useState(action.url);
+  const [bgColor, setBgColor] = useState(action.bg_color ?? "");
+  const [textColor, setTextColor] = useState(action.text_color ?? "");
 
   const style = { transform: CSS.Transform.toString(transform), transition };
 
@@ -163,6 +165,8 @@ function SortableActionRow({
     icon?: HeaderActionIcon;
     style?: HeaderActionStyle;
     position?: HeaderActionPosition;
+    bg_color?: string | null;
+    text_color?: string | null;
   }) {
     updateHeaderAction(action.id, patch).catch((err) =>
       alert(err instanceof Error ? err.message : "Failed to save.")
@@ -262,6 +266,46 @@ function SortableActionRow({
             <option value="right">Right</option>
           </select>
         </label>
+
+        <label className="flex items-center gap-1.5 text-xs text-ink-600">
+          Background
+          <input
+            type="color"
+            value={bgColor || "#ffffff"}
+            onChange={(e) => {
+              setBgColor(e.target.value);
+              save({ bg_color: e.target.value });
+            }}
+            className="w-7 h-7 rounded border border-line cursor-pointer p-0.5"
+          />
+        </label>
+
+        <label className="flex items-center gap-1.5 text-xs text-ink-600">
+          Text
+          <input
+            type="color"
+            value={textColor || "#000000"}
+            onChange={(e) => {
+              setTextColor(e.target.value);
+              save({ text_color: e.target.value });
+            }}
+            className="w-7 h-7 rounded border border-line cursor-pointer p-0.5"
+          />
+        </label>
+
+        {(bgColor || textColor) && (
+          <button
+            type="button"
+            onClick={() => {
+              setBgColor("");
+              setTextColor("");
+              save({ bg_color: null, text_color: null });
+            }}
+            className="text-xs text-ink-400 hover:text-rust underline"
+          >
+            Reset colors
+          </button>
+        )}
       </div>
     </li>
   );
