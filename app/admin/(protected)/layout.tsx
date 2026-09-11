@@ -49,6 +49,13 @@ export default async function AdminProtectedLayout({
 
   return (
     <div className="min-h-screen flex">
+      {/* app/globals.css hides Next.js's dev-mode floating indicator
+          site-wide; this re-enables it, but only for as long as this
+          admin layout is mounted (a plain <style> tag's rules apply to
+          the whole document regardless of where the tag itself sits in
+          the tree, so this has no effect on public pages). */}
+      <style>{"nextjs-portal, [data-nextjs-toast] { display: block !important; }"}</style>
+
       <aside className="w-64 shrink-0 bg-navy-900 text-paper-100 flex flex-col">
         <div className="px-6 py-6 border-b border-white/10">
           <p className="font-display text-lg text-white">Dipak Chatterjee</p>

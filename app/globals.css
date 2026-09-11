@@ -30,3 +30,14 @@ body {
     rgba(35, 42, 54, 0.05) 28px
   );
 }
+
+/* Next.js's dev-mode floating indicator (only ever rendered by `next
+   dev`, never in a production build) — hidden by default so public
+   pages stay clean while developing. The admin dashboard layout
+   (app/admin/(protected)/layout.tsx) re-enables it with a scoped
+   override, since that <style> tag only exists in the DOM while an
+   admin page is mounted. */
+nextjs-portal,
+[data-nextjs-toast] {
+  display: none !important;
+}
