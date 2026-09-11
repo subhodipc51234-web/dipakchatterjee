@@ -4,16 +4,20 @@
 // mobile menu toggle needs interactivity, so this is the one client
 // component in the site shell.
 //
-// The inline "Submit a Complaint" button and the hamburger/drawer are
-// mutually exclusive by breakpoint (`lg:inline-flex` vs `lg:hidden`) so
-// exactly one "Submit a Complaint" affordance is ever visible at once —
-// never both stacked in the header row on tablet-width screens.
+// Action buttons/links (originally just a fixed "Submit a Complaint")
+// are dashboard-managed (Settings -> Header Actions): each has an icon,
+// a style (solid/outline/text-link), and a left/right position. The
+// inline actions and the hamburger/drawer are mutually exclusive by
+// breakpoint (`lg:flex` vs `lg:hidden`) so they're never both stacked in
+// the header row on tablet-width screens.
 
 "use client";
 
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
+import SocialIcon from "@/components/SocialIcon";
+import { HEADER_ACTION_ICON_LABELS, type HeaderAction } from "@/types/domain";
 
 const NAV_LINKS = [
   { href: "#about", label: "About" },
@@ -25,16 +29,50 @@ const NAV_LINKS = [
 const DEFAULT_NAME = "Dipak Chatterjee";
 const DEFAULT_SUBTITLE = "Social Worker · Educationist";
 
+const STYLE_CLASSES: Record<HeaderAction["style"], string> = {
+  solid:
+    "bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-hover)] text-white font-semibold px-4 py-2.5 rounded-md transition-colors",
+  outline:
+    "border border-[var(--theme-primary)] text-[var(--theme-primary)] hover:bg-[var(--theme-primary)] hover:text-white font-semibold px-4 py-2.5 rounded-md transition-colors",
+  link: "text-ink-600 dark:text-paper-100/70 hover:text-navy-900 dark:hover:text-white font-medium",
+};
+
+const MOBILE_STYLE_CLASSES: Record<HeaderAction["style"], string> = {
+  solid: "bg-[var(--theme-primary)] text-white font-semibold px-4 py-3 rounded-md text-center",
+  outline: "border border-[var(--theme-primary)] text-[var(--theme-primary)] font-semibold px-4 py-3 rounded-md text-center",
+  link: "text-ink-600 dark:text-paper-100/70 font-medium py-3 border-b border-line/70 dark:border-white/10 last:border-b-0",
+};
+
+function ActionLabel({ action }: { action: HeaderAction }) {
+  const iconOnly = action.icon !== "none" && !action.label;
+  return (
+    <>
+      {action.icon !== "none" && <SocialIcon platform={action.icon} className="w-4 h-4" />}
+      {!iconOnly && (action.label || "Link")}
+    </>
+  );
+}
+
+function actionAriaLabel(action: HeaderAction) {
+  if (action.label) return undefined;
+  if (action.icon !== "none") return `Follow on ${HEADER_ACTION_ICON_LABELS[action.icon]}`;
+  return undefined;
+}
+
 export default function SiteHeader({
   avatarUrl,
   name,
   subtitle,
+  actions = [],
 }: {
   avatarUrl?: string | null;
   name?: string | null;
   subtitle?: string | null;
+  actions?: HeaderAction[];
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const leftActions = actions.filter((a) => a.position === "left");
+  const rightActions = actions.filter((a) => a.position === "right");
 
   return (
     <header className="sticky top-0 z-40 bg-paper-100/95 dark:bg-navy-900/95 backdrop-blur border-b border-line dark:border-white/10 transition-colors">
@@ -59,6 +97,23 @@ export default function SiteHeader({
           </span>
         </a>
 
+        {leftActions.length > 0 && (
+          <div className="hidden lg:flex items-center gap-3 text-sm shrink-0">
+            {leftActions.map((action) => (
+              <a
+                key={action.id}
+                href={action.url}
+                target={action.url.startsWith("http") ? "_blank" : undefined}
+                rel={action.url.startsWith("http") ? "noopener noreferrer" : undefined}
+                aria-label={actionAriaLabel(action)}
+                className={`inline-flex items-center gap-2 text-sm ${STYLE_CLASSES[action.style]}`}
+              >
+                <ActionLabel action={action} />
+              </a>
+            ))}
+          </div>
+        )}
+
         <div className="hidden lg:flex items-center gap-8 text-sm text-ink-600 dark:text-paper-100/70 font-medium">
           {NAV_LINKS.map((link) => (
             <a key={link.href} href={link.href} className="hover:text-navy-900 dark:hover:text-white">
@@ -70,12 +125,18 @@ export default function SiteHeader({
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <ThemeToggle />
 
-          <a
-            href="/complaints"
-            className="hidden lg:inline-flex items-center gap-2 bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-hover)] text-white text-sm font-semibold px-4 py-2.5 rounded-md transition-colors"
-          >
-            Submit a Complaint
-          </a>
+          {rightActions.map((action) => (
+            <a
+              key={action.id}
+              href={action.url}
+              target={action.url.startsWith("http") ? "_blank" : undefined}
+              rel={action.url.startsWith("http") ? "noopener noreferrer" : undefined}
+              aria-label={actionAriaLabel(action)}
+              className={`hidden lg:inline-flex items-center gap-2 text-sm ${STYLE_CLASSES[action.style]}`}
+            >
+              <ActionLabel action={action} />
+            </a>
+          ))}
 
           <button
             type="button"
@@ -106,13 +167,19 @@ export default function SiteHeader({
                 {link.label}
               </a>
             ))}
-            <a
-              href="/complaints"
-              onClick={() => setMenuOpen(false)}
-              className="mt-3 text-center bg-[var(--theme-primary)] text-white font-semibold px-4 py-3 rounded-md touch-manipulation"
-            >
-              Submit a Complaint
-            </a>
+            {actions.map((action) => (
+              <a
+                key={action.id}
+                href={action.url}
+                target={action.url.startsWith("http") ? "_blank" : undefined}
+                rel={action.url.startsWith("http") ? "noopener noreferrer" : undefined}
+                aria-label={actionAriaLabel(action)}
+                onClick={() => setMenuOpen(false)}
+                className={`mt-2 flex items-center justify-center gap-2 touch-manipulation ${MOBILE_STYLE_CLASSES[action.style]}`}
+              >
+                <ActionLabel action={action} />
+              </a>
+            ))}
           </div>
         </div>
       )}

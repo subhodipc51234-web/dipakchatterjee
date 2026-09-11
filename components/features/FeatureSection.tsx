@@ -72,7 +72,7 @@ function AboutFeature({ feature }: { feature: FeatureWithMedia }) {
   );
 }
 
-function PublicLifeFeature({ feature }: { feature: FeatureWithMedia }) {
+function PublicLifeFeature({ feature, galleryIntervalMs }: { feature: FeatureWithMedia; galleryIntervalMs?: number }) {
   return (
     <section
       id="public-life"
@@ -94,7 +94,7 @@ function PublicLifeFeature({ feature }: { feature: FeatureWithMedia }) {
           )}
         </div>
 
-        <PublicLifeGallery media={feature.feature_media} />
+        <PublicLifeGallery media={feature.feature_media} intervalMs={galleryIntervalMs} />
       </div>
     </section>
   );
@@ -150,12 +150,18 @@ function CustomFeature({ feature }: { feature: FeatureWithMedia }) {
   );
 }
 
-export default function FeatureSection({ feature }: { feature: FeatureWithMedia }) {
+export default function FeatureSection({
+  feature,
+  galleryIntervalMs,
+}: {
+  feature: FeatureWithMedia;
+  galleryIntervalMs?: number;
+}) {
   switch (feature.type) {
     case "about":
       return <AboutFeature feature={feature} />;
     case "public_life_gallery":
-      return <PublicLifeFeature feature={feature} />;
+      return <PublicLifeFeature feature={feature} galleryIntervalMs={galleryIntervalMs} />;
     case "stats":
       return <StatsFeature feature={feature} />;
     case "custom_section":

@@ -6,7 +6,7 @@
 // its own layout, chrome, and fixed branding.
 
 import { createClient } from "@/utils/supabase/server";
-import type { FooterBlockWithLinks, SiteSettings, SocialLink } from "@/types/domain";
+import type { FooterBlockWithLinks, HeaderAction, SiteSettings, SocialLink } from "@/types/domain";
 import { darken } from "@/lib/color";
 import SiteHeader from "@/components/site/SiteHeader";
 import SiteFooter from "@/components/site/SiteFooter";
@@ -14,21 +14,23 @@ import SiteFooter from "@/components/site/SiteFooter";
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
 
-  const [{ data: settings }, { data: footerBlocks }, { data: socialLinks }] = await Promise.all([
-    supabase
-      .from("site_settings")
-      .select(
-        "avatar_url, theme_primary_color, theme_secondary_color, header_name, header_subtitle, footer_tagline, footer_copyright_name, footer_note"
-      )
-      .eq("id", "default")
-      .single(),
-    supabase
-      .from("footer_blocks")
-      .select("*, footer_links(*)")
-      .order("display_order", { ascending: true })
-      .order("display_order", { foreignTable: "footer_links", ascending: true }),
-    supabase.from("social_links").select("*").order("display_order", { ascending: true }),
-  ]);
+  const [{ data: settings }, { data: footerBlocks }, { data: socialLinks }, { data: headerActions }] =
+    await Promise.all([
+      supabase
+        .from("site_settings")
+        .select(
+          "avatar_url, theme_primary_color, theme_secondary_color, header_name, header_subtitle, footer_tagline, footer_copyright_name, footer_note, office_email"
+        )
+        .eq("id", "default")
+        .single(),
+      supabase
+        .from("footer_blocks")
+        .select("*, footer_links(*)")
+        .order("display_order", { ascending: true })
+        .order("display_order", { foreignTable: "footer_links", ascending: true }),
+      supabase.from("social_links").select("*").order("display_order", { ascending: true }),
+      supabase.from("header_actions").select("*").order("display_order", { ascending: true }),
+    ]);
 
   const s = settings as Pick<
     SiteSettings,
@@ -40,6 +42,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
     | "footer_tagline"
     | "footer_copyright_name"
     | "footer_note"
+    | "office_email"
   > | null;
 
   const primary = s?.theme_primary_color || "#C1832B";
@@ -64,12 +67,18 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
         Skip to content
       </a>
 
-      <SiteHeader avatarUrl={s?.avatar_url} name={s?.header_name} subtitle={s?.header_subtitle} />
+      <SiteHeader
+        avatarUrl={s?.avatar_url}
+        name={s?.header_name}
+        subtitle={s?.header_subtitle}
+        actions={(headerActions as HeaderAction[]) ?? []}
+      />
       {children}
       <SiteFooter
         tagline={s?.footer_tagline}
         copyrightName={s?.footer_copyright_name}
         note={s?.footer_note}
+        contactEmail={s?.office_email}
         blocks={(footerBlocks as FooterBlockWithLinks[]) ?? []}
         socialLinks={(socialLinks as SocialLink[]) ?? []}
       />

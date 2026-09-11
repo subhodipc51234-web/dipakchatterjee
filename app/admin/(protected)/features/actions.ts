@@ -174,6 +174,25 @@ export async function updateFeatureMediaMeta(
   revalidatePath("/");
 }
 
+// Global, not per-feature — there's one public hero/banner gallery — but
+// lives beside the Image Gallery feature's media manager since that's
+// the only place an admin would look for "how fast does it cycle".
+export async function updateGalleryIntervalSeconds(seconds: number) {
+  const { supabase } = await requireAdmin();
+
+  const clamped = Math.min(60, Math.max(1, Math.round(seconds)));
+
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ gallery_interval_ms: clamped * 1000, updated_at: new Date().toISOString() })
+    .eq("id", "default");
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/features");
+  revalidatePath("/");
+}
+
 export async function reorderFeatureMedia(featureId: string, orderedIds: string[]) {
   const { supabase } = await requireAdmin();
 

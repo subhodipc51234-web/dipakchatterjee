@@ -10,6 +10,7 @@
 // grid always wraps, so any number of blocks lays out cleanly on both
 // desktop and mobile.
 
+import { Mail } from "lucide-react";
 import SocialIcon from "@/components/SocialIcon";
 import { SOCIAL_PLATFORM_LABELS, type FooterBlockWithLinks, type SocialLink } from "@/types/domain";
 
@@ -76,12 +77,14 @@ export default function SiteFooter({
   tagline,
   copyrightName,
   note,
+  contactEmail,
   blocks,
   socialLinks,
 }: {
   tagline?: string | null;
   copyrightName?: string | null;
   note?: string | null;
+  contactEmail?: string | null;
   blocks: FooterBlockWithLinks[];
   socialLinks: SocialLink[];
 }) {
@@ -91,6 +94,15 @@ export default function SiteFooter({
         <div>
           <p className="font-display text-xl text-white mb-3">{copyrightName || DEFAULT_NAME}</p>
           <p className="text-sm leading-relaxed">{tagline || DEFAULT_TAGLINE}</p>
+          {contactEmail && (
+            <a
+              href={`mailto:${contactEmail}`}
+              className="mt-3 inline-flex items-center gap-1.5 text-sm hover:text-white"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              {contactEmail}
+            </a>
+          )}
         </div>
 
         {blocks.map((block) => (

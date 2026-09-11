@@ -21,6 +21,7 @@ const brandingSchema = z.object({
   footer_tagline: z.string().trim().max(300).optional(),
   footer_copyright_name: z.string().trim().max(120).optional(),
   footer_note: z.string().trim().max(200).optional(),
+  office_email: z.string().trim().email("Enter a valid email address.").max(200).optional().or(z.literal("")),
 });
 
 type BrandingFormValues = z.infer<typeof brandingSchema>;
@@ -42,6 +43,7 @@ export default function BrandingTextForm({ settings }: { settings: SiteSettings 
       footer_tagline: settings?.footer_tagline ?? "",
       footer_copyright_name: settings?.footer_copyright_name ?? "",
       footer_note: settings?.footer_note ?? "",
+      office_email: settings?.office_email ?? "",
     },
   });
 
@@ -56,6 +58,7 @@ export default function BrandingTextForm({ settings }: { settings: SiteSettings 
           footer_tagline: values.footer_tagline ?? "",
           footer_copyright_name: values.footer_copyright_name ?? "",
           footer_note: values.footer_note ?? "",
+          office_email: values.office_email ?? "",
         });
         setSaved(true);
       } catch (err) {
@@ -108,6 +111,30 @@ export default function BrandingTextForm({ settings }: { settings: SiteSettings 
                 <p className="text-xs text-rust mt-1.5">{errors.header_subtitle.message}</p>
               )}
             </div>
+          </div>
+        </div>
+
+        <div className="pt-2 border-t border-line">
+          <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-3 mt-5">Contact</p>
+
+          <div>
+            <label htmlFor="office_email" className="block text-sm font-medium text-navy-900 mb-1.5">
+              Contact email
+            </label>
+            <input
+              id="office_email"
+              type="email"
+              {...register("office_email")}
+              placeholder="office@example.com"
+              className="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none"
+            />
+            <p className="text-xs text-ink-400 mt-1.5">
+              Shown in the footer and on the complaint page. Updating it here changes it
+              everywhere on the site.
+            </p>
+            {errors.office_email && (
+              <p className="text-xs text-rust mt-1.5">{errors.office_email.message}</p>
+            )}
           </div>
         </div>
 

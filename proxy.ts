@@ -57,6 +57,7 @@ function buildCsp(nonce: string): string {
     base-uri 'self';
     form-action 'self';
     frame-ancestors 'none';
+    frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://www.facebook.com https://www.instagram.com;
     upgrade-insecure-requests;
   `
     .replace(/\s{2,}/g, " ")

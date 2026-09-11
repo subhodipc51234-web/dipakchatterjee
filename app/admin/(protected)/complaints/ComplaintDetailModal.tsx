@@ -12,8 +12,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Clock, FileVideo, Phone, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Clock, Copy, FileVideo, Phone, X } from "lucide-react";
 import { formatTimeRemaining, getComplaintStatus } from "@/lib/complaint-status";
+import { formatReferenceNumber } from "@/lib/reference";
 import type { ComplaintMediaWithUrl } from "./ComplaintList";
 import type { Complaint } from "@/types/domain";
 import type { ComplaintResolutionStatus } from "./actions";
@@ -57,10 +58,18 @@ export default function ComplaintDetailModal({
   isTogglingStatus: boolean;
 }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const photos = complaint.complaint_media.filter((m) => m.kind === "image" && m.signedUrl);
   const timeStatus = getComplaintStatus(complaint);
   const isResolved = complaint.status === "resolved";
+
+  function handleCopyReference() {
+    navigator.clipboard.writeText(formatReferenceNumber(complaint.id)).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -117,6 +126,22 @@ export default function ComplaintDetailModal({
         </div>
 
         <div className="p-5 md:p-6 space-y-5">
+          <div className="flex items-center gap-2">
+            <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide">Reference</p>
+            <span className="text-sm font-mono font-semibold text-navy-900">
+              {formatReferenceNumber(complaint.id)}
+            </span>
+            <button
+              type="button"
+              onClick={handleCopyReference}
+              aria-label="Copy reference number"
+              title="Copy reference number"
+              className="text-ink-400 hover:text-saffron-600"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-forest" /> : <Copy className="w-3.5 h-3.5" />}
+            </button>
+          </div>
+
           <div>
             <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-1.5">Description</p>
             <p className="text-sm text-ink-600 leading-relaxed whitespace-pre-wrap">{complaint.description}</p>

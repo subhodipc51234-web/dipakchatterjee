@@ -271,6 +271,39 @@ export type Database = {
           },
         ]
       }
+      header_actions: {
+        Row: {
+          created_at: string
+          display_order: number
+          icon: string
+          id: string
+          label: string
+          position: string
+          style: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          label?: string
+          position?: string
+          style?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          icon?: string
+          id?: string
+          label?: string
+          position?: string
+          style?: string
+          url?: string
+        }
+        Relationships: []
+      }
       organizations: {
         Row: {
           created_at: string
@@ -412,6 +445,7 @@ export type Database = {
           footer_copyright_name: string | null
           footer_note: string | null
           footer_tagline: string | null
+          gallery_interval_ms: number
           header_name: string | null
           header_subtitle: string | null
           hero_body: string | null
@@ -437,6 +471,7 @@ export type Database = {
           footer_copyright_name?: string | null
           footer_note?: string | null
           footer_tagline?: string | null
+          gallery_interval_ms?: number
           header_name?: string | null
           header_subtitle?: string | null
           hero_body?: string | null
@@ -462,6 +497,7 @@ export type Database = {
           footer_copyright_name?: string | null
           footer_note?: string | null
           footer_tagline?: string | null
+          gallery_interval_ms?: number
           header_name?: string | null
           header_subtitle?: string | null
           hero_body?: string | null

@@ -2,13 +2,25 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import ComplaintForm from "@/components/complaints/ComplaintForm";
+import { createClient } from "@/utils/supabase/server";
 
 export const metadata = {
   title: "Submit a Complaint — Dipak Chatterjee",
   description: "File a complaint with Dipak Chatterjee's office and get a reference number for follow-up.",
 };
 
-export default function ComplaintsPage() {
+const DEFAULT_CONTACT_EMAIL = "dipak.chatterjee304@gmail.com";
+
+export default async function ComplaintsPage() {
+  const supabase = await createClient();
+  const { data: settings } = await supabase
+    .from("site_settings")
+    .select("office_email")
+    .eq("id", "default")
+    .single();
+
+  const contactEmail = settings?.office_email || DEFAULT_CONTACT_EMAIL;
+
   return (
     <main className="bg-paper-100 dark:bg-navy-900 min-h-screen transition-colors">
       <div className="max-w-6xl mx-auto px-5 md:px-8 py-12 md:py-16 grid lg:grid-cols-[0.85fr_1.15fr] gap-10 md:gap-14">
@@ -37,11 +49,8 @@ export default function ComplaintsPage() {
             <p className="text-sm text-ink-600 dark:text-paper-100/70">
               <span className="font-semibold text-navy-900 dark:text-white">Urgent safety issue?</span>{" "}
               Mark it clearly in your description below, or email the office directly at{" "}
-              <a
-                href="mailto:dipak.chatterjee304@gmail.com"
-                className="text-[var(--theme-primary)] font-medium"
-              >
-                dipak.chatterjee304@gmail.com
+              <a href={`mailto:${contactEmail}`} className="text-[var(--theme-primary)] font-medium">
+                {contactEmail}
               </a>
               .
             </p>

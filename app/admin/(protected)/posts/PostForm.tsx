@@ -109,15 +109,20 @@ export default function PostForm({
 
       <div>
         <label htmlFor="external_link" className="block text-sm font-medium text-navy-900 mb-1.5">
-          External link (Facebook post or reel)
+          External link (YouTube, Instagram, or Facebook URL)
         </label>
         <input
           id="external_link"
           type="url"
           {...register("external_link")}
-          placeholder="https://www.facebook.com/..."
+          placeholder="https://youtube.com/watch?v=... or facebook.com/... or instagram.com/p/..."
           className="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none"
         />
+        <p className="text-xs text-ink-400 mt-1.5">
+          A recognized YouTube, Instagram, or Facebook URL renders as a live embed next to the
+          post text on the &ldquo;Read More&rdquo; page. Any other URL shows as a plain
+          &ldquo;View original&rdquo; link instead.
+        </p>
         {errors.external_link && (
           <p className="text-xs text-rust mt-1.5">{errors.external_link.message}</p>
         )}

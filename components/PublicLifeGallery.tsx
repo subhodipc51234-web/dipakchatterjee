@@ -23,11 +23,17 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { FeatureMedia } from "@/types/domain";
 
-const AUTO_ADVANCE_MS = 6000;
+const DEFAULT_AUTO_ADVANCE_MS = 6000;
 const SLIDE_TRANSITION = "transform 650ms cubic-bezier(0.65, 0, 0.35, 1)";
 const SWIPE_THRESHOLD_RATIO = 0.18;
 
-export default function PublicLifeGallery({ media }: { media: FeatureMedia[] }) {
+export default function PublicLifeGallery({
+  media,
+  intervalMs = DEFAULT_AUTO_ADVANCE_MS,
+}: {
+  media: FeatureMedia[];
+  intervalMs?: number;
+}) {
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -39,9 +45,9 @@ export default function PublicLifeGallery({ media }: { media: FeatureMedia[] }) 
     if (paused || dragging || media.length <= 1) return;
     const timer = setInterval(() => {
       setIndex((i) => (i + 1) % media.length);
-    }, AUTO_ADVANCE_MS);
+    }, intervalMs);
     return () => clearInterval(timer);
-  }, [paused, dragging, media.length]);
+  }, [paused, dragging, media.length, intervalMs]);
 
   if (media.length === 0) return null;
 

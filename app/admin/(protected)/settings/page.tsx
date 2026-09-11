@@ -1,6 +1,6 @@
 // app/admin/(protected)/settings/page.tsx
 import { createClient } from "@/utils/supabase/server";
-import type { CtaButton, FooterBlockWithLinks, Organization, SiteSettings, SocialLink } from "@/types/domain";
+import type { CtaButton, FooterBlockWithLinks, HeaderAction, Organization, SiteSettings, SocialLink } from "@/types/domain";
 import SiteImageUploader from "./SiteImageUploader";
 import LandingForm from "./LandingForm";
 import OrganizationsManager from "./OrganizationsManager";
@@ -9,22 +9,30 @@ import CtaButtonsManager from "./CtaButtonsManager";
 import BrandingTextForm from "./BrandingTextForm";
 import FooterBlocksManager from "./FooterBlocksManager";
 import SocialLinksManager from "./SocialLinksManager";
+import HeaderActionsManager from "./HeaderActionsManager";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
 
-  const [{ data: settings }, { data: organizations }, { data: ctaButtons }, { data: footerBlocks }, { data: socialLinks }] =
-    await Promise.all([
-      supabase.from("site_settings").select("*").eq("id", "default").single(),
-      supabase.from("organizations").select("*").order("display_order", { ascending: true }),
-      supabase.from("cta_buttons").select("*").order("display_order", { ascending: true }),
-      supabase
-        .from("footer_blocks")
-        .select("*, footer_links(*)")
-        .order("display_order", { ascending: true })
-        .order("display_order", { foreignTable: "footer_links", ascending: true }),
-      supabase.from("social_links").select("*").order("display_order", { ascending: true }),
-    ]);
+  const [
+    { data: settings },
+    { data: organizations },
+    { data: ctaButtons },
+    { data: footerBlocks },
+    { data: socialLinks },
+    { data: headerActions },
+  ] = await Promise.all([
+    supabase.from("site_settings").select("*").eq("id", "default").single(),
+    supabase.from("organizations").select("*").order("display_order", { ascending: true }),
+    supabase.from("cta_buttons").select("*").order("display_order", { ascending: true }),
+    supabase
+      .from("footer_blocks")
+      .select("*, footer_links(*)")
+      .order("display_order", { ascending: true })
+      .order("display_order", { foreignTable: "footer_links", ascending: true }),
+    supabase.from("social_links").select("*").order("display_order", { ascending: true }),
+    supabase.from("header_actions").select("*").order("display_order", { ascending: true }),
+  ]);
 
   const s = settings as SiteSettings | null;
   const themePrimary = s?.theme_primary_color || "#C1832B";
@@ -43,6 +51,8 @@ export default async function SettingsPage() {
         <LandingForm settings={s} />
 
         <BrandingTextForm settings={s} />
+
+        <HeaderActionsManager actions={(headerActions as HeaderAction[]) ?? []} />
 
         <FooterBlocksManager blocks={(footerBlocks as FooterBlockWithLinks[]) ?? []} />
 

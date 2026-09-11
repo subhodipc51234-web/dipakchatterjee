@@ -70,6 +70,7 @@ export type BrandingTextInput = {
   footer_tagline: string;
   footer_copyright_name: string;
   footer_note: string;
+  office_email: string;
 };
 
 export async function updateBrandingText(input: BrandingTextInput) {
@@ -83,6 +84,7 @@ export async function updateBrandingText(input: BrandingTextInput) {
       footer_tagline: input.footer_tagline || null,
       footer_copyright_name: input.footer_copyright_name || null,
       footer_note: input.footer_note || null,
+      office_email: input.office_email || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", "default");

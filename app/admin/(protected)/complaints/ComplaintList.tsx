@@ -2,9 +2,10 @@
 "use client";
 
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { Clock, FileVideo, Phone, Trash2 } from "lucide-react";
+import { Check, Clock, Copy, FileVideo, Phone, Trash2 } from "lucide-react";
 import type { Complaint, ComplaintMedia } from "@/types/domain";
 import { formatTimeRemaining, getComplaintStatus } from "@/lib/complaint-status";
+import { formatReferenceNumber } from "@/lib/reference";
 import { deleteComplaint, updateComplaintStatus, type ComplaintResolutionStatus } from "./actions";
 import ComplaintDetailModal from "./ComplaintDetailModal";
 
@@ -52,6 +53,15 @@ export default function ComplaintList({ complaints }: { complaints: ComplaintRow
   const [filter, setFilter] = useState<"all" | ComplaintResolutionStatus>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  function handleCopyReference(e: React.MouseEvent, id: string) {
+    e.stopPropagation();
+    navigator.clipboard.writeText(formatReferenceNumber(id)).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId((current) => (current === id ? null : current)), 1500);
+    });
+  }
 
   // getComplaintStatus/formatTimeRemaining are relative-to-now and can
   // legitimately differ between the server's render time and the
@@ -150,6 +160,24 @@ export default function ComplaintList({ complaints }: { complaints: ComplaintRow
                       >
                         {isResolved ? "Resolved" : "Unresolved"}
                       </span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="text-xs font-mono font-semibold text-ink-600">
+                        {formatReferenceNumber(complaint.id)}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => handleCopyReference(e, complaint.id)}
+                        aria-label="Copy reference number"
+                        title="Copy reference number"
+                        className="text-ink-400 hover:text-saffron-600"
+                      >
+                        {copiedId === complaint.id ? (
+                          <Check className="w-3.5 h-3.5 text-forest" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
                     </div>
                     <p className="text-xs text-ink-400 mt-1">Submitted {formatDate(complaint.created_at)}</p>
                   </div>

@@ -18,6 +18,7 @@ export type CtaButton = Tables<"cta_buttons">;
 export type SocialLink = Tables<"social_links">;
 export type FooterBlock = Tables<"footer_blocks">;
 export type FooterLink = Tables<"footer_links">;
+export type HeaderAction = Tables<"header_actions">;
 
 export type FeatureType = Feature["type"];
 export type MediaKind = FeatureMedia["kind"];
@@ -43,6 +44,27 @@ export const SOCIAL_PLATFORM_LABELS: Record<string, string> = {
   linkedin: "LinkedIn",
   whatsapp: "WhatsApp",
   other: "Other",
+};
+
+export type HeaderActionIcon = HeaderAction["icon"];
+export type HeaderActionStyle = HeaderAction["style"];
+export type HeaderActionPosition = HeaderAction["position"];
+
+export const HEADER_ACTION_ICON_LABELS: Record<HeaderActionIcon, string> = {
+  none: "No icon",
+  facebook: "Facebook",
+  instagram: "Instagram",
+  twitter: "Twitter / X",
+  youtube: "YouTube",
+  linkedin: "LinkedIn",
+  whatsapp: "WhatsApp",
+  other: "Other",
+};
+
+export const HEADER_ACTION_STYLE_LABELS: Record<HeaderActionStyle, string> = {
+  solid: "Solid button",
+  outline: "Outline button",
+  link: "Text / icon link",
 };
 
 export const FEATURE_TYPE_LABELS: Record<FeatureType, string> = {

@@ -140,7 +140,7 @@ export default async function HomePage() {
 
       {((features as FeatureWithMedia[]) ?? []).map((feature) => (
         <RevealOnScroll key={feature.id}>
-          <FeatureSection feature={feature} />
+          <FeatureSection feature={feature} galleryIntervalMs={s?.gallery_interval_ms ?? undefined} />
         </RevealOnScroll>
       ))}
 

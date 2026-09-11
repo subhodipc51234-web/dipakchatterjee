@@ -15,6 +15,7 @@ import { z } from "zod";
 import { Check, FileVideo, Loader2, Send, X } from "lucide-react";
 import DropzoneUpload from "@/components/admin/DropzoneUpload";
 import { submitComplaint } from "@/app/(site)/complaints/actions";
+import { formatReferenceNumber } from "@/lib/reference";
 
 const MAX_FILES = 5;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
@@ -111,13 +112,14 @@ export default function ComplaintForm() {
           <Check className="w-7 h-7" />
         </div>
         <h3 className="font-display text-xl text-navy-900 dark:text-white mb-2">Your complaint has been logged</h3>
-        <p className="text-sm text-ink-600 dark:text-paper-100/70 max-w-sm mx-auto">
-          Reference number{" "}
-          <span className="font-semibold text-navy-900 dark:text-white">
-            REF-{result.referenceId.slice(0, 8).toUpperCase()}
-          </span>
-          . Our team will call you within 3&ndash;5 working days. Please keep this number for
-          follow-up.
+        <p className="text-sm text-ink-600 dark:text-paper-100/70 max-w-sm mx-auto mb-1">
+          Reference number
+        </p>
+        <p className="font-display text-2xl text-navy-900 dark:text-white tracking-wide">
+          {formatReferenceNumber(result.referenceId)}
+        </p>
+        <p className="text-sm text-ink-600 dark:text-paper-100/70 max-w-sm mx-auto mt-3">
+          Please keep this number for any follow-up.
         </p>
         <button
           type="button"
