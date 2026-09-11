@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: dipakchatterjee
+    env: node
+    plan: free
+    # `output: "standalone"` (next.config.ts) doesn't copy .next/static into
+    # the standalone bundle on its own — copy it manually or all CSS/JS
+    # assets 404. There's no public/ directory in this project yet; add
+    # `cp -r public .next/standalone/public` here too if one is added later.
+    buildCommand: npm install && npm run build && cp -r .next/static .next/standalone/.next/static
+    startCommand: node .next/standalone/server.js
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # Required for the app to boot — utils/supabase/server.ts and
+      # middleware.ts read these with a non-null assertion.
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # Optional — protects /api/cron/purge-complaints if set.
+      - key: CRON_SECRET
+        sync: false
+      - key: APP_ENCRYPTION_KEY
+        sync: false
+      # Not currently read by any code in this app (it uses the Supabase
+      # client, not a direct Postgres connection string) — declared as
+      # requested; safe to leave unset in the Render dashboard.
+      - key: DATABASE_URL
+        sync: false

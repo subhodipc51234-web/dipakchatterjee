@@ -13,6 +13,10 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  // Bundles a minimal server + only the deps actually used into
+  // .next/standalone — much smaller/lighter than `next start` on a
+  // memory-constrained container (e.g. Render's free tier).
+  output: "standalone",
   // Framework fingerprinting: Next.js sends an `X-Powered-By: Next.js`
   // response header by default — no reason to advertise the stack.
   poweredByHeader: false,
