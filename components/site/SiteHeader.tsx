@@ -14,16 +14,20 @@
 "use client";
 
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import SocialIcon from "@/components/SocialIcon";
 import { HEADER_ACTION_ICON_LABELS, type HeaderAction } from "@/types/domain";
 
+// Root-relative ("/#about", not "#about") so these work identically
+// whether clicked from the homepage or any other page — see
+// handleAnchorClick below for the same-page smooth-scroll case.
 const NAV_LINKS = [
-  { href: "#about", label: "About" },
-  { href: "#public-life", label: "Public Life" },
-  { href: "#works", label: "Notable Works" },
-  { href: "#contact", label: "Contact" },
+  { href: "/#about", label: "About" },
+  { href: "/#public-life", label: "Public Life" },
+  { href: "/#works", label: "Notable Works" },
+  { href: "/#contact", label: "Contact" },
 ];
 
 const DEFAULT_NAME = "Dipak Chatterjee";
@@ -71,13 +75,35 @@ export default function SiteHeader({
   actions?: HeaderAction[];
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
   const leftActions = actions.filter((a) => a.position === "left");
   const rightActions = actions.filter((a) => a.position === "right");
+
+  // Shared by every nav link, action link, and the logo: on the
+  // homepage, a same-page "/#section" link should smoothly scroll
+  // instead of doing a full client-side nav to the same route; on any
+  // other page, plain <a>/Link navigation to "/#section" already lands
+  // correctly and Next.js scrolls to the target once the homepage
+  // renders, so this only needs to intervene in the first case.
+  function handleAnchorClick(e: React.MouseEvent<HTMLAnchorElement>, href: string) {
+    if (pathname !== "/") return;
+    if (href === "/") {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    const hashIndex = href.indexOf("#");
+    if (hashIndex === -1) return;
+    const targetPath = href.slice(0, hashIndex) || "/";
+    if (targetPath !== "/") return;
+    e.preventDefault();
+    document.getElementById(href.slice(hashIndex + 1))?.scrollIntoView({ behavior: "smooth" });
+  }
 
   return (
     <header className="sticky top-0 z-40 bg-paper-100/95 dark:bg-navy-900/95 backdrop-blur border-b border-line dark:border-white/10 transition-colors">
       <nav className="relative z-10 max-w-6xl mx-auto px-5 md:px-8 h-16 md:h-20 flex items-center justify-between gap-3">
-        <a href="#top" className="flex items-center gap-3 min-w-0">
+        <a href="/" onClick={(e) => handleAnchorClick(e, "/")} className="flex items-center gap-3 min-w-0">
           <span className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden shrink-0 border border-line dark:border-white/15 bg-paper-100 dark:bg-navy-800 flex items-center justify-center">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -106,6 +132,7 @@ export default function SiteHeader({
                 target={action.url.startsWith("http") ? "_blank" : undefined}
                 rel={action.url.startsWith("http") ? "noopener noreferrer" : undefined}
                 aria-label={actionAriaLabel(action)}
+                onClick={(e) => handleAnchorClick(e, action.url)}
                 className={`inline-flex items-center gap-2 text-sm ${STYLE_CLASSES[action.style]}`}
               >
                 <ActionLabel action={action} />
@@ -116,7 +143,12 @@ export default function SiteHeader({
 
         <div className="hidden lg:flex items-center gap-8 text-sm text-ink-600 dark:text-paper-100/70 font-medium">
           {NAV_LINKS.map((link) => (
-            <a key={link.href} href={link.href} className="hover:text-navy-900 dark:hover:text-white">
+            <a
+              key={link.href}
+              href={link.href}
+              onClick={(e) => handleAnchorClick(e, link.href)}
+              className="hover:text-navy-900 dark:hover:text-white"
+            >
               {link.label}
             </a>
           ))}
@@ -132,6 +164,7 @@ export default function SiteHeader({
               target={action.url.startsWith("http") ? "_blank" : undefined}
               rel={action.url.startsWith("http") ? "noopener noreferrer" : undefined}
               aria-label={actionAriaLabel(action)}
+              onClick={(e) => handleAnchorClick(e, action.url)}
               className={`hidden lg:inline-flex items-center gap-2 text-sm ${STYLE_CLASSES[action.style]}`}
             >
               <ActionLabel action={action} />
@@ -161,7 +194,10 @@ export default function SiteHeader({
               <a
                 key={link.href}
                 href={link.href}
-                onClick={() => setMenuOpen(false)}
+                onClick={(e) => {
+                  setMenuOpen(false);
+                  handleAnchorClick(e, link.href);
+                }}
                 className="py-3 border-b border-line/70 dark:border-white/10 last:border-b-0 touch-manipulation"
               >
                 {link.label}
@@ -174,7 +210,10 @@ export default function SiteHeader({
                 target={action.url.startsWith("http") ? "_blank" : undefined}
                 rel={action.url.startsWith("http") ? "noopener noreferrer" : undefined}
                 aria-label={actionAriaLabel(action)}
-                onClick={() => setMenuOpen(false)}
+                onClick={(e) => {
+                  setMenuOpen(false);
+                  handleAnchorClick(e, action.url);
+                }}
                 className={`mt-2 flex items-center justify-center gap-2 touch-manipulation ${MOBILE_STYLE_CLASSES[action.style]}`}
               >
                 <ActionLabel action={action} />

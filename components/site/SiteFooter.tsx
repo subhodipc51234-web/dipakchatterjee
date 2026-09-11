@@ -12,6 +12,7 @@
 
 import { Mail } from "lucide-react";
 import SocialIcon from "@/components/SocialIcon";
+import AnchorAwareLink from "./AnchorAwareLink";
 import { SOCIAL_PLATFORM_LABELS, type FooterBlockWithLinks, type SocialLink } from "@/types/domain";
 
 const DEFAULT_NAME = "Dipak Chatterjee";
@@ -37,9 +38,9 @@ function FooterBlockColumn({ block, socialLinks }: { block: FooterBlockWithLinks
         <ul className="text-sm space-y-2">
           {block.footer_links.map((link) => (
             <li key={link.id}>
-              <a href={link.url} className="hover:text-white">
+              <AnchorAwareLink href={link.url} className="hover:text-white">
                 {link.label}
-              </a>
+              </AnchorAwareLink>
             </li>
           ))}
         </ul>

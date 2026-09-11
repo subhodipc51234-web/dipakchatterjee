@@ -6,6 +6,7 @@
 // resolved color is.
 
 import { isLightColor } from "@/lib/color";
+import AnchorAwareLink from "@/components/site/AnchorAwareLink";
 import type { CtaButton } from "@/types/domain";
 
 export default function CtaButtonGroup({
@@ -23,14 +24,14 @@ export default function CtaButtonGroup({
         const color = btn.color || themePrimary;
         const textColor = isLightColor(color) ? "#151F33" : "#FFFFFF";
         return (
-          <a
+          <AnchorAwareLink
             key={btn.id}
             href={btn.url}
             style={{ backgroundColor: color, color: textColor }}
             className="relative z-10 inline-flex items-center gap-2 font-semibold px-6 py-3.5 rounded-md transition-[filter] hover:brightness-90 touch-manipulation"
           >
             {btn.label}
-          </a>
+          </AnchorAwareLink>
         );
       })}
     </>
