@@ -8,6 +8,7 @@ import type {
   HeaderAction,
   NavLink,
   Organization,
+  Phase,
   SiteSettings,
   SocialLink,
 } from "@/types/domain";
@@ -86,7 +87,7 @@ export default async function SettingsPage() {
     return <SettingsMessage heading="Signed out" body="Please sign in to manage site settings." />;
   }
 
-  let settings, organizations, ctaButtons, footerBlocks, socialLinks, navLinks, headerActions, features, profiles;
+  let settings, organizations, ctaButtons, footerBlocks, socialLinks, navLinks, headerActions, features, phases, profiles;
 
   try {
     [
@@ -98,6 +99,7 @@ export default async function SettingsPage() {
       { data: navLinks },
       { data: headerActions },
       { data: features },
+      { data: phases },
       { data: profiles },
     ] = await Promise.all([
       supabase.from("site_settings").select("*").eq("id", "default").single(),
@@ -114,6 +116,7 @@ export default async function SettingsPage() {
       // Every feature, published or not — the Layout Builder needs to
       // show and let an admin re-enable a currently-hidden section.
       supabase.from("features").select("*").order("display_order", { ascending: true }),
+      supabase.from("phases").select("*").order("sort_order", { ascending: true }),
       supabase.from("profiles").select("*").order("created_at", { ascending: true }),
     ]);
   } catch (err) {
@@ -130,7 +133,8 @@ export default async function SettingsPage() {
   const themePrimary = s?.theme_primary_color || "#C1832B";
   const themeSecondary = s?.theme_secondary_color || "#151F33";
   const featureList = (features as Feature[]) ?? [];
-  const homepageOrder = computeHomepageOrder(s?.homepage_layout, featureList);
+  const phaseList = (phases as Phase[]) ?? [];
+  const homepageOrder = computeHomepageOrder(s?.homepage_layout, featureList, phaseList);
 
   return (
     <div className="max-w-2xl">
@@ -156,6 +160,7 @@ export default async function SettingsPage() {
             <HomepageLayoutManager
               initialOrder={homepageOrder}
               features={featureList}
+              phases={phaseList}
               organizationsVisible={s?.show_organizations_section ?? true}
               postsVisible={s?.show_posts_feed_section ?? true}
             />

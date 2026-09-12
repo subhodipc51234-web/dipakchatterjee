@@ -253,6 +253,7 @@ export type Database = {
           display_order: number
           id: string
           is_published: boolean
+          slideshow_interval: number
           subtitle: string | null
           title: string
           type: Database["public"]["Enums"]["feature_type"]
@@ -265,6 +266,7 @@ export type Database = {
           display_order?: number
           id?: string
           is_published?: boolean
+          slideshow_interval?: number
           subtitle?: string | null
           title: string
           type: Database["public"]["Enums"]["feature_type"]
@@ -277,6 +279,7 @@ export type Database = {
           display_order?: number
           id?: string
           is_published?: boolean
+          slideshow_interval?: number
           subtitle?: string | null
           title?: string
           type?: Database["public"]["Enums"]["feature_type"]
@@ -462,6 +465,7 @@ export type Database = {
           id: string
           period: string | null
           photos: Json
+          slideshow_interval: number
           sort_order: number
           summary: string
           title: string
@@ -471,6 +475,7 @@ export type Database = {
           id?: string
           period?: string | null
           photos?: Json
+          slideshow_interval?: number
           sort_order?: number
           summary: string
           title: string
@@ -480,6 +485,7 @@ export type Database = {
           id?: string
           period?: string | null
           photos?: Json
+          slideshow_interval?: number
           sort_order?: number
           summary?: string
           title?: string

@@ -1,16 +1,23 @@
 // app/admin/(protected)/features/actions.ts
+//
+// "Image Gallery" is now the only Feature type creatable from the UI
+// ("Phases" — the other Section Type — creates a row in the `phases`
+// table instead; see ../phases/actions.ts). `type` is still stored
+// (features.type is a non-null Postgres enum with legacy values like
+// "about"/"stats"/"custom_section" from before this unification) but is
+// no longer admin-editable, so it's hardcoded to "public_life_gallery"
+// here rather than accepted from FeatureFormInput.
 "use server";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-guard";
-import { FEATURE_BUCKET, type FeatureType, type MediaKind } from "@/types/domain";
+import { FEATURE_BUCKET, type MediaKind } from "@/types/domain";
 
 export type FeatureFormInput = {
   title: string;
   subtitle: string;
-  body_markdown: string;
-  type: FeatureType;
+  slideshow_interval: number;
   is_published: boolean;
 };
 
@@ -26,8 +33,8 @@ export async function createFeature(input: FeatureFormInput) {
     .insert({
       title: input.title,
       subtitle: input.subtitle || null,
-      body_markdown: input.body_markdown || null,
-      type: input.type,
+      type: "public_life_gallery",
+      slideshow_interval: input.slideshow_interval,
       is_published: input.is_published,
       display_order: count ?? 0,
     })
@@ -49,8 +56,7 @@ export async function updateFeature(id: string, input: FeatureFormInput) {
     .update({
       title: input.title,
       subtitle: input.subtitle || null,
-      body_markdown: input.body_markdown || null,
-      type: input.type,
+      slideshow_interval: input.slideshow_interval,
       is_published: input.is_published,
     })
     .eq("id", id);
@@ -83,16 +89,30 @@ export async function deleteFeature(id: string) {
   revalidatePath("/");
 }
 
-export async function reorderFeatures(orderedIds: string[]) {
+export type SectionRef = { kind: "feature" | "phase"; id: string };
+
+/**
+ * Persists the unified /admin/features list's order (Image Galleries
+ * and Phases interleaved) in one call. Both kinds get their new
+ * position from the same 0..n-1 sequence over the *whole* merged list —
+ * not renumbered per-kind — so that sorting features by display_order
+ * and phases by sort_order and merging by that shared number (see
+ * lib/homepage-layout.ts's computeHomepageOrder) reconstructs the exact
+ * interleaved order chosen here.
+ */
+export async function reorderSections(items: SectionRef[]) {
   const { supabase } = await requireAdmin();
 
   await Promise.all(
-    orderedIds.map((id, index) =>
-      supabase.from("features").update({ display_order: index }).eq("id", id)
+    items.map((item, index) =>
+      item.kind === "feature"
+        ? supabase.from("features").update({ display_order: index }).eq("id", item.id)
+        : supabase.from("phases").update({ sort_order: index }).eq("id", item.id)
     )
   );
 
   revalidatePath("/admin/features");
+  revalidatePath("/admin/settings");
   revalidatePath("/");
 }
 
@@ -181,27 +201,6 @@ export async function updateFeatureMediaMeta(
   if (error) throw new Error(error.message);
 
   revalidatePath(`/admin/features/${featureId}`);
-  revalidatePath("/");
-}
-
-// Global, not per-feature — there's one public hero/banner gallery — but
-// lives beside the Image Gallery feature's media manager since that's
-// the only place an admin would look for "how fast does it cycle".
-export async function updateGalleryIntervalSeconds(seconds: number) {
-  const { supabase } = await requireAdmin();
-
-  // Rounded to the nearest 0.1s (not a whole second) so decimal speeds
-  // like "2.5" survive the round-trip instead of being floored/ceiled.
-  const clamped = Math.min(60, Math.max(1, Math.round(seconds * 10) / 10));
-
-  const { error } = await supabase
-    .from("site_settings")
-    .update({ gallery_interval_ms: Math.round(clamped * 1000), updated_at: new Date().toISOString() })
-    .eq("id", "default");
-
-  if (error) throw new Error(error.message);
-
-  revalidatePath("/admin/features");
   revalidatePath("/");
 }
 

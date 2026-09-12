@@ -20,17 +20,18 @@
 // header nav (and its mobile drawer) — so it isn't duplicated beside the
 // hero CTA buttons.
 //
-// Phases (below) is deliberately NOT part of the reorderable/toggleable
-// sectionOrder — it's a modular subsection of Features now, not a
-// first-class homepage section, so it always renders at a fixed
-// position right after Organizations/Features/Notable Works whenever
-// at least one phase exists (see components/phases/PhasesSection.tsx).
+// Phases is unified into the same Modular Sections list as Image
+// Gallery features (managed from /admin/features) and renders
+// interleaved with them here — each phase gets its own key in
+// sectionOrder (phase:<id>, alongside feature:<id>) so its position
+// among Organizations/Features/Posts follows the exact order chosen in
+// that unified admin list (see lib/homepage-layout.ts).
 
 import { createClient } from "@/utils/supabase/server";
 import type { CtaButton, FeatureWithMedia, Organization, Phase, PostWithMedia, SiteSettings } from "@/types/domain";
 import FeatureSection from "@/components/features/FeatureSection";
 import PostsFeed from "@/components/posts/PostsFeed";
-import PhasesSection from "@/components/phases/PhasesSection";
+import PhaseEntry from "@/components/phases/PhaseEntry";
 import OrganizationsSection from "@/components/OrganizationsSection";
 import CtaButtonGroup from "@/components/CtaButtonGroup";
 import RevealOnScroll from "@/components/RevealOnScroll";
@@ -39,6 +40,7 @@ import DesktopHero from "@/components/DesktopHero";
 import {
   computeHomepageOrder,
   featureIdFromKey,
+  phaseIdFromKey,
   ORGANIZATIONS_SECTION_KEY,
   POSTS_SECTION_KEY,
 } from "@/lib/homepage-layout";
@@ -87,8 +89,10 @@ export default async function HomePage() {
   const ctas = (ctaButtons as CtaButton[]) ?? [];
   const featureList = (features as FeatureWithMedia[]) ?? [];
   const featureMap = new Map(featureList.map((f) => [f.id, f]));
+  const phaseList = (phases as Phase[]) ?? [];
+  const phaseMap = new Map(phaseList.map((p) => [p.id, p]));
 
-  const sectionOrder = computeHomepageOrder(s?.homepage_layout, featureList);
+  const sectionOrder = computeHomepageOrder(s?.homepage_layout, featureList, phaseList);
 
   return (
     <main id="main">
@@ -151,17 +155,29 @@ export default async function HomePage() {
         }
 
         const featureId = featureIdFromKey(key);
-        const feature = featureId ? featureMap.get(featureId) : undefined;
-        if (!feature) return null;
+        if (featureId) {
+          const feature = featureMap.get(featureId);
+          if (!feature) return null;
+          return (
+            <RevealOnScroll key={key}>
+              <FeatureSection feature={feature} />
+            </RevealOnScroll>
+          );
+        }
 
-        return (
-          <RevealOnScroll key={key}>
-            <FeatureSection feature={feature} galleryIntervalMs={s?.gallery_interval_ms ?? undefined} />
-          </RevealOnScroll>
-        );
+        const phaseId = phaseIdFromKey(key);
+        if (phaseId) {
+          const phase = phaseMap.get(phaseId);
+          if (!phase) return null;
+          return (
+            <RevealOnScroll key={key}>
+              <PhaseEntry phase={phase} />
+            </RevealOnScroll>
+          );
+        }
+
+        return null;
       })}
-
-      <PhasesSection phases={(phases as Phase[]) ?? []} />
     </main>
   );
 }

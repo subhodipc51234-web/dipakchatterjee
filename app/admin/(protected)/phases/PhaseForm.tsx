@@ -19,6 +19,7 @@ const phaseSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200),
   period: z.string().trim().max(100).optional(),
   summary: z.string().trim().min(1, "Summary / story is required").max(20000),
+  slideshow_interval: z.number().int().min(0).max(10),
 });
 
 type PhaseFormValues = z.infer<typeof phaseSchema>;
@@ -44,6 +45,7 @@ export default function PhaseForm({
       title: phase?.title ?? "",
       period: phase?.period ?? "",
       summary: phase?.summary ?? "",
+      slideshow_interval: phase?.slideshow_interval ?? 0,
     },
   });
 
@@ -57,6 +59,7 @@ export default function PhaseForm({
           title: values.title,
           period: values.period ?? "",
           summary: values.summary,
+          slideshow_interval: values.slideshow_interval,
         });
         reset(values);
       } catch (err) {
@@ -67,6 +70,20 @@ export default function PhaseForm({
 
   return (
     <form onSubmit={handleSubmit(submit)} className="space-y-5">
+      {phase && (
+        <div>
+          <label className="block text-sm font-medium text-navy-900 mb-1.5">Section type</label>
+          <select
+            disabled
+            value="phases"
+            className="w-full rounded-md border border-line bg-paper-100 px-4 py-3 text-sm text-ink-400 cursor-not-allowed"
+          >
+            <option value="phases">Phases</option>
+          </select>
+          <p className="text-xs text-ink-400 mt-1.5">A section&rsquo;s type is set when it&rsquo;s created and can&rsquo;t be changed.</p>
+        </div>
+      )}
+
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-navy-900 mb-1.5">
           Phase Title
@@ -105,6 +122,29 @@ export default function PhaseForm({
           className="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none resize-y"
         />
         {errors.summary && <p className="text-xs text-rust mt-1.5">{errors.summary.message}</p>}
+      </div>
+
+      <div>
+        <label htmlFor="slideshow_interval" className="block text-sm font-medium text-navy-900 mb-1.5">
+          Slideshow interval (seconds)
+        </label>
+        <input
+          id="slideshow_interval"
+          type="number"
+          min={0}
+          max={10}
+          step={1}
+          {...register("slideshow_interval", { valueAsNumber: true })}
+          className="w-32 rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none"
+        />
+        <p className="text-xs text-ink-400 mt-1.5">
+          How long each photo shows in the lightbox before auto-advancing, when this phase has
+          multiple photos (0-10 seconds). Set to <strong>0</strong> to disable auto-advance
+          entirely — visitors can still navigate manually with the arrows.
+        </p>
+        {errors.slideshow_interval && (
+          <p className="text-xs text-rust mt-1.5">{errors.slideshow_interval.message}</p>
+        )}
       </div>
 
       {serverError && (

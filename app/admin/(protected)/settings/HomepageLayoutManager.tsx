@@ -35,37 +35,52 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Eye, EyeOff, GripVertical } from "lucide-react";
 import DndListSkeleton from "@/components/admin/DndListSkeleton";
-import { FEATURE_TYPE_LABELS, type Feature } from "@/types/domain";
-import { ORGANIZATIONS_SECTION_KEY, POSTS_SECTION_KEY, featureIdFromKey } from "@/lib/homepage-layout";
+import { FEATURE_TYPE_LABELS, type Feature, type Phase } from "@/types/domain";
+import {
+  ORGANIZATIONS_SECTION_KEY,
+  POSTS_SECTION_KEY,
+  featureIdFromKey,
+  phaseIdFromKey,
+} from "@/lib/homepage-layout";
 import { updateHomepageLayout, updateHomepageSectionVisibility } from "./actions";
 import { toggleFeaturePublished } from "../features/actions";
 
 const FIXED_SECTION_KEYS = [ORGANIZATIONS_SECTION_KEY, POSTS_SECTION_KEY];
 
-function sectionLabel(key: string, featureMap: Map<string, Feature>) {
+function sectionLabel(key: string, featureMap: Map<string, Feature>, phaseMap: Map<string, Phase>) {
   if (key === ORGANIZATIONS_SECTION_KEY) return "Organizations Worked With";
   if (key === POSTS_SECTION_KEY) return "Notable Works (Posts Feed)";
   const featureId = featureIdFromKey(key);
-  const feature = featureId ? featureMap.get(featureId) : undefined;
-  if (!feature) return "(deleted section)";
-  return feature.title || FEATURE_TYPE_LABELS[feature.type];
+  if (featureId) {
+    const feature = featureMap.get(featureId);
+    return feature ? feature.title || FEATURE_TYPE_LABELS[feature.type] : "(deleted section)";
+  }
+  const phaseId = phaseIdFromKey(key);
+  const phase = phaseId ? phaseMap.get(phaseId) : undefined;
+  return phase ? phase.title : "(deleted section)";
 }
 
 function sectionTypeLabel(key: string, featureMap: Map<string, Feature>) {
   if (FIXED_SECTION_KEYS.includes(key)) return "Built-in";
   const featureId = featureIdFromKey(key);
-  const feature = featureId ? featureMap.get(featureId) : undefined;
-  return feature ? FEATURE_TYPE_LABELS[feature.type] : "";
+  if (featureId) {
+    const feature = featureMap.get(featureId);
+    return feature ? FEATURE_TYPE_LABELS[feature.type] : "";
+  }
+  if (phaseIdFromKey(key)) return "Phases";
+  return "";
 }
 
 export default function HomepageLayoutManager({
   initialOrder,
   features,
+  phases,
   organizationsVisible: initialOrganizationsVisible,
   postsVisible: initialPostsVisible,
 }: {
   initialOrder: string[];
   features: Feature[];
+  phases: Phase[];
   organizationsVisible: boolean;
   postsVisible: boolean;
 }) {
@@ -79,6 +94,7 @@ export default function HomepageLayoutManager({
   const [error, setError] = useState<string | null>(null);
 
   const featureMap = new Map(features.map((f) => [f.id, f]));
+  const phaseMap = new Map(phases.map((p) => [p.id, p]));
 
   // See SocialLinksManager for why both an explicit DndContext `id` and
   // a mount-gate are used together to fully eliminate the
@@ -147,7 +163,13 @@ export default function HomepageLayoutManager({
     if (key === ORGANIZATIONS_SECTION_KEY) return organizationsVisible;
     if (key === POSTS_SECTION_KEY) return postsVisible;
     const featureId = featureIdFromKey(key);
-    return featureId ? (featureVisibility[featureId] ?? false) : false;
+    if (featureId) return featureVisibility[featureId] ?? false;
+    // A phase has no publish flag — it's always shown once created.
+    return true;
+  }
+
+  function isToggleable(key: string) {
+    return !phaseIdFromKey(key);
   }
 
   function handleToggle(key: string) {
@@ -197,9 +219,10 @@ export default function HomepageLayoutManager({
                 <SortableSectionRow
                   key={key}
                   id={key}
-                  label={sectionLabel(key, featureMap)}
+                  label={sectionLabel(key, featureMap, phaseMap)}
                   typeLabel={sectionTypeLabel(key, featureMap)}
                   visible={isVisible(key)}
+                  toggleable={isToggleable(key)}
                   disabled={isPending}
                   onToggle={() => handleToggle(key)}
                 />
@@ -217,6 +240,7 @@ function SortableSectionRow({
   label,
   typeLabel,
   visible,
+  toggleable,
   disabled,
   onToggle,
 }: {
@@ -224,6 +248,7 @@ function SortableSectionRow({
   label: string;
   typeLabel: string;
   visible: boolean;
+  toggleable: boolean;
   disabled: boolean;
   onToggle: () => void;
 }) {
@@ -257,19 +282,25 @@ function SortableSectionRow({
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={onToggle}
-        disabled={disabled}
-        aria-pressed={visible}
-        title={visible ? "Visible — click to hide" : "Hidden — click to show"}
-        className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-md border disabled:opacity-60 ${
-          visible ? "border-forest text-forest bg-forest-100" : "border-line text-ink-400 bg-paper-100"
-        }`}
-      >
-        {visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-        {visible ? "Shown" : "Hidden"}
-      </button>
+      {toggleable ? (
+        <button
+          type="button"
+          onClick={onToggle}
+          disabled={disabled}
+          aria-pressed={visible}
+          title={visible ? "Visible — click to hide" : "Hidden — click to show"}
+          className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-md border disabled:opacity-60 ${
+            visible ? "border-forest text-forest bg-forest-100" : "border-line text-ink-400 bg-paper-100"
+          }`}
+        >
+          {visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+          {visible ? "Shown" : "Hidden"}
+        </button>
+      ) : (
+        <span className="shrink-0 text-[11px] font-medium text-ink-400 bg-paper-100 border border-line rounded px-2.5 py-1.5">
+          Always shown
+        </span>
+      )}
     </li>
   );
 }

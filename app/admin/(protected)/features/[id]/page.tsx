@@ -7,7 +7,6 @@ import { FEATURE_BUCKET, type Feature, type FeatureMedia } from "@/types/domain"
 import MediaManager from "@/components/admin/MediaManager";
 import DeleteEntityButton from "@/components/admin/DeleteEntityButton";
 import FeatureForm from "../FeatureForm";
-import GalleryIntervalControl from "../GalleryIntervalControl";
 import {
   addFeatureMedia,
   deleteFeature,
@@ -25,14 +24,13 @@ export default async function EditFeaturePage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: feature }, { data: media }, { data: settings }] = await Promise.all([
+  const [{ data: feature }, { data: media }] = await Promise.all([
     supabase.from("features").select("*").eq("id", id).single(),
     supabase
       .from("feature_media")
       .select("*")
       .eq("feature_id", id)
       .order("display_order", { ascending: true }),
-    supabase.from("site_settings").select("gallery_interval_ms").eq("id", "default").single(),
   ]);
 
   if (!feature) notFound();
@@ -66,9 +64,6 @@ export default async function EditFeaturePage({
       </div>
 
       <div className="bg-white border border-line rounded-xl p-6 md:p-8">
-        {feature.type === "public_life_gallery" && (
-          <GalleryIntervalControl intervalMs={settings?.gallery_interval_ms ?? 6000} />
-        )}
         <MediaManager
           bucket={FEATURE_BUCKET}
           entityId={id}

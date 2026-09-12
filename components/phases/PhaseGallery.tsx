@@ -4,6 +4,13 @@
 // a full-resolution lightbox (prev/next, caption, Escape/backdrop to
 // close) on click — "Carousel/slideshow or neat grid... with full-
 // resolution expand/lightbox inspection" per the Phases layout spec.
+//
+// slideshowInterval (whole seconds, 0-10) is the phase's own
+// slideshow_interval, converted to ms by the caller — 0 (or omitted)
+// disables auto-advance entirely, leaving only the manual controls.
+// Auto-advance only runs once the lightbox is open (the thumbnail grid
+// itself never moves on its own), restarting whenever the index changes
+// so manual navigation doesn't fight the timer.
 
 "use client";
 
@@ -11,7 +18,13 @@ import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
 import type { PhasePhoto } from "@/types/domain";
 
-export default function PhaseGallery({ photos }: { photos: PhasePhoto[] }) {
+export default function PhaseGallery({
+  photos,
+  slideshowIntervalMs = 0,
+}: {
+  photos: PhasePhoto[];
+  slideshowIntervalMs?: number;
+}) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   useEffect(() => {
@@ -26,6 +39,14 @@ export default function PhaseGallery({ photos }: { photos: PhasePhoto[] }) {
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [lightboxIndex, photos.length]);
+
+  useEffect(() => {
+    if (lightboxIndex === null || photos.length <= 1 || !slideshowIntervalMs) return;
+    const timer = setInterval(() => {
+      setLightboxIndex((i) => (i === null ? null : (i + 1) % photos.length));
+    }, slideshowIntervalMs);
+    return () => clearInterval(timer);
+  }, [lightboxIndex, photos.length, slideshowIntervalMs]);
 
   if (photos.length === 0) {
     return (

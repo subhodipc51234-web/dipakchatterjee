@@ -22,11 +22,11 @@ export default async function EditPhasePage({ params }: { params: Promise<{ id: 
   return (
     <div className="max-w-2xl">
       <Link
-        href="/admin/phases"
+        href="/admin/features"
         className="inline-flex items-center gap-1.5 text-sm font-semibold text-ink-600 hover:text-navy-900 mb-6"
       >
         <ChevronLeft className="w-4 h-4" />
-        Back to Phases
+        Back to Features
       </Link>
 
       <div className="flex items-center justify-between mb-8">
@@ -38,7 +38,7 @@ export default async function EditPhasePage({ params }: { params: Promise<{ id: 
         <DeleteEntityButton
           label="Delete phase"
           confirmMessage="Delete this phase and all its photos? This cannot be undone."
-          redirectTo="/admin/phases"
+          redirectTo="/admin/features"
           onDelete={deletePhase.bind(null, id)}
         />
       </div>

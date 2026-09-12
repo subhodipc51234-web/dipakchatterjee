@@ -1,4 +1,10 @@
 // app/admin/(protected)/features/FeatureForm.tsx
+//
+// Fields for the "Image Gallery" Section Type only — the other type,
+// "Phases", is a different entity/table entirely (see ../phases/*) with
+// its own form. The type itself isn't editable here (a section's kind
+// is fixed at creation — see ../new/NewSectionForm.tsx): when editing
+// an existing feature this just shows a locked indicator for context.
 "use client";
 
 import { useState, useTransition } from "react";
@@ -6,17 +12,14 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Loader2, Save } from "lucide-react";
-import { FEATURE_TYPE_LABELS, type Feature, type FeatureType } from "@/types/domain";
+import type { Feature } from "@/types/domain";
 import type { FeatureFormInput } from "./actions";
 import { useUnsavedChangesWarning } from "@/lib/useUnsavedChangesWarning";
-
-const FEATURE_TYPES = Object.keys(FEATURE_TYPE_LABELS) as FeatureType[];
 
 const featureSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200),
   subtitle: z.string().trim().max(300).optional(),
-  type: z.enum(FEATURE_TYPES as [FeatureType, ...FeatureType[]]),
-  body_markdown: z.string().max(20000).optional(),
+  slideshow_interval: z.number().int().min(0).max(10),
   is_published: z.boolean(),
 });
 
@@ -42,8 +45,7 @@ export default function FeatureForm({
     defaultValues: {
       title: feature?.title ?? "",
       subtitle: feature?.subtitle ?? "",
-      type: feature?.type ?? "custom_section",
-      body_markdown: feature?.body_markdown ?? "",
+      slideshow_interval: feature?.slideshow_interval ?? 5,
       is_published: feature?.is_published ?? false,
     },
   });
@@ -57,8 +59,7 @@ export default function FeatureForm({
         await onSubmit({
           title: values.title,
           subtitle: values.subtitle ?? "",
-          body_markdown: values.body_markdown ?? "",
-          type: values.type,
+          slideshow_interval: values.slideshow_interval,
           is_published: values.is_published,
         });
         reset(values);
@@ -70,6 +71,20 @@ export default function FeatureForm({
 
   return (
     <form onSubmit={handleSubmit(submit)} className="space-y-5">
+      {feature && (
+        <div>
+          <label className="block text-sm font-medium text-navy-900 mb-1.5">Section type</label>
+          <select
+            disabled
+            value="public_life_gallery"
+            className="w-full rounded-md border border-line bg-paper-100 px-4 py-3 text-sm text-ink-400 cursor-not-allowed"
+          >
+            <option value="public_life_gallery">Image Gallery</option>
+          </select>
+          <p className="text-xs text-ink-400 mt-1.5">A section&rsquo;s type is set when it&rsquo;s created and can&rsquo;t be changed.</p>
+        </div>
+      )}
+
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-navy-900 mb-1.5">
           Title
@@ -99,37 +114,25 @@ export default function FeatureForm({
       </div>
 
       <div>
-        <label htmlFor="type" className="block text-sm font-medium text-navy-900 mb-1.5">
-          Section type
+        <label htmlFor="slideshow_interval" className="block text-sm font-medium text-navy-900 mb-1.5">
+          Slideshow interval (seconds)
         </label>
-        <select
-          id="type"
-          {...register("type")}
-          className="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none"
-        >
-          {FEATURE_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {FEATURE_TYPE_LABELS[t]}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label htmlFor="body_markdown" className="block text-sm font-medium text-navy-900 mb-1.5">
-          Body (Markdown)
-        </label>
-        <textarea
-          id="body_markdown"
-          rows={8}
-          {...register("body_markdown")}
-          placeholder={
-            "Supports Markdown. For a Stats Strip, try a list like:\n- **20+** Years in Education\n- **15+** Years of Public Outreach"
-          }
-          className="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none resize-y"
+        <input
+          id="slideshow_interval"
+          type="number"
+          min={0}
+          max={10}
+          step={1}
+          {...register("slideshow_interval", { valueAsNumber: true })}
+          className="w-32 rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none"
         />
-        {errors.body_markdown && (
-          <p className="text-xs text-rust mt-1.5">{errors.body_markdown.message}</p>
+        <p className="text-xs text-ink-400 mt-1.5">
+          How long each image shows before auto-advancing, when this gallery has multiple images
+          (0-10 seconds). Set to <strong>0</strong> to disable auto-advance entirely — visitors can
+          still navigate manually with the arrows/dots.
+        </p>
+        {errors.slideshow_interval && (
+          <p className="text-xs text-rust mt-1.5">{errors.slideshow_interval.message}</p>
         )}
       </div>
 

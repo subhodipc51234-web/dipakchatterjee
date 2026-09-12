@@ -22,6 +22,7 @@ export type PhaseFormInput = {
   title: string;
   period: string;
   summary: string;
+  slideshow_interval: number;
 };
 
 export async function createPhase(input: PhaseFormInput) {
@@ -35,6 +36,7 @@ export async function createPhase(input: PhaseFormInput) {
       title: input.title,
       period: input.period || null,
       summary: input.summary,
+      slideshow_interval: input.slideshow_interval,
       sort_order: count ?? 0,
     })
     .select("id")
@@ -64,6 +66,7 @@ export async function updatePhase(id: string, input: PhaseFormInput) {
       title: input.title,
       period: input.period || null,
       summary: input.summary,
+      slideshow_interval: input.slideshow_interval,
     })
     .eq("id", id);
 
@@ -101,20 +104,6 @@ export async function deletePhase(id: string) {
     entityId: id,
     details: `Deleted phase: '${phase?.title ?? id}'`,
   });
-
-  revalidatePath("/admin/features");
-  revalidatePath("/admin/phases");
-  revalidatePath("/");
-}
-
-export async function reorderPhases(orderedIds: string[]) {
-  const { supabase } = await requireAdmin();
-
-  await Promise.all(
-    orderedIds.map((id, index) =>
-      supabase.from("phases").update({ sort_order: index }).eq("id", id)
-    )
-  );
 
   revalidatePath("/admin/features");
   revalidatePath("/admin/phases");

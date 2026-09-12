@@ -72,7 +72,7 @@ function AboutFeature({ feature }: { feature: FeatureWithMedia }) {
   );
 }
 
-function PublicLifeFeature({ feature, galleryIntervalMs }: { feature: FeatureWithMedia; galleryIntervalMs?: number }) {
+function PublicLifeFeature({ feature }: { feature: FeatureWithMedia }) {
   return (
     <section
       id="public-life"
@@ -94,7 +94,7 @@ function PublicLifeFeature({ feature, galleryIntervalMs }: { feature: FeatureWit
           )}
         </div>
 
-        <PublicLifeGallery media={feature.feature_media} intervalMs={galleryIntervalMs} />
+        <PublicLifeGallery media={feature.feature_media} intervalMs={feature.slideshow_interval * 1000} />
       </div>
     </section>
   );
@@ -150,18 +150,12 @@ function CustomFeature({ feature }: { feature: FeatureWithMedia }) {
   );
 }
 
-export default function FeatureSection({
-  feature,
-  galleryIntervalMs,
-}: {
-  feature: FeatureWithMedia;
-  galleryIntervalMs?: number;
-}) {
+export default function FeatureSection({ feature }: { feature: FeatureWithMedia }) {
   switch (feature.type) {
     case "about":
       return <AboutFeature feature={feature} />;
     case "public_life_gallery":
-      return <PublicLifeFeature feature={feature} galleryIntervalMs={galleryIntervalMs} />;
+      return <PublicLifeFeature feature={feature} />;
     case "stats":
       return <StatsFeature feature={feature} />;
     case "custom_section":

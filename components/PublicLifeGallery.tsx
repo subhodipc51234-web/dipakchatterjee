@@ -43,7 +43,7 @@ export default function PublicLifeGallery({
   const [dragWidth, setDragWidth] = useState(1);
 
   useEffect(() => {
-    if (paused || dragging || media.length <= 1) return;
+    if (paused || dragging || media.length <= 1 || !intervalMs) return;
     const timer = setInterval(() => {
       setIndex((i) => (i + 1) % media.length);
     }, intervalMs);
