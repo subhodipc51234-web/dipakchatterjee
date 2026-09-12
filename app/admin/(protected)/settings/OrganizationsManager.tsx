@@ -1,7 +1,8 @@
 // app/admin/(protected)/settings/OrganizationsManager.tsx
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
+import { useHydrated } from "@/lib/hooks/useHydrated";
 import { createClient } from "@/utils/supabase/client";
 import { SITE_BUCKET, type Organization } from "@/types/domain";
 import DropzoneUpload from "@/components/admin/DropzoneUpload";
@@ -109,8 +110,7 @@ export default function OrganizationsManager({
   // See SocialLinksManager for why both an explicit DndContext `id` and
   // a mount-gate are used together to fully eliminate the
   // aria-describedby hydration mismatch.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHydrated();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),

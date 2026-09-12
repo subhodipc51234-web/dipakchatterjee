@@ -1,9 +1,14 @@
 // app/admin/(protected)/posts/page.tsx
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Plus } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import type { Post } from "@/types/domain";
 import PostList from "./PostList";
+
+export const metadata: Metadata = {
+  title: "Posts - Dashboard | Dipak Chatterjee",
+};
 
 export default async function PostsPage() {
   const supabase = await createClient();

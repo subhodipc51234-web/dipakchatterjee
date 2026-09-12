@@ -42,16 +42,15 @@ export default async function AdminProtectedLayout({
   }
 
   const [{ data: profile }, { data: settings }] = await Promise.all([
-    supabase.from("profiles").select("is_admin, is_moderator, full_name").eq("id", user.id).single(),
+    supabase.from("profiles").select("is_admin, full_name").eq("id", user.id).single(),
     supabase.from("site_settings").select("header_name, header_subtitle").eq("id", "default").single(),
   ]);
 
-  // Any recognized profile (ADMIN, MODERATOR, or USER) may view the
-  // dashboard shell — privileged mutations are gated separately,
-  // per-action, by requireAdmin()/requireOwner() (see
-  // lib/admin-guard.ts). A row missing entirely means this Supabase
-  // user has no profile at all, which shouldn't happen for a real
-  // account.
+  // Any recognized profile (ADMIN or USER) may view the dashboard shell
+  // — privileged mutations are gated separately, per-action, by
+  // requireAdmin()/requireOwner() (see lib/admin-guard.ts). A row
+  // missing entirely means this Supabase user has no profile at all,
+  // which shouldn't happen for a real account.
   if (!profile) {
     redirect("/admin/login");
   }

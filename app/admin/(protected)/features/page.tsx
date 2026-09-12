@@ -1,9 +1,14 @@
 // app/admin/(protected)/features/page.tsx
 import Link from "next/link";
+import type { Metadata } from "next";
 import { Plus } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import type { Feature } from "@/types/domain";
 import FeatureList from "./FeatureList";
+
+export const metadata: Metadata = {
+  title: "Features - Dashboard | Dipak Chatterjee",
+};
 
 export default async function FeaturesPage() {
   const supabase = await createClient();

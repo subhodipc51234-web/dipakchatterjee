@@ -8,7 +8,7 @@
 
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 const TABS = [
   { id: "general", label: "General Settings" },
@@ -21,6 +21,21 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]["id"];
 
+// The route's own <title> (set via metadata in page.tsx) covers the
+// General tab, which is what loads by default. Switching tabs here is
+// client-side state, not a navigation, so Next's metadata API never
+// re-runs for the others — this keeps the visible browser tab in sync
+// by hand. "Users & Access" gets the short "Users" title called for in
+// the spec; every other tab reuses its own label.
+const TAB_TITLES: Record<TabId, string> = {
+  general: "Settings - Dashboard | Dipak Chatterjee",
+  sections: "Homepage Sections - Dashboard | Dipak Chatterjee",
+  header: "Header & Navigation - Dashboard | Dipak Chatterjee",
+  hero: "Hero & Bio - Dashboard | Dipak Chatterjee",
+  media: "Media & Display - Dashboard | Dipak Chatterjee",
+  users: "Users - Dashboard | Dipak Chatterjee",
+};
+
 export default function SettingsTabs({
   general,
   sections,
@@ -31,6 +46,10 @@ export default function SettingsTabs({
 }: Record<TabId, ReactNode>) {
   const [active, setActive] = useState<TabId>("general");
   const panels: Record<TabId, ReactNode> = { general, sections, header, hero, media, users };
+
+  useEffect(() => {
+    document.title = TAB_TITLES[active];
+  }, [active]);
 
   return (
     <div>

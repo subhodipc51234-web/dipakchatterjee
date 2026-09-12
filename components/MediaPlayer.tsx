@@ -75,6 +75,7 @@ export default function MediaPlayer({
         ) : (
           // Plain <img>, not next/image: we deliberately want full control
           // over draggable/context-menu behavior here.
+          // eslint-disable-next-line @next/next/no-img-element
           <img
             src={src}
             alt={caption ?? "Media attachment"}

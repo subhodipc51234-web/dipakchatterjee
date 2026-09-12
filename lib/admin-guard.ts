@@ -6,13 +6,13 @@
 // every admin mutation so the check is enforced server-side, independent
 // of UI.
 //
-// Two tiers: requireAdmin() covers content/settings edits, which ADMIN
-// and MODERATOR both get full access to. requireOwner() is strictly the
-// single ADMIN account — user management (add/delete/edit users, change
-// roles, transfer the ADMIN role) stays owner-only. See the
-// is_moderator column and the redefined is_admin() SQL function
-// (supabase/migrations/20260915000000_moderator_role.sql) for the
-// database-side half of this same split.
+// Two tiers: requireAdmin() just requires being a recognized profile —
+// ADMIN and USER both get full content/settings edit access, and both
+// can add new users. requireOwner() is strictly the single ADMIN
+// account — deleting a user and transferring the ADMIN role stay
+// owner-only. See the redefined is_admin() SQL function
+// (supabase/migrations/20260917000000_simplify_to_two_tier_roles.sql)
+// for the database-side half of this same split.
 
 import { createClient } from "@/utils/supabase/server";
 
@@ -25,22 +25,18 @@ export async function requireAdmin() {
 
   if (!user) throw new Error("Unauthorized");
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_admin, is_moderator")
-    .eq("id", user.id)
-    .single();
+  const { data: profile } = await supabase.from("profiles").select("id").eq("id", user.id).single();
 
-  if (!profile?.is_admin && !profile?.is_moderator) throw new Error("Forbidden");
+  if (!profile) throw new Error("Forbidden");
 
   return { supabase, user };
 }
 
 /**
- * Strictly the single ADMIN account — never a MODERATOR. Use this for
- * user-management actions (create/delete a user, edit someone else's
- * details, transfer the ADMIN role, change a user's role) rather than
- * requireAdmin(), which MODERATOR accounts also pass.
+ * Strictly the single ADMIN account. Use this for the two actions that
+ * stay owner-only: deleting a user and transferring the ADMIN role.
+ * Everything else (including creating a user) uses requireAdmin(),
+ * which any USER also passes.
  */
 export async function requireOwner() {
   const supabase = await createClient();
@@ -63,10 +59,10 @@ export async function requireOwner() {
 }
 
 /**
- * Like requireAdmin(), but for actions any recognized profile (ADMIN,
- * MODERATOR, or USER) may call on their own behalf — e.g. editing your
- * own contact info. Callers still need to check `profile.is_admin`
- * themselves before allowing anything scoped to *another* user's data.
+ * Like requireAdmin(), but also returns the profile row — e.g. for
+ * editing your own contact info. Callers still need to check
+ * `profile.is_admin` themselves before allowing anything scoped to
+ * *another* user's data.
  */
 export async function requireProfile() {
   const supabase = await createClient();
@@ -79,7 +75,7 @@ export async function requireProfile() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("is_admin, is_moderator, email")
+    .select("is_admin, email")
     .eq("id", user.id)
     .single();
 

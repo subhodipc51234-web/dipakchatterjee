@@ -8,7 +8,7 @@
 // The OTP always goes to the site's single ADMIN profile's email (not
 // necessarily whichever account is logging in) — this is a small site
 // where the admin is meant to be the one gatekeeping every login,
-// including a MODERATOR or USER account's. See
+// including a standard USER account's. See
 // app/admin/login/actions.ts for how this plugs into the two-step
 // login flow (password, then this).
 //

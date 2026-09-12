@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "notify:discord": "node scripts/notify-discord.js",
     "deploy:push": "git push origin main && npm run notify:discord"
   },
@@ -31,6 +31,8 @@
     "@types/node": "^22.20.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.3.5",
     "postcss": "^8.5.28",
     "supabase": "^2.117.0",
     "tailwindcss": "^4.3.3",

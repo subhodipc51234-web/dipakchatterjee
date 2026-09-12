@@ -1,7 +1,8 @@
 // app/admin/(protected)/settings/CtaButtonsManager.tsx
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
+import { useHydrated } from "@/lib/hooks/useHydrated";
 import {
   DndContext,
   type DragEndEvent,
@@ -38,8 +39,7 @@ export default function CtaButtonsManager({
   // See SocialLinksManager for why both an explicit DndContext `id` and
   // a mount-gate are used together to fully eliminate the
   // aria-describedby hydration mismatch.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHydrated();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),

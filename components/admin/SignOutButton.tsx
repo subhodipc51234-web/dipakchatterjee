@@ -23,6 +23,7 @@ export default function SignOutButton() {
     // what was causing the render loop. A hard navigation guarantees
     // every server component re-reads cookies from scratch, with no
     // stale client cache involved.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.assign("/admin/login");
   }
 

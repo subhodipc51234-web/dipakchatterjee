@@ -13,17 +13,26 @@
 //      this holds site-wide with no exceptions.
 //
 //   2. Admin auth gate, /admin/* (and /dashboard/*, reserved for the
-//      same protected area) only: refresh the Supabase session and
-//      require BOTH a Supabase user AND a valid, non-expired OTP
-//      session cookie (see lib/otp-session.ts) — the second factor
-//      completed at login. A visitor with neither goes to /admin/login;
-//      one who's passed the password check but not yet the OTP (the
-//      admin_pending_2fa cookie, set right after password verification
-//      — see app/admin/login/actions.ts) goes to /admin/verify-otp
-//      instead, so a stuck step 1 doesn't look like a failed login. A
-//      fully verified admin is redirected away from both /admin/login
-//      and /admin/verify-otp. Scoped to these prefixes so public pages
-//      never pay for an extra Supabase auth round trip.
+//      same protected area) only: refresh the Supabase session and,
+//      when FEATURE_FLAGS.REQUIRE_OTP is on, also require a valid,
+//      non-expired OTP session cookie (see lib/otp-session.ts) — the
+//      second factor completed at login. A visitor with neither goes
+//      to /admin/login; one who's passed the password check but not
+//      yet the OTP (the admin_pending_2fa cookie, set right after
+//      password verification — see app/admin/login/actions.ts) goes to
+//      /admin/verify-otp instead, so a stuck step 1 doesn't look like a
+//      failed login. A fully verified admin is redirected away from
+//      both /admin/login and /admin/verify-otp. Scoped to these
+//      prefixes so public pages never pay for an extra Supabase auth
+//      round trip.
+//
+//      With the flag off, a Supabase session alone counts as verified
+//      — no cookie is checked — so a successful login goes straight to
+//      /admin and /admin/verify-otp is simply never reached
+//      (requestLoginOtp() skips issuing the pending-2FA cookie in that
+//      case too, see app/admin/login/actions.ts). Nothing here deletes
+//      the OTP gate, it's just short-circuited: flip the flag back on
+//      and this file's logic reverts with no further changes.
 //
 // Note: proxy.ts always runs on the Node.js runtime (not Edge), so the
 // full Supabase SSR client works here without any edge-compatibility
@@ -31,6 +40,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
+import { FEATURE_FLAGS } from "@/lib/feature-flags";
 import {
   OTP_SESSION_COOKIE,
   PENDING_2FA_COOKIE,
@@ -100,7 +110,9 @@ export async function proxy(request: NextRequest) {
     // cookie from a previous account (or a signed session for a user
     // who's since signed out) doesn't count for either.
     const otpSession = verifyOtpSessionToken(request.cookies.get(OTP_SESSION_COOKIE)?.value);
-    const isOtpVerified = Boolean(user && otpSession && otpSession.userId === user.id);
+    const isOtpVerified = FEATURE_FLAGS.REQUIRE_OTP
+      ? Boolean(user && otpSession && otpSession.userId === user.id)
+      : Boolean(user);
 
     const pending2fa = verifyPending2faToken(request.cookies.get(PENDING_2FA_COOKIE)?.value);
     const isPending2fa = Boolean(user && pending2fa && pending2fa.userId === user.id);

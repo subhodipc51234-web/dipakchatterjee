@@ -71,10 +71,9 @@ export default function ExpandableBio({
       // is already comfortably in view.
       wrapperRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
-    setExpanded((v) => {
-      onExpandedChange?.(!v);
-      return !v;
-    });
+    const nextExpanded = !expanded;
+    setExpanded(nextExpanded);
+    onExpandedChange?.(nextExpanded);
   }
 
   return (

@@ -12,11 +12,21 @@
 //      suspenders alongside proxy.ts's own enforcement of the same
 //      rule) before it will even check the submitted code, and only
 //      grants the real admin_otp_session cookie on success.
+//
+// FEATURE_FLAGS.REQUIRE_OTP (lib/feature-flags.ts) gates step 1 only:
+// when it's off, requestLoginOtp skips generating/sending a code
+// entirely and grants the admin_otp_session cookie immediately — the
+// "verified" result below already existed for the fail-safe case (no
+// admin email on file), so LoginForm.tsx needs no changes either way.
+// verifyLoginOtp and everything in lib/otp-login.ts are untouched, so
+// flipping the flag back to true resumes the real challenge with no
+// other code changes.
 
 "use server";
 
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
+import { FEATURE_FLAGS } from "@/lib/feature-flags";
 import { requestLoginOtp as requestOtp, verifyLoginOtp as verifyOtp } from "@/lib/otp-login";
 import {
   OTP_SESSION_COOKIE,
@@ -42,6 +52,11 @@ export async function requestLoginOtp(): Promise<RequestOtpResult> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not signed in.");
+
+  if (!FEATURE_FLAGS.REQUIRE_OTP) {
+    await grantOtpSession(user.id);
+    return { step: "verified" };
+  }
 
   const result = await requestOtp(user.id);
 

@@ -1,7 +1,8 @@
 // app/admin/(protected)/complaints/ComplaintList.tsx
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useHydrated } from "@/lib/hooks/useHydrated";
 import { Check, Clock, Copy, FileVideo, Phone, Trash2 } from "lucide-react";
 import type { Complaint, ComplaintMedia } from "@/types/domain";
 import { formatTimeRemaining, getComplaintStatus } from "@/lib/complaint-status";
@@ -70,8 +71,7 @@ export default function ComplaintList({ complaints }: { complaints: ComplaintRow
   // them behind a `mounted` flag guarantees the very first client render
   // matches the server-rendered HTML exactly; the live values then take
   // over immediately after mount, as a normal post-hydration update.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHydrated();
 
   const filtered = useMemo(
     () => (filter === "all" ? items : items.filter((c) => c.status === filter)),

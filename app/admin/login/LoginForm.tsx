@@ -2,11 +2,12 @@
 //
 // Step 1 of the two-step login flow: email + password only. On success,
 // requestLoginOtp() (see ./actions.ts) issues the short-lived
-// admin_pending_2fa cookie and sends the OTP — it deliberately never
-// grants the real dashboard session, so this always hard-navigates on to
-// /admin/verify-otp next (never straight to /admin), except for the
-// fail-safe "verified" step (no admin email on file anywhere to
-// challenge against — see lib/otp-login.ts).
+// admin_pending_2fa cookie and sends the OTP, so this hard-navigates on
+// to /admin/verify-otp next rather than straight to /admin — except for
+// the "verified" step, which grants the real dashboard session right
+// away. That happens both as a fail-safe (no admin email on file
+// anywhere to challenge against — see lib/otp-login.ts) and, currently,
+// whenever FEATURE_FLAGS.REQUIRE_OTP is off (lib/feature-flags.ts).
 
 "use client";
 
@@ -43,9 +44,11 @@ export default function LoginForm({ brandName, brandSubtitle }: { brandName: str
       // the freshly-set cookies directly, with no client router cache in
       // the mix.
       if (result.step === "verified") {
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- hard navigation so /admin's server-side cookie check sees the freshly-set session (see file header)
         window.location.assign("/admin");
         return;
       }
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- same reason as above
       window.location.assign("/admin/verify-otp");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not send a login code.");

@@ -39,6 +39,7 @@ export default function VerifyOtpForm({ brandName, brandSubtitle }: { brandName:
       }
       // Hard navigation so /admin/(protected)/layout.tsx's server-side
       // session check reads the freshly-set cookie directly.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.assign("/admin");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -53,6 +54,7 @@ export default function VerifyOtpForm({ brandName, brandSubtitle }: { brandName:
     try {
       const result = await requestLoginOtp();
       if (result.step === "verified") {
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- same reason as handleSubmit above
         window.location.assign("/admin");
         return;
       }

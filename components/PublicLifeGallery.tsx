@@ -40,6 +40,7 @@ export default function PublicLifeGallery({
   const dragState = useRef<{ pointerId: number; startX: number; width: number } | null>(null);
   const [dragPx, setDragPx] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [dragWidth, setDragWidth] = useState(1);
 
   useEffect(() => {
     if (paused || dragging || media.length <= 1) return;
@@ -60,6 +61,7 @@ export default function PublicLifeGallery({
     if ((e.target as HTMLElement).closest("button")) return;
     const width = containerRef.current?.offsetWidth ?? 1;
     dragState.current = { pointerId: e.pointerId, startX: e.clientX, width };
+    setDragWidth(width);
     setDragging(true);
     setPaused(true);
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -86,9 +88,7 @@ export default function PublicLifeGallery({
   }
 
   const baseOffsetPercent = -index * 100;
-  const dragOffsetPercent = containerRef.current
-    ? (dragPx / containerRef.current.offsetWidth) * 100
-    : 0;
+  const dragOffsetPercent = (dragPx / dragWidth) * 100;
 
   return (
     <div

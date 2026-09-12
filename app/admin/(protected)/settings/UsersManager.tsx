@@ -1,21 +1,21 @@
 // app/admin/(protected)/settings/UsersManager.tsx
 //
-// Settings -> Users & Access. Every recognized profile (ADMIN,
-// MODERATOR, or USER) can reach the Settings page and view this list —
-// see page.tsx's gate — but mutation controls (add a user, promote/
-// demote, transfer admin, delete) only ever render for `viewerIsOwner`
-// (the single ADMIN). A MODERATOR sees the same list, read-only, plus
-// an "Edit contact" button on their own row only. The ADMIN's own row
-// never gets a delete/transfer/role action: it can't be deleted, and
-// role changes for it go through Transfer Admin, not setUserRole.
+// Settings -> Users & Access. Every recognized profile (ADMIN or USER)
+// can reach the Settings page, view this list, and add a new user —
+// see page.tsx's gate. Transferring the ADMIN role and deleting a user
+// are owner-only (`viewerIsOwner`, true only for the single ADMIN); a
+// standard USER sees the same list, plus an "Edit contact" button on
+// their own row only. The ADMIN's own row never gets a delete/transfer
+// action: it can't be deleted, and role only ever changes via Transfer
+// Admin, never in place.
 
 "use client";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Crown, Loader2, Pencil, ShieldCheck, ShieldOff, Trash2, UserPlus } from "lucide-react";
+import { Crown, Loader2, Pencil, ShieldCheck, Trash2, UserPlus } from "lucide-react";
 import type { Profile } from "@/types/domain";
-import { createUserAccount, deleteUserAccount, setUserRole, transferAdminRole } from "./user-actions";
+import { createUserAccount, deleteUserAccount, transferAdminRole } from "./user-actions";
 import ContactInfoModal from "@/components/admin/ContactInfoModal";
 
 function formatDate(value: string) {
@@ -31,15 +31,12 @@ export default function UsersManager({
 }: {
   users: Profile[];
   viewerId: string;
-  /** True only for the single ADMIN account — every mutation control (add/promote/demote/transfer/delete) is hidden from a MODERATOR viewer. */
+  /** True only for the single ADMIN account — transfer/delete are hidden from every other viewer. */
   viewerIsOwner: boolean;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState<PendingAction>(null);
   const [editingContact, setEditingContact] = useState<Profile | null>(null);
-  const [rolePendingId, setRolePendingId] = useState<string | null>(null);
-  const [roleError, setRoleError] = useState<string | null>(null);
-  const [, startRoleTransition] = useTransition();
 
   const admin = users.find((u) => u.is_admin);
   const others = users.filter((u) => !u.is_admin);
@@ -48,30 +45,15 @@ export default function UsersManager({
     router.refresh();
   }
 
-  function handleRoleToggle(userId: string, nextRole: "USER" | "MODERATOR") {
-    setRoleError(null);
-    setRolePendingId(userId);
-    startRoleTransition(async () => {
-      try {
-        await setUserRole(userId, nextRole);
-        refresh();
-      } catch (err) {
-        setRoleError(err instanceof Error ? err.message : "Failed to update role.");
-      } finally {
-        setRolePendingId(null);
-      }
-    });
-  }
-
   return (
     <div className="bg-white border border-line rounded-xl p-6 md:p-8">
       <p className="text-sm font-semibold text-navy-900 mb-1">Users &amp; Access</p>
       <p className="text-xs text-ink-400 mb-5">
-        Exactly one account holds the ADMIN role at any time. MODERATOR accounts have full content
-        and settings access but can&apos;t manage users.
+        Exactly one account holds the ADMIN role at any time. Every USER has full content and
+        settings access, including adding new users.
         {viewerIsOwner
-          ? " Adding, promoting/demoting, transferring, or deleting a user requires your current password where noted."
-          : " Only the ADMIN account can add, edit, or remove users."}
+          ? " Transferring Admin or deleting a user asks for your current password to confirm."
+          : " Only the ADMIN account can transfer its role or remove a user."}
       </p>
 
       <ul className="space-y-2 mb-6">
@@ -101,19 +83,11 @@ export default function UsersManager({
                 ? () => setPending({ kind: "transfer", userId: u.id, name: u.full_name || u.email || "this user" })
                 : undefined
             }
-            onToggleRole={viewerIsOwner ? () => handleRoleToggle(u.id, u.is_moderator ? "USER" : "MODERATOR") : undefined}
-            roleActionPending={rolePendingId === u.id}
           />
         ))}
       </ul>
 
-      {roleError && (
-        <p className="text-xs text-rust mb-4" role="alert">
-          {roleError}
-        </p>
-      )}
-
-      {viewerIsOwner && <AddUserForm onCreated={refresh} />}
+      <AddUserForm onCreated={refresh} />
 
       {pending && (
         <PasswordConfirmModal
@@ -144,7 +118,6 @@ export default function UsersManager({
 
 const ROLE_BADGE_STYLES: Record<string, string> = {
   ADMIN: "bg-saffron-100 text-saffron-600",
-  MODERATOR: "bg-[var(--theme-secondary)]/10 text-navy-900",
   USER: "bg-paper-100 text-ink-400 border border-line",
 };
 
@@ -155,8 +128,6 @@ function UserRow({
   onEditContact,
   onDelete,
   onTransfer,
-  onToggleRole,
-  roleActionPending,
 }: {
   profile: Profile;
   viewerIsOwner: boolean;
@@ -164,10 +135,8 @@ function UserRow({
   onEditContact: () => void;
   onDelete?: () => void;
   onTransfer?: () => void;
-  onToggleRole?: () => void;
-  roleActionPending?: boolean;
 }) {
-  const roleLabel = profile.is_admin ? "ADMIN" : profile.is_moderator ? "MODERATOR" : "USER";
+  const roleLabel = profile.is_admin ? "ADMIN" : "USER";
   // Anyone can edit their own contact info; only the owner can edit
   // someone else's (matches the server-side rule in updateContactInfo).
   const canEditContact = isSelf || viewerIsOwner;
@@ -184,10 +153,8 @@ function UserRow({
             {roleLabel}
           </span>
         </div>
-        <p className="text-xs text-ink-400 mt-0.5">
-          {profile.email || "No email on file"}
-          {profile.phone ? ` · ${profile.phone}` : ""}
-        </p>
+        <p className="text-xs text-ink-400 mt-0.5">Email: {profile.email || "No email on file"}</p>
+        <p className="text-xs text-ink-400 mt-0.5">Phone: {profile.phone || "No phone on file"}</p>
         <p className="text-[11px] text-ink-300 mt-0.5">Joined {formatDate(profile.created_at)}</p>
       </div>
 
@@ -200,24 +167,6 @@ function UserRow({
           >
             <Pencil className="w-3.5 h-3.5" />
             Edit contact
-          </button>
-        )}
-
-        {!profile.is_admin && onToggleRole && (
-          <button
-            type="button"
-            onClick={onToggleRole}
-            disabled={roleActionPending}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-navy-900 hover:text-saffron-600 border border-line hover:border-saffron/60 rounded-md px-2.5 py-1.5 disabled:opacity-60"
-          >
-            {roleActionPending ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : profile.is_moderator ? (
-              <ShieldOff className="w-3.5 h-3.5" />
-            ) : (
-              <ShieldCheck className="w-3.5 h-3.5" />
-            )}
-            {profile.is_moderator ? "Remove Moderator" : "Make Moderator"}
           </button>
         )}
 
@@ -253,7 +202,6 @@ function AddUserForm({ onCreated }: { onCreated: () => void }) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"USER" | "MODERATOR">("USER");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -262,12 +210,11 @@ function AddUserForm({ onCreated }: { onCreated: () => void }) {
     setError(null);
     startTransition(async () => {
       try {
-        await createUserAccount({ name, email, phone, password, role });
+        await createUserAccount({ name, email, phone, password });
         setName("");
         setEmail("");
         setPhone("");
         setPassword("");
-        setRole("USER");
         onCreated();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to create user.");
@@ -311,15 +258,9 @@ function AddUserForm({ onCreated }: { onCreated: () => void }) {
           autoComplete="new-password"
           className="rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-saffron focus:outline-none"
         />
-        <select
-          value={role}
-          onChange={(e) => setRole(e.target.value as "USER" | "MODERATOR")}
-          className="sm:col-span-2 rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-saffron focus:outline-none"
-        >
-          <option value="USER">Standard User</option>
-          <option value="MODERATOR">Moderator (full content/settings access)</option>
-        </select>
       </div>
+
+      <p className="text-xs text-ink-400 mt-3">New accounts are always created as a standard USER.</p>
 
       {error && (
         <p className="text-xs text-rust mt-3" role="alert">

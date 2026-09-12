@@ -6,7 +6,8 @@
 
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
+import { useHydrated } from "@/lib/hooks/useHydrated";
 import {
   DndContext,
   type DragEndEvent,
@@ -49,8 +50,7 @@ export default function SocialLinksManager({ links }: { links: SocialLink[] }) {
   // gating the DndContext behind `mounted` (rendering an identical inert
   // skeleton until then) additionally guarantees the very first client
   // render can never diverge from the server's, however it's counted.
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useHydrated();
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),

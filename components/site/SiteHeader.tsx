@@ -21,6 +21,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import SocialIcon from "@/components/SocialIcon";
@@ -139,7 +140,7 @@ export default function SiteHeader({
   return (
     <header className="sticky top-0 z-40 bg-paper-100/95 backdrop-blur border-b border-line transition-colors">
       <nav className="relative z-10 max-w-6xl mx-auto px-5 md:px-8 h-16 md:h-20 flex items-center justify-between gap-3">
-        <a href="/" onClick={(e) => handleAnchorClick(e, "/")} className="flex items-center gap-3 min-w-0">
+        <Link href="/" onClick={(e) => handleAnchorClick(e, "/")} className="flex items-center gap-3 min-w-0">
           <span className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden shrink-0 border border-line bg-paper-100 flex items-center justify-center">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -160,7 +161,7 @@ export default function SiteHeader({
               {subtitle || DEFAULT_SUBTITLE}
             </span>
           </span>
-        </a>
+        </Link>
 
         {leftActions.length > 0 && (
           <div className="flex items-center gap-3 text-sm shrink-0">

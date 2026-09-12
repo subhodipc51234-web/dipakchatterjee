@@ -1,18 +1,20 @@
 // app/admin/(protected)/settings/user-actions.ts
 //
-// Settings -> Users & Access. Creating/deleting a user, changing a
-// user's role, and transferring the ADMIN role are all owner-only
-// (requireOwner() — the single ADMIN, never a MODERATOR); updateContactInfo
-// is the one exception (requireProfile()) since a standard USER or
-// MODERATOR needs to be able to edit their own contact details too —
-// see its own comment for exactly which changes require a password.
+// Settings -> Users & Access. Only two actions are owner-only
+// (requireOwner() — the single ADMIN): deleting a user and transferring
+// the ADMIN role. Creating a user is requireAdmin(), which any USER also
+// passes — matches "USER can create/add new users but cannot delete
+// any account or transfer admin status". updateContactInfo uses
+// requireProfile() since any USER needs to be able to edit their own
+// contact details too — see its own comment for exactly which changes
+// require a password.
 
 "use server";
 
 import { revalidatePath } from "next/cache";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
-import { requireOwner, requireProfile } from "@/lib/admin-guard";
+import { requireAdmin, requireOwner, requireProfile } from "@/lib/admin-guard";
 import { createServiceClient } from "@/utils/supabase/admin";
 
 /**
@@ -49,12 +51,11 @@ export type CreateUserInput = {
   email: string;
   phone: string;
   password: string;
-  /** Defaults to a standard USER when omitted. */
-  role?: "USER" | "MODERATOR";
 };
 
+/** Any logged-in profile (ADMIN or USER) may add a new user — always created as a standard USER; only transferAdminRole can ever produce a second privileged account. */
 export async function createUserAccount(input: CreateUserInput) {
-  await requireOwner();
+  await requireAdmin();
 
   const name = input.name.trim();
   const email = input.email.trim();
@@ -80,7 +81,6 @@ export async function createUserAccount(input: CreateUserInput) {
     email,
     phone: phone || null,
     is_admin: false,
-    is_moderator: input.role === "MODERATOR",
   });
 
   if (profileError) {
@@ -89,25 +89,6 @@ export async function createUserAccount(input: CreateUserInput) {
     await service.auth.admin.deleteUser(created.user.id);
     throw new Error(profileError.message);
   }
-
-  revalidatePath("/admin/settings");
-}
-
-/** Promotes a standard USER to MODERATOR, or demotes a MODERATOR back to USER. Never touches the ADMIN row — use transferAdminRole for that. */
-export async function setUserRole(targetUserId: string, role: "USER" | "MODERATOR") {
-  await requireOwner();
-
-  const service = createServiceClient();
-
-  const { data: target } = await service.from("profiles").select("is_admin").eq("id", targetUserId).single();
-  if (!target) throw new Error("User not found.");
-  if (target.is_admin) throw new Error("Use Transfer Admin to change the ADMIN account's role.");
-
-  const { error } = await service
-    .from("profiles")
-    .update({ is_moderator: role === "MODERATOR" })
-    .eq("id", targetUserId);
-  if (error) throw new Error(error.message);
 
   revalidatePath("/admin/settings");
 }

@@ -1,9 +1,14 @@
 // app/admin/(protected)/complaints/page.tsx
+import type { Metadata } from "next";
 import { createClient } from "@/utils/supabase/server";
 import { purgeExpiredComplaints } from "@/lib/complaints-cleanup";
 import { COMPLAINT_BUCKET, type ComplaintMedia, type ComplaintWithMedia, type SiteSettings } from "@/types/domain";
 import ComplaintList, { type ComplaintMediaWithUrl } from "./ComplaintList";
 import ComplaintExpirySettings from "./ComplaintExpirySettings";
+
+export const metadata: Metadata = {
+  title: "Complaints - Dashboard | Dipak Chatterjee",
+};
 
 const SIGNED_URL_TTL_SECONDS = 60 * 60; // 1 hour, regenerated on every page load
 

@@ -1,9 +1,14 @@
 // app/admin/(protected)/page.tsx
 import Link from "next/link";
+import type { Metadata } from "next";
 import { createClient } from "@/utils/supabase/server";
 import { ArrowRight, Layers, MessageSquareWarning, Rss } from "lucide-react";
 import type { Profile } from "@/types/domain";
 import MyContactInfoCard from "@/components/admin/MyContactInfoCard";
+
+export const metadata: Metadata = {
+  title: "Dashboard | Dipak Chatterjee",
+};
 
 export default async function AdminOverviewPage() {
   const supabase = await createClient();

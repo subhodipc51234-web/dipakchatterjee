@@ -12,7 +12,7 @@
 
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { logoutAdmin } from "@/app/admin/session-actions";
 
@@ -29,11 +29,29 @@ function formatTime(totalSeconds: number) {
 
 export default function SessionTimer() {
   const [secondsLeft, setSecondsLeft] = useState(SESSION_SECONDS);
-  const lastActivityRef = useRef(Date.now());
-  const lastHeartbeatRef = useRef(Date.now());
+  // Seeded with 0, not Date.now(): reading the clock is impure, and
+  // React can call a render's ref-initializer more than once (double
+  // rendering in dev/Strict Mode) or discard its result — real
+  // timestamps are assigned once, from inside the effect below, which
+  // runs exactly once per mount.
+  const lastActivityRef = useRef(0);
+  const lastHeartbeatRef = useRef(0);
   const expiredRef = useRef(false);
 
+  const handleExpire = useCallback(async () => {
+    await logoutAdmin().catch(() => {});
+    alert("Session expired due to inactivity.");
+    // Hard navigation, matching SignOutButton.tsx: guarantees the login
+    // page's server-side check re-reads cookies fresh, no client router
+    // cache in the mix.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.assign("/admin/login");
+  }, []);
+
   useEffect(() => {
+    lastActivityRef.current = Date.now();
+    lastHeartbeatRef.current = Date.now();
+
     function handleActivity() {
       lastActivityRef.current = Date.now();
 
@@ -66,13 +84,7 @@ export default function SessionTimer() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
-
-  async function handleExpire() {
-    await logoutAdmin().catch(() => {});
-    alert("Session expired due to inactivity.");
-    window.location.assign("/admin/login");
-  }
+  }, [handleExpire]);
 
   const isLow = secondsLeft <= LOW_TIME_THRESHOLD_SECONDS;
 
