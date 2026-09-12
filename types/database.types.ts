@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_otp_codes: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_otp_codes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       complaint_media: {
         Row: {
           complaint_id: string
@@ -467,21 +505,28 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string
+          email: string | null
           full_name: string | null
           id: string
           is_admin: boolean
+          phone: string | null
+          role: string
         }
         Insert: {
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id: string
           is_admin?: boolean
+          phone?: string | null
         }
         Update: {
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
           is_admin?: boolean
+          phone?: string | null
         }
         Relationships: []
       }
@@ -617,6 +662,7 @@ export type Database = {
     }
     Functions: {
       is_admin: { Args: never; Returns: boolean }
+      transfer_admin_role: { Args: { new_admin_id: string }; Returns: undefined }
     }
     Enums: {
       feature_type: "about" | "public_life_gallery" | "stats" | "custom_section"

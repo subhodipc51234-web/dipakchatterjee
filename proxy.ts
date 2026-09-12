@@ -12,10 +12,14 @@
 //      are explicitly forced dynamic (see their files) specifically so
 //      this holds site-wide with no exceptions.
 //
-//   2. Admin auth gate, /admin/* only: refresh the Supabase session and
-//      redirect unauthenticated visitors to /admin/login (and a
-//      logged-in admin away from /admin/login). Scoped to /admin so
-//      public pages never pay for an extra Supabase auth round trip.
+//   2. Admin auth gate, /admin/* (and /dashboard/*, reserved for the
+//      same protected area) only: refresh the Supabase session and
+//      require BOTH a Supabase user AND a valid, non-expired OTP
+//      session cookie (see lib/otp-session.ts) — the second factor
+//      completed at login. Redirects an unauthenticated or
+//      OTP-unverified visitor to /admin/login, and a fully verified
+//      admin away from /admin/login. Scoped to these prefixes so public
+//      pages never pay for an extra Supabase auth round trip.
 //
 // Note: proxy.ts always runs on the Node.js runtime (not Edge), so the
 // full Supabase SSR client works here without any edge-compatibility
@@ -23,6 +27,7 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
+import { OTP_SESSION_COOKIE, verifyOtpSessionToken } from "@/lib/otp-session";
 
 function supabaseHost(): string {
   try {
@@ -73,7 +78,7 @@ export async function proxy(request: NextRequest) {
   requestHeaders.set("Content-Security-Policy", csp);
 
   const { pathname } = request.nextUrl;
-  const isAdminRoute = pathname.startsWith("/admin");
+  const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/dashboard");
 
   let response = NextResponse.next({ request: { headers: requestHeaders } });
 
@@ -81,9 +86,16 @@ export async function proxy(request: NextRequest) {
     const { user } = await updateSession(request, response);
     const isLoginRoute = pathname === "/admin/login";
 
-    if (!isLoginRoute && !user) {
+    const otpToken = request.cookies.get(OTP_SESSION_COOKIE)?.value;
+    const otpSession = verifyOtpSessionToken(otpToken);
+    // The OTP session cookie is bound to whichever user completed the
+    // challenge — a stale cookie from a previous account (or a signed
+    // session for a user who's since signed out) doesn't count.
+    const isOtpVerified = Boolean(user && otpSession && otpSession.userId === user.id);
+
+    if (!isLoginRoute && !isOtpVerified) {
       response = NextResponse.redirect(new URL("/admin/login", request.url));
-    } else if (isLoginRoute && user) {
+    } else if (isLoginRoute && isOtpVerified) {
       response = NextResponse.redirect(new URL("/admin", request.url));
     }
   }

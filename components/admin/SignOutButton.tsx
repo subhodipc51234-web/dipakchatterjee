@@ -2,18 +2,20 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { LogOut, Loader2 } from "lucide-react";
+import { logoutAdmin } from "@/app/admin/session-actions";
 
 export default function SignOutButton() {
-  const supabase = createClient();
   const [loading, setLoading] = useState(false);
 
   async function handleSignOut() {
     if (loading) return;
     setLoading(true);
 
-    await supabase.auth.signOut();
+    // Clears both the Supabase session and the OTP-verified cookie
+    // (see app/admin/session-actions.ts) — signing out of Supabase
+    // alone would leave the OTP cookie valid for its remaining TTL.
+    await logoutAdmin();
 
     // Deliberately NOT using router.push()/router.refresh() here.
     // Calling both together races Next's client-side router cache

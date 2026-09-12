@@ -13,6 +13,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import SignOutButton from "@/components/admin/SignOutButton";
+import SessionTimer from "@/components/admin/SessionTimer";
 import {
   ExternalLink,
   Image as ImageIcon,
@@ -43,7 +44,12 @@ export default async function AdminProtectedLayout({
     .eq("id", user.id)
     .single();
 
-  if (!profile?.is_admin) {
+  // Any recognized profile (ADMIN or USER) may view the dashboard shell
+  // — privileged mutations are gated separately, per-action, by
+  // requireAdmin() (see lib/admin-guard.ts). A row missing entirely
+  // means this Supabase user has no profile at all, which shouldn't
+  // happen for a real account.
+  if (!profile) {
     redirect("/admin/login");
   }
 
@@ -124,8 +130,11 @@ export default async function AdminProtectedLayout({
         </div>
       </aside>
 
-      <main className="flex-1 bg-paper-100 min-h-screen">
-        <div className="max-w-5xl mx-auto px-6 py-10">{children}</div>
+      <main className="flex-1 bg-paper-100 min-h-screen flex flex-col">
+        <header className="h-14 shrink-0 border-b border-line bg-white flex items-center justify-end px-6">
+          <SessionTimer />
+        </header>
+        <div className="flex-1 max-w-5xl w-full mx-auto px-6 py-10">{children}</div>
       </main>
     </div>
   );

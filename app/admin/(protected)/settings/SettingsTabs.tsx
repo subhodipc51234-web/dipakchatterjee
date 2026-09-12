@@ -16,6 +16,7 @@ const TABS = [
   { id: "header", label: "Header & Navigation" },
   { id: "hero", label: "Hero & Bio" },
   { id: "media", label: "Media & Display" },
+  { id: "users", label: "Users & Access" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -26,9 +27,10 @@ export default function SettingsTabs({
   header,
   hero,
   media,
+  users,
 }: Record<TabId, ReactNode>) {
   const [active, setActive] = useState<TabId>("general");
-  const panels: Record<TabId, ReactNode> = { general, sections, header, hero, media };
+  const panels: Record<TabId, ReactNode> = { general, sections, header, hero, media, users };
 
   return (
     <div>

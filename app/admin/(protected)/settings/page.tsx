@@ -20,11 +20,35 @@ import FooterBlocksManager from "./FooterBlocksManager";
 import SocialLinksManager from "./SocialLinksManager";
 import HeaderNavigationManager from "./HeaderNavigationManager";
 import HomepageLayoutManager from "./HomepageLayoutManager";
+import UsersManager from "./UsersManager";
 import SettingsTabs from "./SettingsTabs";
 import { computeHomepageOrder } from "@/lib/homepage-layout";
+import type { Profile } from "@/types/domain";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: viewerProfile } = user
+    ? await supabase.from("profiles").select("is_admin").eq("id", user.id).single()
+    : { data: null };
+
+  // Settings holds site-wide content controls and the Users & Access
+  // panel — kept admin-only even though the dashboard shell itself now
+  // also allows a plain USER account in (see the (protected) layout).
+  if (!viewerProfile?.is_admin) {
+    return (
+      <div className="max-w-2xl">
+        <p className="text-sm font-semibold text-saffron-600 mb-2">Settings</p>
+        <h1 className="font-display text-3xl text-navy-900 mb-4">Admins only</h1>
+        <p className="text-sm text-ink-600">
+          Site settings are managed by the account holding the ADMIN role.
+        </p>
+      </div>
+    );
+  }
 
   const [
     { data: settings },
@@ -35,6 +59,7 @@ export default async function SettingsPage() {
     { data: navLinks },
     { data: headerActions },
     { data: features },
+    { data: profiles },
   ] = await Promise.all([
     supabase.from("site_settings").select("*").eq("id", "default").single(),
     supabase.from("organizations").select("*").order("display_order", { ascending: true }),
@@ -50,6 +75,7 @@ export default async function SettingsPage() {
     // Every feature, published or not — the Layout Builder needs to
     // show and let an admin re-enable a currently-hidden section.
     supabase.from("features").select("*").order("display_order", { ascending: true }),
+    supabase.from("profiles").select("*").order("created_at", { ascending: true }),
   ]);
 
   const s = settings as SiteSettings | null;
@@ -121,6 +147,7 @@ export default async function SettingsPage() {
             />
           </>
         }
+        users={<UsersManager users={(profiles as Profile[]) ?? []} />}
       />
     </div>
   );
