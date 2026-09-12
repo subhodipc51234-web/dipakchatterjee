@@ -11,9 +11,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Crown, Loader2, ShieldCheck, Trash2, UserPlus } from "lucide-react";
+import { Crown, Loader2, Pencil, ShieldCheck, Trash2, UserPlus } from "lucide-react";
 import type { Profile } from "@/types/domain";
-import { createUserAccount, deleteUserAccount, transferAdminRole, updateOwnContactPhone } from "./user-actions";
+import { createUserAccount, deleteUserAccount, transferAdminRole } from "./user-actions";
+import ContactInfoModal from "@/components/admin/ContactInfoModal";
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
@@ -21,9 +22,10 @@ function formatDate(value: string) {
 
 type PendingAction = { kind: "delete" | "transfer"; userId: string; name: string } | null;
 
-export default function UsersManager({ users }: { users: Profile[] }) {
+export default function UsersManager({ users, viewerId }: { users: Profile[]; viewerId: string }) {
   const router = useRouter();
   const [pending, setPending] = useState<PendingAction>(null);
+  const [editingContact, setEditingContact] = useState<Profile | null>(null);
 
   const admin = users.find((u) => u.is_admin);
   const others = users.filter((u) => !u.is_admin);
@@ -40,13 +42,12 @@ export default function UsersManager({ users }: { users: Profile[] }) {
         USER. Deleting a user or transferring the ADMIN role requires your current password.
       </p>
 
-      {admin && <AdminContactPhoneForm admin={admin} onSaved={refresh} />}
-
       <ul className="space-y-2 mb-6">
         {admin && (
           <UserRow
             key={admin.id}
             profile={admin}
+            onEditContact={() => setEditingContact(admin)}
             onDelete={undefined}
             onTransfer={undefined}
           />
@@ -55,6 +56,7 @@ export default function UsersManager({ users }: { users: Profile[] }) {
           <UserRow
             key={u.id}
             profile={u}
+            onEditContact={() => setEditingContact(u)}
             onDelete={() => setPending({ kind: "delete", userId: u.id, name: u.full_name || u.email || "this user" })}
             onTransfer={() => setPending({ kind: "transfer", userId: u.id, name: u.full_name || u.email || "this user" })}
           />
@@ -73,73 +75,31 @@ export default function UsersManager({ users }: { users: Profile[] }) {
           }}
         />
       )}
-    </div>
-  );
-}
 
-function AdminContactPhoneForm({ admin, onSaved }: { admin: Profile; onSaved: () => void }) {
-  const [phone, setPhone] = useState(admin.phone ?? "");
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-
-  function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSaved(false);
-    startTransition(async () => {
-      try {
-        await updateOwnContactPhone(phone);
-        setSaved(true);
-        onSaved();
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to save.");
-      }
-    });
-  }
-
-  return (
-    <form
-      onSubmit={submit}
-      className="flex flex-wrap items-end gap-3 mb-5 p-3 rounded-md border border-line bg-paper-100"
-    >
-      <div className="flex-1 min-w-[220px]">
-        <label htmlFor="admin-phone" className="block text-xs font-medium text-navy-900 mb-1.5">
-          Your phone number (for login SMS codes)
-        </label>
-        <input
-          id="admin-phone"
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder="+91XXXXXXXXXX"
-          className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:border-saffron focus:outline-none"
+      {editingContact && (
+        <ContactInfoModal
+          profile={editingContact}
+          viewerId={viewerId}
+          viewerIsAdmin={true}
+          onClose={() => setEditingContact(null)}
+          onSaved={() => {
+            setEditingContact(null);
+            refresh();
+          }}
         />
-      </div>
-      <button
-        type="submit"
-        disabled={isPending || phone === (admin.phone ?? "")}
-        className="inline-flex items-center gap-1.5 bg-navy-900 hover:bg-navy-700 disabled:opacity-50 text-white text-xs font-semibold px-3 py-2.5 rounded-md transition-colors"
-      >
-        {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-        {isPending ? "Saving…" : "Save"}
-      </button>
-      {saved && !isPending && <span className="text-xs text-forest">Saved.</span>}
-      {error && (
-        <span className="text-xs text-rust" role="alert">
-          {error}
-        </span>
       )}
-    </form>
+    </div>
   );
 }
 
 function UserRow({
   profile,
+  onEditContact,
   onDelete,
   onTransfer,
 }: {
   profile: Profile;
+  onEditContact: () => void;
   onDelete?: () => void;
   onTransfer?: () => void;
 }) {
@@ -164,27 +124,38 @@ function UserRow({
         <p className="text-[11px] text-ink-300 mt-0.5">Joined {formatDate(profile.created_at)}</p>
       </div>
 
-      {!profile.is_admin && (
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={onTransfer}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-saffron-600 hover:text-saffron border border-saffron/30 hover:border-saffron/60 rounded-md px-2.5 py-1.5"
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            Transfer Admin
-          </button>
-          <button
-            type="button"
-            onClick={onDelete}
-            aria-label="Delete user"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-rust hover:text-rust/80 border border-rust/30 hover:border-rust/60 rounded-md px-2.5 py-1.5"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            Delete
-          </button>
-        </div>
-      )}
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={onEditContact}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-600 hover:text-navy-900 border border-line hover:border-navy-900/30 rounded-md px-2.5 py-1.5"
+        >
+          <Pencil className="w-3.5 h-3.5" />
+          Edit contact
+        </button>
+
+        {!profile.is_admin && (
+          <>
+            <button
+              type="button"
+              onClick={onTransfer}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-saffron-600 hover:text-saffron border border-saffron/30 hover:border-saffron/60 rounded-md px-2.5 py-1.5"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              Transfer Admin
+            </button>
+            <button
+              type="button"
+              onClick={onDelete}
+              aria-label="Delete user"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-rust hover:text-rust/80 border border-rust/30 hover:border-rust/60 rounded-md px-2.5 py-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              Delete
+            </button>
+          </>
+        )}
+      </div>
     </li>
   );
 }

@@ -147,7 +147,7 @@ export default async function SettingsPage() {
             />
           </>
         }
-        users={<UsersManager users={(profiles as Profile[]) ?? []} />}
+        users={<UsersManager users={(profiles as Profile[]) ?? []} viewerId={user!.id} />}
       />
     </div>
   );

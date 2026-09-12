@@ -504,6 +504,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          admin_flag: boolean | null
           created_at: string
           email: string | null
           full_name: string | null

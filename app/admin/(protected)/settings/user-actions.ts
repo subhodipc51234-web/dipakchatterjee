@@ -1,34 +1,46 @@
 // app/admin/(protected)/settings/user-actions.ts
 //
-// Settings -> Users & Access. Every mutation here is admin-only
-// (requireAdmin()) and every destructive/privilege-changing one also
-// re-checks the current admin's password against Supabase Auth
-// directly — a compromised or left-open dashboard session alone isn't
-// enough to delete a user or transfer the ADMIN role.
+// Settings -> Users & Access. Creating/deleting a user and transferring
+// the ADMIN role are admin-only (requireAdmin()); updateContactInfo is
+// the one exception (requireProfile()) since a standard USER needs to
+// be able to edit their own contact details too — see its own comment
+// for exactly which changes require a password.
 
 "use server";
 
 import { revalidatePath } from "next/cache";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
-import { requireAdmin } from "@/lib/admin-guard";
+import { requireAdmin, requireProfile } from "@/lib/admin-guard";
 import { createServiceClient } from "@/utils/supabase/admin";
 
 /**
- * Re-checks a password against Supabase Auth for the currently signed-in
- * admin, without touching the real session. Uses a throwaway client
- * (anon key, no session persistence) so this can never overwrite or
- * extend the admin's actual cookies.
+ * Re-checks a password against Supabase Auth for the given account,
+ * without touching the real session. Uses a throwaway client (anon key,
+ * no session persistence) so this can never overwrite or extend the
+ * caller's actual cookies.
  */
-async function verifyCurrentAdminPassword(adminEmail: string, password: string): Promise<boolean> {
+async function verifyPassword(email: string, password: string): Promise<boolean> {
   const throwaway = createSupabaseClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     { auth: { persistSession: false, autoRefreshToken: false } }
   );
 
-  const { error } = await throwaway.auth.signInWithPassword({ email: adminEmail, password });
+  const { error } = await throwaway.auth.signInWithPassword({ email, password });
   return !error;
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+/** Strips formatting and an optional country/trunk prefix down to a bare 10-digit number, or null if that's not possible. */
+function normalizePhone(raw: string): string | null {
+  let digits = raw.replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("91")) digits = digits.slice(2);
+  else if (digits.length === 11 && digits.startsWith("0")) digits = digits.slice(1);
+  return /^\d{10}$/.test(digits) ? digits : null;
 }
 
 export type CreateUserInput = {
@@ -94,7 +106,7 @@ export async function deleteUserAccount(targetUserId: string, adminPassword: str
   const { data: adminAuth } = await supabase.auth.getUser();
   if (!adminAuth.user?.email) throw new Error("Could not verify your account.");
 
-  const passwordOk = await verifyCurrentAdminPassword(adminAuth.user.email, adminPassword);
+  const passwordOk = await verifyPassword(adminAuth.user.email, adminPassword);
   if (!passwordOk) throw new Error("Incorrect password.");
 
   const service = createServiceClient();
@@ -105,27 +117,88 @@ export async function deleteUserAccount(targetUserId: string, adminPassword: str
   revalidatePath("/admin/settings");
 }
 
+export type UpdateContactInfoInput = {
+  targetUserId: string;
+  email: string;
+  phone: string;
+  /**
+   * Required when the change needs re-authentication: any email change
+   * (it's a login credential), or an admin editing someone else's row
+   * (a privileged action). A plain USER editing only their own phone
+   * number can omit it.
+   */
+  confirmPassword?: string;
+};
+
 /**
- * Lets the current admin set the phone number login OTP codes are
- * texted to (their profiles.email is already backfilled from Supabase
- * Auth by the migration, but nothing populates a phone number
- * automatically). Deliberately admin-only and self-only, not a general
- * profile editor.
+ * Settings -> Users & Access (admin editing any row) and the dashboard
+ * overview's "Your contact info" card (self-service) both call this.
+ * Syncs profiles.email/phone (the app's own source of truth — login OTP
+ * dispatch reads profiles.phone directly) and best-effort mirrors both
+ * into Supabase Auth via updateUserById, so the login email and any
+ * future phone-based auth stay aligned.
  */
-export async function updateOwnContactPhone(phone: string) {
-  const { user } = await requireAdmin();
+export async function updateContactInfo(input: UpdateContactInfoInput) {
+  const { user, profile: callerProfile } = await requireProfile();
 
-  // Service client, not the request-bound one: profiles has no
-  // client-facing "update your own row" RLS policy (every existing
-  // policy on it is scoped through is_admin() for admin-only writes to
-  // *other* tables), so this write would otherwise be silently
-  // rejected by RLS.
+  const isSelf = input.targetUserId === user.id;
+  if (!isSelf && !callerProfile.is_admin) {
+    throw new Error("You can only edit your own contact details.");
+  }
+
+  const email = input.email.trim();
+  const rawPhone = input.phone.trim();
+
+  if (!isValidEmail(email)) throw new Error("Enter a valid email address.");
+  const normalizedPhone = rawPhone ? normalizePhone(rawPhone) : null;
+  if (rawPhone && !normalizedPhone) throw new Error("Enter a valid 10-digit phone number.");
+
   const service = createServiceClient();
-  const { error } = await service.from("profiles").update({ phone: phone.trim() || null }).eq("id", user.id);
 
-  if (error) throw new Error(error.message);
+  const { data: target } = await service.from("profiles").select("email").eq("id", input.targetUserId).single();
+  if (!target) throw new Error("User not found.");
+
+  const emailChanged = email !== (target.email ?? "");
+  const editingSomeoneElseAsAdmin = !isSelf && callerProfile.is_admin;
+
+  if (emailChanged || editingSomeoneElseAsAdmin) {
+    if (!callerProfile.email) throw new Error("Could not verify your account.");
+    if (!input.confirmPassword) throw new Error("Your password is required to confirm this change.");
+
+    const passwordOk = await verifyPassword(callerProfile.email, input.confirmPassword);
+    if (!passwordOk) throw new Error("Incorrect password.");
+  }
+
+  if (emailChanged) {
+    const { error: authEmailError } = await service.auth.admin.updateUserById(input.targetUserId, {
+      email,
+      email_confirm: true,
+    });
+    if (authEmailError) throw new Error(authEmailError.message);
+  }
+
+  if (normalizedPhone) {
+    // Best-effort only: Supabase Auth's phone field has its own format
+    // rules and this app doesn't use phone-based auth, so a rejection
+    // here shouldn't block the profiles update — profiles.phone is what
+    // login OTP dispatch actually reads (see lib/otp-login.ts). Assumes
+    // an Indian number (+91) by default, matching the site's context.
+    const { error: authPhoneError } = await service.auth.admin.updateUserById(input.targetUserId, {
+      phone: `+91${normalizedPhone}`,
+    });
+    if (authPhoneError) {
+      console.warn("[user-actions] Supabase Auth phone sync failed:", authPhoneError.message);
+    }
+  }
+
+  const { error: profileError } = await service
+    .from("profiles")
+    .update({ email, phone: normalizedPhone })
+    .eq("id", input.targetUserId);
+  if (profileError) throw new Error(profileError.message);
 
   revalidatePath("/admin/settings");
+  revalidatePath("/admin");
 }
 
 export async function transferAdminRole(targetUserId: string, adminPassword: string) {
@@ -143,7 +216,7 @@ export async function transferAdminRole(targetUserId: string, adminPassword: str
   const { data: adminAuth } = await supabase.auth.getUser();
   if (!adminAuth.user?.email) throw new Error("Could not verify your account.");
 
-  const passwordOk = await verifyCurrentAdminPassword(adminAuth.user.email, adminPassword);
+  const passwordOk = await verifyPassword(adminAuth.user.email, adminPassword);
   if (!passwordOk) throw new Error("Incorrect password.");
 
   const service = createServiceClient();

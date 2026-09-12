@@ -26,3 +26,29 @@ export async function requireAdmin() {
 
   return { supabase, user };
 }
+
+/**
+ * Like requireAdmin(), but for actions any recognized profile (ADMIN or
+ * USER) may call on their own behalf — e.g. editing your own contact
+ * info. Callers still need to check `profile.is_admin` themselves
+ * before allowing anything scoped to *another* user's data.
+ */
+export async function requireProfile() {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Unauthorized");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("is_admin, email")
+    .eq("id", user.id)
+    .single();
+
+  if (!profile) throw new Error("Forbidden");
+
+  return { supabase, user, profile };
+}

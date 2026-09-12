@@ -2,20 +2,33 @@
 import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import { ArrowRight, Layers, MessageSquareWarning, Rss } from "lucide-react";
+import type { Profile } from "@/types/domain";
+import MyContactInfoCard from "@/components/admin/MyContactInfoCard";
 
 export default async function AdminOverviewPage() {
   const supabase = await createClient();
 
-  const [{ count: featureCount }, { count: postCount }, { count: complaintCount }] =
-    await Promise.all([
-      supabase.from("features").select("*", { count: "exact", head: true }),
-      supabase.from("posts").select("*", { count: "exact", head: true }),
-      supabase
-        .from("complaints")
-        .select("*", { count: "exact", head: true })
-        .eq("is_expired", false)
-        .gt("expires_at", new Date().toISOString()),
-    ]);
+  const [
+    { count: featureCount },
+    { count: postCount },
+    { count: complaintCount },
+    {
+      data: { user },
+    },
+  ] = await Promise.all([
+    supabase.from("features").select("*", { count: "exact", head: true }),
+    supabase.from("posts").select("*", { count: "exact", head: true }),
+    supabase
+      .from("complaints")
+      .select("*", { count: "exact", head: true })
+      .eq("is_expired", false)
+      .gt("expires_at", new Date().toISOString()),
+    supabase.auth.getUser(),
+  ]);
+
+  const { data: viewerProfile } = user
+    ? await supabase.from("profiles").select("*").eq("id", user.id).single()
+    : { data: null };
 
   return (
     <div>
@@ -82,6 +95,12 @@ export default async function AdminOverviewPage() {
           </span>
         </Link>
       </div>
+
+      {viewerProfile && (
+        <div className="mt-5 max-w-sm">
+          <MyContactInfoCard profile={viewerProfile as Profile} />
+        </div>
+      )}
     </div>
   );
 }

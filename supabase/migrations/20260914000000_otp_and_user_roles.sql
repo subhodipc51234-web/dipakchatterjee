@@ -48,9 +48,21 @@ update public.profiles
 -- the check to transaction commit lets transfer_admin_role() (below)
 -- perform both writes in one transaction and still have the invariant
 -- enforced by the time anything else can observe the result.
+--
+-- Postgres's `ALTER TABLE ... ADD CONSTRAINT ... UNIQUE USING INDEX`
+-- only accepts a plain index on real column(s) — it rejects both a
+-- *partial* index (`where is_admin`) and an *expression* index
+-- (`(case when is_admin then true end)`), each with "Cannot create a
+-- ... unique constraint using such an index". So this materializes the
+-- expression as its own generated column first, then indexes that
+-- plain column — same effect (NULL for every non-admin row, so only
+-- two rows both claiming ADMIN can ever collide), but now a normal
+-- column a deferrable constraint can actually attach to.
+alter table public.profiles
+  add column if not exists admin_flag boolean generated always as (case when is_admin then true end) stored;
+
 create unique index if not exists profiles_single_admin_idx
-  on public.profiles (is_admin)
-  where is_admin;
+  on public.profiles (admin_flag);
 
 alter table public.profiles
   add constraint profiles_single_admin_uq
