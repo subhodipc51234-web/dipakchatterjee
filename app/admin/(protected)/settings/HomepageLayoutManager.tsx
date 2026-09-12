@@ -38,15 +38,19 @@ import DndListSkeleton from "@/components/admin/DndListSkeleton";
 import { FEATURE_TYPE_LABELS, type Feature } from "@/types/domain";
 import {
   ORGANIZATIONS_SECTION_KEY,
+  PHASES_SECTION_KEY,
   POSTS_SECTION_KEY,
   featureIdFromKey,
 } from "@/lib/homepage-layout";
 import { updateHomepageLayout, updateHomepageSectionVisibility } from "./actions";
 import { toggleFeaturePublished } from "../features/actions";
 
+const FIXED_SECTION_KEYS = [ORGANIZATIONS_SECTION_KEY, POSTS_SECTION_KEY, PHASES_SECTION_KEY];
+
 function sectionLabel(key: string, featureMap: Map<string, Feature>) {
   if (key === ORGANIZATIONS_SECTION_KEY) return "Organizations Worked With";
   if (key === POSTS_SECTION_KEY) return "Notable Works (Posts Feed)";
+  if (key === PHASES_SECTION_KEY) return "Phases (Life & Career Milestones)";
   const featureId = featureIdFromKey(key);
   const feature = featureId ? featureMap.get(featureId) : undefined;
   if (!feature) return "(deleted section)";
@@ -54,7 +58,7 @@ function sectionLabel(key: string, featureMap: Map<string, Feature>) {
 }
 
 function sectionTypeLabel(key: string, featureMap: Map<string, Feature>) {
-  if (key === ORGANIZATIONS_SECTION_KEY || key === POSTS_SECTION_KEY) return "Built-in";
+  if (FIXED_SECTION_KEYS.includes(key)) return "Built-in";
   const featureId = featureIdFromKey(key);
   const feature = featureId ? featureMap.get(featureId) : undefined;
   return feature ? FEATURE_TYPE_LABELS[feature.type] : "";
@@ -65,15 +69,18 @@ export default function HomepageLayoutManager({
   features,
   organizationsVisible: initialOrganizationsVisible,
   postsVisible: initialPostsVisible,
+  phasesVisible: initialPhasesVisible,
 }: {
   initialOrder: string[];
   features: Feature[];
   organizationsVisible: boolean;
   postsVisible: boolean;
+  phasesVisible: boolean;
 }) {
   const [order, setOrder] = useState(initialOrder);
   const [organizationsVisible, setOrganizationsVisible] = useState(initialOrganizationsVisible);
   const [postsVisible, setPostsVisible] = useState(initialPostsVisible);
+  const [phasesVisible, setPhasesVisible] = useState(initialPhasesVisible);
   const [featureVisibility, setFeatureVisibility] = useState<Record<string, boolean>>(
     () => Object.fromEntries(features.map((f) => [f.id, f.is_published]))
   );
@@ -113,18 +120,19 @@ export default function HomepageLayoutManager({
     });
   }
 
-  function handleToggleFixed(key: "organizations" | "posts") {
-    const next = key === "organizations" ? !organizationsVisible : !postsVisible;
-    if (key === "organizations") setOrganizationsVisible(next);
-    else setPostsVisible(next);
+  function handleToggleFixed(key: "organizations" | "posts" | "phases") {
+    const current = key === "organizations" ? organizationsVisible : key === "posts" ? postsVisible : phasesVisible;
+    const next = !current;
+    const setVisible =
+      key === "organizations" ? setOrganizationsVisible : key === "posts" ? setPostsVisible : setPhasesVisible;
+    setVisible(next);
     setError(null);
 
     startTransition(async () => {
       try {
         await updateHomepageSectionVisibility(key, next);
       } catch (err) {
-        if (key === "organizations") setOrganizationsVisible(!next);
-        else setPostsVisible(!next);
+        setVisible(!next);
         setError(err instanceof Error ? err.message : "Failed to save.");
       }
     });
@@ -148,12 +156,13 @@ export default function HomepageLayoutManager({
   function isVisible(key: string) {
     if (key === ORGANIZATIONS_SECTION_KEY) return organizationsVisible;
     if (key === POSTS_SECTION_KEY) return postsVisible;
+    if (key === PHASES_SECTION_KEY) return phasesVisible;
     const featureId = featureIdFromKey(key);
     return featureId ? (featureVisibility[featureId] ?? false) : false;
   }
 
   function handleToggle(key: string) {
-    if (key === ORGANIZATIONS_SECTION_KEY || key === POSTS_SECTION_KEY) {
+    if (key === ORGANIZATIONS_SECTION_KEY || key === POSTS_SECTION_KEY || key === PHASES_SECTION_KEY) {
       handleToggleFixed(key);
       return;
     }

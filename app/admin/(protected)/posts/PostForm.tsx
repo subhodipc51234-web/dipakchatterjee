@@ -2,33 +2,34 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Loader2, Save } from "lucide-react";
-import type { Post } from "@/types/domain";
+import { Loader2, Plus, Save, Trash2 } from "lucide-react";
+import type { Post, PostLink } from "@/types/domain";
 import type { PostFormInput } from "./actions";
 import { useUnsavedChangesWarning } from "@/lib/useUnsavedChangesWarning";
+
+// Deliberately just "non-empty", not a strict URL() format check: an
+// embed/button link should persist whatever the admin typed even if
+// it's unverified or turns out broken — no blocking pre-validation.
+const linkSchema = z.object({
+  id: z.string(),
+  url: z.string().trim().min(1, "URL is required"),
+  type: z.enum(["button", "embed"]),
+  label: z.string().trim().max(80).optional(),
+});
 
 const postSchema = z.object({
   title: z.string().trim().max(200).optional(),
   body: z.string().trim().max(20000).optional(),
   published_at: z.string().optional(),
-  external_link: z
-    .string()
-    .trim()
-    .url("Enter a valid URL, e.g. https://facebook.com/...")
-    .optional()
-    .or(z.literal("")),
   is_published: z.boolean(),
-  image_interval_seconds: z
-    .string()
-    .trim()
-    .refine((v) => v === "" || (Number(v) >= 1 && Number(v) <= 60), {
-      message: "Enter a number between 1 and 60, or leave blank.",
-    })
-    .optional()
-    .or(z.literal("")),
+  links: z.array(linkSchema).max(10),
+  // Registered with { valueAsNumber: true } below, so RHF already hands
+  // this a number — no z.coerce needed (and z.coerce's input/output
+  // type split trips up zodResolver's inference with useForm here).
+  slideshow_interval: z.number().int().min(0).max(10),
 });
 
 type PostFormValues = z.infer<typeof postSchema>;
@@ -39,6 +40,10 @@ function toLocalDatetimeInputValue(date: Date) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
     date.getHours()
   )}:${pad(date.getMinutes())}`;
+}
+
+function newLinkId() {
+  return typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `link-${Date.now()}`;
 }
 
 export default function PostForm({
@@ -53,6 +58,7 @@ export default function PostForm({
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isDirty },
@@ -62,13 +68,13 @@ export default function PostForm({
       title: post?.title ?? "",
       body: post?.body ?? "",
       published_at: toLocalDatetimeInputValue(post ? new Date(post.published_at) : new Date()),
-      external_link: post?.external_link ?? "",
       is_published: post?.is_published ?? false,
-      image_interval_seconds: post?.image_interval_ms
-        ? String(Math.round((post.image_interval_ms / 1000) * 10) / 10)
-        : "",
+      links: ((post?.links as unknown as PostLink[]) ?? []).map((l) => ({ ...l, label: l.label ?? "" })),
+      slideshow_interval: post?.slideshow_interval ?? 0,
     },
   });
+
+  const { fields, append, remove } = useFieldArray({ control, name: "links" });
 
   useUnsavedChangesWarning(isDirty);
 
@@ -80,11 +86,9 @@ export default function PostForm({
           title: values.title ?? "",
           body: values.body ?? "",
           published_at: values.published_at ?? "",
-          external_link: values.external_link ?? "",
           is_published: values.is_published,
-          image_interval_seconds: values.image_interval_seconds
-            ? Number(values.image_interval_seconds)
-            : null,
+          links: values.links.map((l) => ({ ...l, label: l.label || undefined })),
+          slideshow_interval: values.slideshow_interval,
         });
         // Re-baselines the form on the just-saved values so isDirty
         // (and the unsaved-changes guard it drives) clears — without
@@ -131,24 +135,68 @@ export default function PostForm({
       </div>
 
       <div>
-        <label htmlFor="external_link" className="block text-sm font-medium text-navy-900 mb-1.5">
-          External link (YouTube, Instagram, or Facebook URL)
-        </label>
-        <input
-          id="external_link"
-          type="url"
-          {...register("external_link")}
-          placeholder="https://youtube.com/watch?v=... or facebook.com/... or instagram.com/p/..."
-          className="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none"
-        />
-        <p className="text-xs text-ink-400 mt-1.5">
-          A recognized YouTube, Instagram, or Facebook URL renders as a live embed next to the
-          post text on the &ldquo;Read More&rdquo; page. Any other URL shows as a plain
-          &ldquo;View original&rdquo; link instead.
+        <label className="block text-sm font-medium text-navy-900 mb-1.5">Links</label>
+        <p className="text-xs text-ink-400 mb-3">
+          Add any number of links. <strong>Embed</strong> renders as a live embed beside the post
+          text when the URL is a recognized YouTube, Instagram, or Facebook link. <strong>Button</strong>{" "}
+          always renders as a plain call-to-action (e.g. &ldquo;View on Facebook&rdquo;) below the text.
         </p>
-        {errors.external_link && (
-          <p className="text-xs text-rust mt-1.5">{errors.external_link.message}</p>
+
+        {fields.length > 0 && (
+          <ul className="space-y-2 mb-3">
+            {fields.map((field, index) => {
+              const type = field.type;
+              return (
+                <li key={field.id} className="flex flex-wrap items-start gap-2 rounded-md border border-line bg-paper-100 p-3">
+                  <div className="flex-1 min-w-[200px]">
+                    <input
+                      {...register(`links.${index}.url` as const)}
+                      placeholder="https://..."
+                      className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:border-saffron focus:outline-none"
+                    />
+                    {errors.links?.[index]?.url && (
+                      <p className="text-xs text-rust mt-1">{errors.links[index]?.url?.message}</p>
+                    )}
+                  </div>
+
+                  <select
+                    {...register(`links.${index}.type` as const)}
+                    className="rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:border-saffron focus:outline-none"
+                  >
+                    <option value="embed">Embed</option>
+                    <option value="button">Button</option>
+                  </select>
+
+                  {type === "button" && (
+                    <input
+                      {...register(`links.${index}.label` as const)}
+                      placeholder="View on Facebook"
+                      className="w-40 rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:border-saffron focus:outline-none"
+                    />
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => remove(index)}
+                    aria-label="Remove link"
+                    className="shrink-0 w-9 h-9 rounded-md border border-line bg-white flex items-center justify-center text-ink-600 hover:border-rust hover:text-rust"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
         )}
+
+        <button
+          type="button"
+          onClick={() => append({ id: newLinkId(), url: "", type: "embed", label: "" })}
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-saffron-600 hover:text-saffron"
+        >
+          <Plus className="w-4 h-4" />
+          Add Link
+        </button>
       </div>
 
       <div>
@@ -165,25 +213,25 @@ export default function PostForm({
       </div>
 
       <div>
-        <label htmlFor="image_interval_seconds" className="block text-sm font-medium text-navy-900 mb-1.5">
+        <label htmlFor="slideshow_interval" className="block text-sm font-medium text-navy-900 mb-1.5">
           Slideshow interval (seconds)
         </label>
         <input
-          id="image_interval_seconds"
+          id="slideshow_interval"
           type="number"
-          min={1}
-          max={60}
-          step={0.1}
-          placeholder="Default"
-          {...register("image_interval_seconds")}
+          min={0}
+          max={10}
+          step={1}
+          {...register("slideshow_interval", { valueAsNumber: true })}
           className="w-32 rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none"
         />
         <p className="text-xs text-ink-400 mt-1.5">
-          How long each image shows before advancing, when this post has multiple images. Decimal
-          values are allowed (e.g. 2.5). Leave blank to use the default speed.
+          How long each image shows before auto-advancing, when this post has multiple images (0-10
+          seconds). Set to <strong>0</strong> to disable auto-advance entirely — visitors can still
+          navigate manually with the arrows/dots.
         </p>
-        {errors.image_interval_seconds && (
-          <p className="text-xs text-rust mt-1.5">{errors.image_interval_seconds.message}</p>
+        {errors.slideshow_interval && (
+          <p className="text-xs text-rust mt-1.5">{errors.slideshow_interval.message}</p>
         )}
       </div>
 

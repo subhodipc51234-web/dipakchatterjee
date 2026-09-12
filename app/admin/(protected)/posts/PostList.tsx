@@ -3,9 +3,9 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Eye, EyeOff, Pencil, Trash2 } from "lucide-react";
+import { Eye, EyeOff, Pencil, Pin, PinOff, Trash2 } from "lucide-react";
 import type { Post } from "@/types/domain";
-import { deletePost, togglePostPublished } from "./actions";
+import { deletePost, togglePostPinned, togglePostPublished } from "./actions";
 
 // Fixed timeZone so this is a pure function of `value` — otherwise it
 // depends on the server process's local timezone (often UTC) vs. the
@@ -30,6 +30,13 @@ export default function PostList({ posts }: { posts: Post[] }) {
     setItems((prev) => prev.map((p) => (p.id === id ? { ...p, is_published: next } : p)));
     startTransition(async () => {
       await togglePostPublished(id, next);
+    });
+  }
+
+  function handleTogglePinned(id: string, next: boolean) {
+    setItems((prev) => prev.map((p) => (p.id === id ? { ...p, is_pinned: next } : p)));
+    startTransition(async () => {
+      await togglePostPinned(id, next);
     });
   }
 
@@ -61,12 +68,33 @@ export default function PostList({ posts }: { posts: Post[] }) {
               <p className="font-semibold text-navy-900 truncate">
                 {post.title || "Untitled update"}
               </p>
+              {post.is_pinned && (
+                <span className="shrink-0 text-[11px] font-semibold text-saffron-600 bg-saffron-100 border border-saffron/30 rounded px-2 py-0.5">
+                  [Pinned]
+                </span>
+              )}
               <span className="shrink-0 text-[11px] font-medium text-ink-400 bg-paper-100 border border-line rounded px-2 py-0.5">
                 {formatDate(post.published_at)}
               </span>
             </div>
             {post.body && <p className="text-sm text-ink-600 truncate mt-0.5">{post.body}</p>}
           </div>
+
+          <button
+            type="button"
+            onClick={() => handleTogglePinned(post.id, !post.is_pinned)}
+            disabled={isPending}
+            aria-pressed={post.is_pinned}
+            title={post.is_pinned ? "Pinned — click to unpin" : "Pin to top of Notable Works"}
+            className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-md border disabled:opacity-60 ${
+              post.is_pinned
+                ? "border-saffron text-saffron-600 bg-saffron-100"
+                : "border-line text-ink-400 bg-paper-100"
+            }`}
+          >
+            {post.is_pinned ? <Pin className="w-3.5 h-3.5" /> : <PinOff className="w-3.5 h-3.5" />}
+            {post.is_pinned ? "Pinned" : "Pin"}
+          </button>
 
           <button
             type="button"

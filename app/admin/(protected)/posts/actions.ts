@@ -4,18 +4,23 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-guard";
-import { POST_BUCKET, type MediaKind } from "@/types/domain";
+import { POST_BUCKET, type MediaKind, type PostLink } from "@/types/domain";
 
 export type PostFormInput = {
   title: string;
   body: string;
   /** "YYYY-MM-DDTHH:mm" from a datetime-local input, in the admin's local time; empty to fall back to now(). */
   published_at: string;
-  external_link: string;
   is_published: boolean;
-  /** Seconds between slides for this post's image carousel; empty/undefined to fall back to the carousel's built-in default. */
-  image_interval_seconds?: number | null;
+  /** Each explicitly typed "embed" (rendered as an iframe when recognized) or "button" (always a plain CTA) — see types/domain.ts's PostLink. */
+  links: PostLink[];
+  /** Whole seconds, 0-10; 0 disables the image carousel's auto-advance (manual arrows/dots only). */
+  slideshow_interval: number;
 };
+
+function clampSlideshowInterval(value: number) {
+  return Math.min(10, Math.max(0, Math.round(value)));
+}
 
 export async function createPost(input: PostFormInput) {
   const { supabase, user } = await requireAdmin();
@@ -28,9 +33,9 @@ export async function createPost(input: PostFormInput) {
       // Omitted (not just null) so the column's `default now()` applies
       // when the admin leaves the picker untouched/cleared.
       ...(input.published_at ? { published_at: new Date(input.published_at).toISOString() } : {}),
-      external_link: input.external_link || null,
       is_published: input.is_published,
-      image_interval_ms: input.image_interval_seconds ? Math.round(input.image_interval_seconds * 1000) : null,
+      links: input.links,
+      slideshow_interval: clampSlideshowInterval(input.slideshow_interval),
       created_by: user.id,
     })
     .select("id")
@@ -40,6 +45,7 @@ export async function createPost(input: PostFormInput) {
 
   revalidatePath("/admin/posts");
   revalidatePath("/");
+  revalidatePath("/notable-works");
   redirect(`/admin/posts/${data.id}`);
 }
 
@@ -52,9 +58,9 @@ export async function updatePost(id: string, input: PostFormInput) {
       title: input.title || null,
       body: input.body || null,
       ...(input.published_at ? { published_at: new Date(input.published_at).toISOString() } : {}),
-      external_link: input.external_link || null,
       is_published: input.is_published,
-      image_interval_ms: input.image_interval_seconds ? Math.round(input.image_interval_seconds * 1000) : null,
+      links: input.links,
+      slideshow_interval: clampSlideshowInterval(input.slideshow_interval),
     })
     .eq("id", id);
 
@@ -63,6 +69,7 @@ export async function updatePost(id: string, input: PostFormInput) {
   revalidatePath("/admin/posts");
   revalidatePath(`/admin/posts/${id}`);
   revalidatePath("/");
+  revalidatePath("/notable-works");
 }
 
 export async function deletePost(id: string) {
@@ -84,6 +91,7 @@ export async function deletePost(id: string) {
 
   revalidatePath("/admin/posts");
   revalidatePath("/");
+  revalidatePath("/notable-works");
 }
 
 export async function togglePostPublished(id: string, is_published: boolean) {
@@ -98,6 +106,22 @@ export async function togglePostPublished(id: string, is_published: boolean) {
 
   revalidatePath("/admin/posts");
   revalidatePath("/");
+  revalidatePath("/notable-works");
+}
+
+export async function togglePostPinned(id: string, is_pinned: boolean) {
+  const { supabase } = await requireAdmin();
+
+  const { error } = await supabase
+    .from("posts")
+    .update({ is_pinned })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/posts");
+  revalidatePath("/");
+  revalidatePath("/notable-works");
 }
 
 export async function addPostMedia(
@@ -131,6 +155,7 @@ export async function addPostMedia(
 
   revalidatePath(`/admin/posts/${postId}`);
   revalidatePath("/");
+  revalidatePath("/notable-works");
 
   return { id: data.id };
 }
@@ -153,6 +178,7 @@ export async function deletePostMedia(postId: string, mediaId: string) {
 
   revalidatePath(`/admin/posts/${postId}`);
   revalidatePath("/");
+  revalidatePath("/notable-works");
 }
 
 export async function reorderPostMedia(postId: string, orderedIds: string[]) {
@@ -166,6 +192,7 @@ export async function reorderPostMedia(postId: string, orderedIds: string[]) {
 
   revalidatePath(`/admin/posts/${postId}`);
   revalidatePath("/");
+  revalidatePath("/notable-works");
 }
 
 export async function updatePostThumbnail(
@@ -197,6 +224,7 @@ export async function updatePostThumbnail(
 
   revalidatePath(`/admin/posts/${postId}`);
   revalidatePath("/");
+  revalidatePath("/notable-works");
 }
 
 export async function removePostThumbnail(postId: string) {
@@ -221,4 +249,5 @@ export async function removePostThumbnail(postId: string) {
 
   revalidatePath(`/admin/posts/${postId}`);
   revalidatePath("/");
+  revalidatePath("/notable-works");
 }

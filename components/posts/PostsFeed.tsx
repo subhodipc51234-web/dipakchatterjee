@@ -1,9 +1,10 @@
 // components/posts/PostsFeed.tsx
 //
-// Chronological feed, styled after the original "Notable Works" section
-// (dark navy band, card grid). Each post's first media item renders
-// through MediaPlayer, carrying the post's external_link as the
-// "View original on Facebook" action.
+// Chronological feed (pinned posts first — see the page's query),
+// styled after the original "Notable Works" section (dark navy band,
+// card grid). Each post's first media item (or its dedicated thumbnail)
+// renders through MediaPlayer; per-post links render on the post's own
+// "Read More" page (app/(site)/posts/[id]/page.tsx), not on this card.
 
 import Link from "next/link";
 import MediaPlayer from "@/components/MediaPlayer";
@@ -78,13 +79,24 @@ export default function PostsFeed({ posts }: { posts: PostWithMedia[] }) {
         {posts.length === 0 ? (
           <p className="text-paper-100/60 text-sm">Updates will appear here soon.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {posts.map((post, i) => (
-              <RevealOnScroll key={post.id} className="h-full" style={{ transitionDelay: `${Math.min(i, 4) * 75}ms` }}>
-                <PostCard post={post} />
-              </RevealOnScroll>
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {posts.map((post, i) => (
+                <RevealOnScroll key={post.id} className="h-full" style={{ transitionDelay: `${Math.min(i, 4) * 75}ms` }}>
+                  <PostCard post={post} />
+                </RevealOnScroll>
+              ))}
+            </div>
+
+            <div className="mt-10 flex justify-center">
+              <Link
+                href="/notable-works"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-navy-900 bg-[var(--theme-primary)] hover:opacity-90 px-5 py-3 rounded-md transition-opacity"
+              >
+                View All Works <span aria-hidden="true">&rarr;</span>
+              </Link>
+            </div>
+          </>
         )}
       </div>
     </section>

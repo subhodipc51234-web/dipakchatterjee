@@ -16,6 +16,7 @@ export default async function PostsPage() {
   const { data: posts } = await supabase
     .from("posts")
     .select("*")
+    .order("is_pinned", { ascending: false })
     .order("published_at", { ascending: false })
     .order("created_at", { ascending: false });
 

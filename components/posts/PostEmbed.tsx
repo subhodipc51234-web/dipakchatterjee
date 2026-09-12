@@ -7,7 +7,21 @@
 // frame; everything else (a plain Instagram post, a Facebook link/post
 // embed) sizes to its own natural height since that isn't reliably one
 // aspect ratio or the other.
+//
+// Graceful failure: if the iframe fails to load at all (onError — a
+// genuine network-level failure), this hides itself entirely rather
+// than showing a broken embed box. Worth being honest about the limits
+// here: a cross-origin iframe whose *content* errors (a deleted post, a
+// login wall) typically still returns a normal 200 response and fires
+// onLoad, not onError — the browser has no API for "the page inside
+// this iframe rendered an error", so that class of failure can't be
+// caught this way. What this achieves is specifically the case a plain
+// <iframe src> can hit on its own: a network error, a blocked/refused
+// connection, or a CSP violation.
 
+"use client";
+
+import { useState } from "react";
 import type { EmbedInfo } from "@/lib/embed";
 
 const CONTAINER_CLASS: Record<EmbedInfo["orientation"], string> = {
@@ -17,6 +31,10 @@ const CONTAINER_CLASS: Record<EmbedInfo["orientation"], string> = {
 };
 
 export default function PostEmbed({ embed }: { embed: EmbedInfo }) {
+  const [failed, setFailed] = useState(false);
+
+  if (failed) return null;
+
   return (
     <div
       className={`rounded-lg overflow-hidden border border-line bg-navy-900 ${CONTAINER_CLASS[embed.orientation]}`}
@@ -29,6 +47,7 @@ export default function PostEmbed({ embed }: { embed: EmbedInfo }) {
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
         allowFullScreen
         loading="lazy"
+        onError={() => setFailed(true)}
       />
     </div>
   );

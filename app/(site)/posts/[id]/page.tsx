@@ -3,27 +3,32 @@
 // Single post permalink. Async `params`, per the Next.js 15+ App Router
 // convention already used across the admin edit pages in this project.
 //
-// Layout, in two parts:
-//   - Upper section: headline/metadata/description on the LEFT, the
-//     external embed (Facebook/YouTube/Instagram) on the RIGHT — a
-//     two-column split on desktop, stacked (text then embed) on
-//     mobile. Uploaded images never appear here, so they can't squeeze
-//     the description.
-//   - Lower "Media" section: full-width, styled with the site's
-//     secondary theme color, holding only the post's uploaded
-//     images/video (as a carousel using the post's own cycle interval
-//     when there are multiple images).
+// A post's `links` (see types/domain.ts's PostLink) are split into:
+//   - "embed" links: the first one whose URL matches a known provider
+//     (see lib/embed.ts) is rendered as a live embed. An embed link
+//     that doesn't match anything recognized is simply not rendered —
+//     same as it always failing closed — and PostEmbed itself hides
+//     silently if the iframe genuinely fails to load at runtime.
+//   - "button" links: always render as plain call-to-actions below the
+//     text, regardless of whether an embed is present.
+//
+// Adaptive layout:
+//   - A working embed present: the embed sits beside the text (2-column
+//     on desktop); any uploaded media/photos render full-width below.
+//   - No working embed: uploaded media/photos sit beside the text
+//     instead.
+//   - Neither an embed nor uploaded media: the text renders full-width.
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import ReactMarkdown from "react-markdown";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ExternalLink, ArrowLeft } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
-import type { PostWithMedia } from "@/types/domain";
+import type { PostLink, PostWithMedia } from "@/types/domain";
 import MediaPlayer from "@/components/MediaPlayer";
 import PostEmbed from "@/components/posts/PostEmbed";
 import PostImageCarousel from "@/components/posts/PostImageCarousel";
-import { getEmbedInfo } from "@/lib/embed";
+import { getEmbedInfo, type EmbedInfo } from "@/lib/embed";
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString("en-US", {
@@ -33,6 +38,42 @@ function formatDate(value: string) {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function buttonLabel(link: PostLink) {
+  if (link.label) return link.label;
+  try {
+    const host = new URL(link.url).hostname.replace(/^www\./, "");
+    if (host === "facebook.com" || host === "fb.watch") return "View on Facebook";
+  } catch {
+    // Not a parseable URL — fall through to the generic label. Links
+    // persist as-is regardless of format, per the admin link builder's
+    // "no blocking validation" rule.
+  }
+  return "View Link";
+}
+
+function MediaGallery({
+  images,
+  videos,
+  intervalMs,
+}: {
+  images: PostWithMedia["post_media"];
+  videos: PostWithMedia["post_media"];
+  intervalMs?: number;
+}) {
+  return (
+    <div className="space-y-6">
+      {images.length > 1 ? (
+        <PostImageCarousel images={images} intervalMs={intervalMs} />
+      ) : (
+        images.map((media) => <MediaPlayer key={media.id} kind={media.kind} src={media.public_url} />)
+      )}
+      {videos.map((media) => (
+        <MediaPlayer key={media.id} kind={media.kind} src={media.public_url} />
+      ))}
+    </div>
+  );
 }
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
@@ -50,10 +91,31 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   if (!post) notFound();
 
   const typedPost = post as PostWithMedia;
-  const embed = getEmbedInfo(typedPost.external_link);
+  const links = (typedPost.links as unknown as PostLink[] | null) ?? [];
+  const buttonLinks = links.filter((l) => l.type === "button");
+
+  // The first embed-type link that resolves to a recognized provider
+  // wins; any others (or an embed link that doesn't resolve) are
+  // silently ignored rather than shown as an error.
+  let embed: EmbedInfo | null = null;
+  for (const link of links) {
+    if (link.type !== "embed") continue;
+    const info = getEmbedInfo(link.url);
+    if (info) {
+      embed = info;
+      break;
+    }
+  }
+
   const images = typedPost.post_media.filter((m) => m.kind === "image");
   const videos = typedPost.post_media.filter((m) => m.kind === "video");
   const hasUploadedMedia = typedPost.post_media.length > 0;
+  const slideshowMs = typedPost.slideshow_interval ? typedPost.slideshow_interval * 1000 : 0;
+
+  const showEmbedBesideText = Boolean(embed);
+  const showMediaBesideText = !showEmbedBesideText && hasUploadedMedia;
+  const isSplitLayout = showMediaBesideText || showEmbedBesideText;
+  const showMediaBelow = showEmbedBesideText && hasUploadedMedia;
 
   return (
     <main className="bg-paper-100 min-h-screen">
@@ -66,11 +128,8 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           Back to Home
         </Link>
 
-        {/* Text/embed split only kicks in when there's an embed to put
-            beside the text; a text-only or images-only post just gets
-            the plain single (readable-width) column below. */}
-        <div className={embed ? "grid lg:grid-cols-2 gap-8 lg:gap-12 items-start" : ""}>
-          <div className={embed ? "" : "max-w-2xl"}>
+        <div className={isSplitLayout ? "grid lg:grid-cols-2 gap-8 lg:gap-12 items-start" : ""}>
+          <div className={isSplitLayout ? "" : "max-w-2xl"}>
             <p className="text-xs text-ink-400 font-medium">{formatDate(typedPost.published_at)}</p>
             <h1 className="font-display text-3xl md:text-4xl text-navy-900 leading-tight mt-2">
               {typedPost.title || "Update"}
@@ -82,46 +141,46 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
               </div>
             )}
 
-            {typedPost.external_link && (
-              <a
-                href={typedPost.external_link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--theme-primary)] hover:opacity-80"
-              >
-                View original
-                <ExternalLink className="w-3.5 h-3.5" />
-              </a>
+            {buttonLinks.length > 0 && (
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                {buttonLinks.map((link) => (
+                  <a
+                    key={link.id}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-white bg-[#1877F2] hover:bg-[#1665d8] px-4 py-2 rounded-md transition-colors"
+                  >
+                    {buttonLabel(link)}
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                ))}
+              </div>
             )}
           </div>
 
-          {embed && (
+          {showEmbedBesideText && embed && (
             <div>
               <PostEmbed embed={embed} />
+            </div>
+          )}
+
+          {showMediaBesideText && (
+            <div>
+              <MediaGallery images={images} videos={videos} intervalMs={slideshowMs} />
             </div>
           )}
         </div>
       </article>
 
-      {hasUploadedMedia && (
+      {showMediaBelow && (
         <section className="border-y border-[var(--theme-secondary)]/15 bg-[var(--theme-secondary)]/[0.04] py-12 md:py-16">
           <div className="max-w-6xl mx-auto px-5 md:px-8">
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--theme-secondary)] mb-6">
               Media
             </p>
 
-            <div className="space-y-6">
-              {images.length > 1 ? (
-                <PostImageCarousel images={images} intervalMs={typedPost.image_interval_ms ?? undefined} />
-              ) : (
-                images.map((media) => (
-                  <MediaPlayer key={media.id} kind={media.kind} src={media.public_url} />
-                ))
-              )}
-              {videos.map((media) => (
-                <MediaPlayer key={media.id} kind={media.kind} src={media.public_url} />
-              ))}
-            </div>
+            <MediaGallery images={images} videos={videos} intervalMs={slideshowMs} />
           </div>
         </section>
       )}

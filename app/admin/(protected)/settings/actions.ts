@@ -56,7 +56,7 @@ export async function updateHomepageLayout(orderedKeys: string[]) {
 }
 
 export async function updateHomepageSectionVisibility(
-  key: "organizations" | "posts",
+  key: "organizations" | "posts" | "phases",
   visible: boolean
 ) {
   const { supabase } = await requireAdmin();
@@ -64,7 +64,9 @@ export async function updateHomepageSectionVisibility(
   const patch =
     key === "organizations"
       ? { show_organizations_section: visible }
-      : { show_posts_feed_section: visible };
+      : key === "posts"
+        ? { show_posts_feed_section: visible }
+        : { show_phases_section: visible };
 
   const { error } = await supabase
     .from("site_settings")
@@ -102,6 +104,23 @@ export async function updateLandingContent(input: LandingContentInput) {
 
   revalidatePath("/admin/settings");
   revalidatePath("/");
+}
+
+export async function updateNotableWorksLimit(value: number) {
+  const { supabase } = await requireAdmin();
+
+  const clamped = Math.min(48, Math.max(1, Math.round(value)));
+
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ notable_works_limit: clamped, updated_at: new Date().toISOString() })
+    .eq("id", "default");
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/settings");
+  revalidatePath("/");
+  revalidatePath("/notable-works");
 }
 
 export async function updateOrgMaxPerRow(value: number) {

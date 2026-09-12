@@ -6,17 +6,19 @@
 // simpler than PublicLifeGallery (no drag/swipe): this is a supporting
 // slideshow inside an article, not the site's primary hero carousel.
 
+// intervalMs is the post's own slideshow_interval (whole seconds, 0-10)
+// converted to milliseconds by the caller — 0 (or omitted) disables
+// auto-advance entirely, leaving only the manual arrows/dots below.
+
 "use client";
 
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { PostMedia } from "@/types/domain";
 
-const DEFAULT_INTERVAL_MS = 3000;
-
 export default function PostImageCarousel({
   images,
-  intervalMs = DEFAULT_INTERVAL_MS,
+  intervalMs = 0,
 }: {
   images: PostMedia[];
   intervalMs?: number;
@@ -25,7 +27,7 @@ export default function PostImageCarousel({
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    if (paused || images.length <= 1) return;
+    if (paused || images.length <= 1 || !intervalMs) return;
     const timer = setInterval(() => {
       setIndex((i) => (i + 1) % images.length);
     }, intervalMs);

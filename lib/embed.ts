@@ -1,11 +1,13 @@
 // lib/embed.ts
 //
-// Turns a post's `external_link` into a responsive iframe embed when it
+// Turns a post link's `url` into a responsive iframe embed when it
 // recognizably points at YouTube, Instagram, or Facebook. Falls back to
-// null (an ordinary "View original" link, handled by the caller) for
-// anything else — this is a best-effort URL-pattern match, not a full
-// oEmbed integration, so it deliberately fails closed rather than
-// guessing at surprising URL shapes.
+// null for anything else — this is a best-effort URL-pattern match, not
+// a full oEmbed integration, so it deliberately fails closed rather than
+// guessing at surprising URL shapes. A link this returns null for still
+// isn't wasted: components/posts/PostEmbed.tsx's caller treats "no
+// recognized embed" the same as "no working embed", per the graceful
+// embed-failure rule on post pages.
 //
 // The Facebook/Instagram/YouTube iframe endpoints below are all public,
 // no-JS-SDK, no-API-key plugin URLs (Meta's plugins/post.php and

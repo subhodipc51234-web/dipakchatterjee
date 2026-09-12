@@ -21,9 +21,10 @@
 // hero CTA buttons.
 
 import { createClient } from "@/utils/supabase/server";
-import type { CtaButton, FeatureWithMedia, Organization, PostWithMedia, SiteSettings } from "@/types/domain";
+import type { CtaButton, FeatureWithMedia, Organization, Phase, PostWithMedia, SiteSettings } from "@/types/domain";
 import FeatureSection from "@/components/features/FeatureSection";
 import PostsFeed from "@/components/posts/PostsFeed";
+import PhasesShowcase from "@/components/phases/PhasesShowcase";
 import OrganizationsSection from "@/components/OrganizationsSection";
 import CtaButtonGroup from "@/components/CtaButtonGroup";
 import RevealOnScroll from "@/components/RevealOnScroll";
@@ -33,6 +34,7 @@ import {
   computeHomepageOrder,
   featureIdFromKey,
   ORGANIZATIONS_SECTION_KEY,
+  PHASES_SECTION_KEY,
   POSTS_SECTION_KEY,
 } from "@/lib/homepage-layout";
 
@@ -40,10 +42,19 @@ const FALLBACK_HEADLINE = "A life spent teaching, organising, and showing up whe
 const FALLBACK_BODY =
   "Dipak Chatterjee has spent over two decades as a schoolteacher and headmaster in Chanchal, North Malda, alongside a parallel life of community organising. This is his record of work, and a direct line for anyone who needs help.";
 
+// Phases has no dashboard-configurable limit (unlike Notable Works) —
+// the homepage showcase is just a preview, with the full chronology
+// always available at /phases.
+const PHASES_SHOWCASE_LIMIT = 6;
+
 export default async function HomePage() {
   const supabase = await createClient();
 
-  const [{ data: features }, { data: posts }, { data: settings }, { data: organizations }, { data: ctaButtons }] =
+  const { data: settings } = await supabase.from("site_settings").select("*").eq("id", "default").single();
+  const s = settings as SiteSettings | null;
+  const notableWorksLimit = s?.notable_works_limit ?? 6;
+
+  const [{ data: features }, { data: posts }, { data: phases }, { data: organizations }, { data: ctaButtons }] =
     await Promise.all([
       supabase
         .from("features")
@@ -55,15 +66,20 @@ export default async function HomePage() {
         .from("posts")
         .select("*, post_media(*)")
         .eq("is_published", true)
+        .order("is_pinned", { ascending: false })
         .order("published_at", { ascending: false })
         .order("created_at", { ascending: false })
-        .order("display_order", { foreignTable: "post_media", ascending: true }),
-      supabase.from("site_settings").select("*").eq("id", "default").single(),
+        .order("display_order", { foreignTable: "post_media", ascending: true })
+        .limit(notableWorksLimit),
+      supabase
+        .from("phases")
+        .select("*")
+        .order("is_pinned", { ascending: false })
+        .order("sort_order", { ascending: true })
+        .limit(PHASES_SHOWCASE_LIMIT),
       supabase.from("organizations").select("*").order("display_order", { ascending: true }),
       supabase.from("cta_buttons").select("*").order("display_order", { ascending: true }),
     ]);
-
-  const s = settings as SiteSettings | null;
   const headline = s?.hero_headline || FALLBACK_HEADLINE;
   const body = s?.hero_body || FALLBACK_BODY;
   const themePrimary = s?.theme_primary_color || "#C1832B";
@@ -137,6 +153,11 @@ export default async function HomePage() {
         if (key === POSTS_SECTION_KEY) {
           if (s?.show_posts_feed_section === false) return null;
           return <PostsFeed key={key} posts={(posts as PostWithMedia[]) ?? []} />;
+        }
+
+        if (key === PHASES_SECTION_KEY) {
+          if (s?.show_phases_section === false) return null;
+          return <PhasesShowcase key={key} phases={(phases as Phase[]) ?? []} />;
         }
 
         const featureId = featureIdFromKey(key);

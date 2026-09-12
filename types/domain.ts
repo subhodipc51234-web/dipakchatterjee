@@ -9,6 +9,7 @@ export type Feature = Tables<"features">;
 export type FeatureMedia = Tables<"feature_media">;
 export type Post = Tables<"posts">;
 export type PostMedia = Tables<"post_media">;
+export type Phase = Tables<"phases">;
 export type Profile = Tables<"profiles">;
 export type SiteSettings = Tables<"site_settings">;
 export type Organization = Tables<"organizations">;
@@ -79,3 +80,16 @@ export const FEATURE_BUCKET = "feature-media";
 export const POST_BUCKET = "post-media";
 export const SITE_BUCKET = "site-media";
 export const COMPLAINT_BUCKET = "complaint-media";
+export const PHASE_BUCKET = "phase-media";
+
+/** One entry of phases.photos (a JSONB array, not a foreign-keyed media table). */
+export type PhasePhoto = { url: string; path: string; caption: string };
+
+/**
+ * One entry of posts.links (a JSONB array). "embed" is rendered as an
+ * iframe beside the post text when its `url` matches a known provider
+ * (see lib/embed.ts's getEmbedInfo) — otherwise it's silently ignored,
+ * same as an unrecognized URL always was. "button" always renders as a
+ * plain call-to-action, regardless of what its URL points to.
+ */
+export type PostLink = { id: string; url: string; type: "button" | "embed"; label?: string };

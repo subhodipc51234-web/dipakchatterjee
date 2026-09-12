@@ -5,19 +5,21 @@
 // compute the exact same section order from the same inputs.
 //
 // site_settings.homepage_layout stores an ordered array of section
-// keys: "organizations", "posts", or `feature:<feature id>`. It only
-// needs to record ordering — visibility for "organizations"/"posts"
-// lives on their own site_settings booleans, and a feature's visibility
-// is just its existing `is_published` — so this never goes stale in a
-// way that could hide content: any key missing from the stored array
-// (a section never touched by the layout builder yet, most commonly a
-// brand new feature) is appended at the end in a sensible default
-// order rather than silently dropped.
+// keys: "organizations", "posts", "phases", or `feature:<feature id>`.
+// It only needs to record ordering — visibility for
+// "organizations"/"posts"/"phases" lives on their own site_settings
+// booleans, and a feature's visibility is just its existing
+// `is_published` — so this never goes stale in a way that could hide
+// content: any key missing from the stored array (a section never
+// touched by the layout builder yet, most commonly a brand new feature)
+// is appended at the end in a sensible default order rather than
+// silently dropped.
 
 import type { Feature } from "@/types/domain";
 
 export const ORGANIZATIONS_SECTION_KEY = "organizations";
 export const POSTS_SECTION_KEY = "posts";
+export const PHASES_SECTION_KEY = "phases";
 
 export function featureSectionKey(featureId: string) {
   return `feature:${featureId}`;
@@ -41,12 +43,22 @@ export function computeHomepageOrder(
     .sort((a, b) => a.display_order - b.display_order)
     .map((f) => featureSectionKey(f.id));
 
-  const known = new Set([ORGANIZATIONS_SECTION_KEY, POSTS_SECTION_KEY, ...sortedFeatureKeys]);
+  const known = new Set([
+    ORGANIZATIONS_SECTION_KEY,
+    POSTS_SECTION_KEY,
+    PHASES_SECTION_KEY,
+    ...sortedFeatureKeys,
+  ]);
   const stored = Array.isArray(storedOrder)
     ? storedOrder.filter((k): k is string => typeof k === "string" && known.has(k))
     : [];
 
-  const defaultOrder = [ORGANIZATIONS_SECTION_KEY, ...sortedFeatureKeys, POSTS_SECTION_KEY];
+  const defaultOrder = [
+    ORGANIZATIONS_SECTION_KEY,
+    ...sortedFeatureKeys,
+    PHASES_SECTION_KEY,
+    POSTS_SECTION_KEY,
+  ];
   const seen = new Set(stored);
 
   return [...stored, ...defaultOrder.filter((k) => !seen.has(k))];
