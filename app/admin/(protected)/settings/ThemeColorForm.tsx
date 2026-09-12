@@ -4,6 +4,7 @@
 import { useState, useTransition } from "react";
 import { Loader2, Save } from "lucide-react";
 import { updateThemeColors } from "./actions";
+import { useUnsavedChangesWarning } from "@/lib/useUnsavedChangesWarning";
 
 export default function ThemeColorForm({
   primaryColor,
@@ -14,9 +15,17 @@ export default function ThemeColorForm({
 }) {
   const [primary, setPrimary] = useState(primaryColor);
   const [secondary, setSecondary] = useState(secondaryColor);
+  // The last-saved values, not the initial props — used to compute
+  // isDirty so the guard clears the moment a save succeeds instead of
+  // waiting on the parent Server Component to re-fetch and hand back
+  // new props.
+  const [baseline, setBaseline] = useState({ primary: primaryColor, secondary: secondaryColor });
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const isDirty = primary !== baseline.primary || secondary !== baseline.secondary;
+  useUnsavedChangesWarning(isDirty);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,6 +35,7 @@ export default function ThemeColorForm({
       try {
         await updateThemeColors({ theme_primary_color: primary, theme_secondary_color: secondary });
         setSaved(true);
+        setBaseline({ primary, secondary });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to save.");
       }
@@ -93,12 +103,19 @@ export default function ThemeColorForm({
           <button
             type="submit"
             disabled={isPending}
-            className="inline-flex items-center gap-2 bg-saffron hover:bg-saffron-600 disabled:opacity-60 text-white font-semibold px-5 py-3 rounded-md transition-colors"
+            className={`inline-flex items-center gap-2 disabled:opacity-60 text-white font-semibold px-5 py-3 rounded-md transition-colors ${
+              isDirty
+                ? "bg-rust hover:bg-rust/90 shadow-[0_0_0_3px_rgba(180,75,61,0.2)]"
+                : "bg-saffron hover:bg-saffron-600"
+            }`}
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {isPending ? "Saving…" : "Save"}
+            {isPending ? "Saving…" : isDirty ? "Save Changes" : "Save"}
           </button>
-          {saved && !isPending && <span className="text-xs text-forest">Saved.</span>}
+          {isDirty && !isPending && (
+            <span className="text-xs font-medium text-rust">You have unsaved changes.</span>
+          )}
+          {saved && !isPending && !isDirty && <span className="text-xs text-forest">Saved.</span>}
         </div>
       </form>
     </div>

@@ -12,6 +12,7 @@ import { useState, type ReactNode } from "react";
 
 const TABS = [
   { id: "general", label: "General Settings" },
+  { id: "sections", label: "Homepage Sections" },
   { id: "header", label: "Header & Navigation" },
   { id: "hero", label: "Hero & Bio" },
   { id: "media", label: "Media & Display" },
@@ -21,12 +22,13 @@ type TabId = (typeof TABS)[number]["id"];
 
 export default function SettingsTabs({
   general,
+  sections,
   header,
   hero,
   media,
 }: Record<TabId, ReactNode>) {
   const [active, setActive] = useState<TabId>("general");
-  const panels: Record<TabId, ReactNode> = { general, header, hero, media };
+  const panels: Record<TabId, ReactNode> = { general, sections, header, hero, media };
 
   return (
     <div>

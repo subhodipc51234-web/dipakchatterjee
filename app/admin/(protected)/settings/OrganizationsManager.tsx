@@ -32,6 +32,7 @@ import {
   updateOrgMaxPerRow,
   updateOrganization,
 } from "./actions";
+import { useUnsavedChangesWarning } from "@/lib/useUnsavedChangesWarning";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const MAX_PER_ROW_OPTIONS = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -158,7 +159,9 @@ export default function OrganizationsManager({
     <div className="bg-white border border-line rounded-xl p-6 md:p-8">
       <p className="text-sm font-semibold text-navy-900 mb-1">Affiliated Organizations</p>
       <p className="text-xs text-ink-400 mb-5">
-        Logos shown in a row beneath the hero CTA button. Drag to reorder.
+        Shown in the &ldquo;Organizations Worked With&rdquo; homepage section (its position among
+        other sections is set in Homepage Sections above). Drag to reorder. Designation and
+        Organization name are both required; the link is optional.
       </p>
 
       <MaxPerRowControl initialValue={orgMaxPerRow} />
@@ -212,6 +215,11 @@ function SortableOrgRow({
   const [url, setUrl] = useState(org.external_url ?? "");
   const [logoUrl, setLogoUrl] = useState(org.logo_url);
   const [replacing, setReplacing] = useState(false);
+  const [fieldError, setFieldError] = useState<string | null>(null);
+
+  useUnsavedChangesWarning(
+    name !== org.name || designation !== (org.designation ?? "") || url !== (org.external_url ?? "")
+  );
 
   const style = { transform: CSS.Transform.toString(transform), transition };
 
@@ -294,23 +302,44 @@ function SortableOrgRow({
       />
 
       <div className="flex-1 min-w-0 grid sm:grid-cols-2 gap-2">
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={() => name !== org.name && startTransition(() => updateOrganization(org.id, { name }))}
-          placeholder="Organization name"
-          className="rounded border border-line bg-white px-2.5 py-1.5 text-sm text-ink focus:border-saffron focus:outline-none"
-        />
-        <input
-          value={designation}
-          onChange={(e) => setDesignation(e.target.value)}
-          onBlur={() =>
-            designation !== (org.designation ?? "") &&
-            startTransition(() => updateOrganization(org.id, { designation }))
-          }
-          placeholder="Role / designation (optional)"
-          className="rounded border border-line bg-white px-2.5 py-1.5 text-sm text-ink focus:border-saffron focus:outline-none"
-        />
+        <div>
+          <input
+            value={designation}
+            onChange={(e) => setDesignation(e.target.value)}
+            onBlur={() => {
+              if (!designation.trim()) {
+                setFieldError("Designation / role is required.");
+                return;
+              }
+              setFieldError(null);
+              if (designation !== (org.designation ?? "")) {
+                startTransition(() => updateOrganization(org.id, { designation }));
+              }
+            }}
+            required
+            placeholder="Designation / role *"
+            className="w-full rounded border border-line bg-white px-2.5 py-1.5 text-sm text-ink focus:border-saffron focus:outline-none"
+          />
+        </div>
+        <div>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={() => {
+              if (!name.trim()) {
+                setFieldError("Organization name is required.");
+                return;
+              }
+              setFieldError(null);
+              if (name !== org.name) {
+                startTransition(() => updateOrganization(org.id, { name }));
+              }
+            }}
+            required
+            placeholder="Organization name *"
+            className="w-full rounded border border-line bg-white px-2.5 py-1.5 text-sm text-ink focus:border-saffron focus:outline-none"
+          />
+        </div>
         <input
           value={url}
           onChange={(e) => setUrl(e.target.value)}
@@ -321,6 +350,7 @@ function SortableOrgRow({
           placeholder="https:// (optional link)"
           className="sm:col-span-2 rounded border border-line bg-white px-2.5 py-1.5 text-xs text-ink-600 focus:border-saffron focus:outline-none"
         />
+        {fieldError && <p className="sm:col-span-2 text-xs text-rust">{fieldError}</p>}
       </div>
 
       <button
@@ -392,8 +422,8 @@ function AddOrganizationForm({ onAdded }: { onAdded: (org: Organization) => void
   }
 
   async function handleAdd() {
-    if (!pendingLogo || !name.trim()) {
-      setError("Add a logo and a name before saving.");
+    if (!pendingLogo || !name.trim() || !designation.trim()) {
+      setError("A logo, organization name, and designation / role are all required.");
       return;
     }
 
@@ -454,15 +484,17 @@ function AddOrganizationForm({ onAdded }: { onAdded: (org: Organization) => void
 
         <div className="space-y-2.5">
           <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Organization name"
+            value={designation}
+            onChange={(e) => setDesignation(e.target.value)}
+            required
+            placeholder="Designation / role *"
             className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:border-saffron focus:outline-none"
           />
           <input
-            value={designation}
-            onChange={(e) => setDesignation(e.target.value)}
-            placeholder="Role / designation (optional)"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            placeholder="Organization name *"
             className="w-full rounded-md border border-line bg-white px-3 py-2 text-sm text-ink focus:border-saffron focus:outline-none"
           />
           <input
@@ -474,7 +506,7 @@ function AddOrganizationForm({ onAdded }: { onAdded: (org: Organization) => void
           <button
             type="button"
             onClick={handleAdd}
-            disabled={!pendingLogo || !name.trim() || saving}
+            disabled={!pendingLogo || !name.trim() || !designation.trim() || saving}
             className="inline-flex items-center gap-2 bg-navy-900 hover:bg-navy-700 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-md transition-colors"
           >
             {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}

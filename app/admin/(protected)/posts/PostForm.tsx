@@ -8,6 +8,7 @@ import { z } from "zod";
 import { Loader2, Save } from "lucide-react";
 import type { Post } from "@/types/domain";
 import type { PostFormInput } from "./actions";
+import { useUnsavedChangesWarning } from "@/lib/useUnsavedChangesWarning";
 
 const postSchema = z.object({
   title: z.string().trim().max(200).optional(),
@@ -53,7 +54,8 @@ export default function PostForm({
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    reset,
+    formState: { errors, isDirty },
   } = useForm<PostFormValues>({
     resolver: zodResolver(postSchema),
     defaultValues: {
@@ -67,6 +69,8 @@ export default function PostForm({
         : "",
     },
   });
+
+  useUnsavedChangesWarning(isDirty);
 
   function submit(values: PostFormValues) {
     setServerError(null);
@@ -82,6 +86,11 @@ export default function PostForm({
             ? Number(values.image_interval_seconds)
             : null,
         });
+        // Re-baselines the form on the just-saved values so isDirty
+        // (and the unsaved-changes guard it drives) clears — without
+        // this, a successful save would still read as "unsaved" until
+        // the next full page load.
+        reset(values);
       } catch (err) {
         setServerError(err instanceof Error ? err.message : "Something went wrong.");
       }
@@ -193,14 +202,23 @@ export default function PostForm({
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={isPending}
-        className="inline-flex items-center gap-2 bg-saffron hover:bg-saffron-600 disabled:opacity-60 text-white font-semibold px-5 py-3 rounded-md transition-colors"
-      >
-        {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-        {isPending ? "Saving…" : "Save"}
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={isPending}
+          className={`inline-flex items-center gap-2 disabled:opacity-60 text-white font-semibold px-5 py-3 rounded-md transition-colors ${
+            isDirty
+              ? "bg-rust hover:bg-rust/90 shadow-[0_0_0_3px_rgba(180,75,61,0.2)]"
+              : "bg-saffron hover:bg-saffron-600"
+          }`}
+        >
+          {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {isPending ? "Saving…" : isDirty ? "Save Changes" : "Save"}
+        </button>
+        {isDirty && !isPending && (
+          <span className="text-xs font-medium text-rust">You have unsaved changes.</span>
+        )}
+      </div>
     </form>
   );
 }

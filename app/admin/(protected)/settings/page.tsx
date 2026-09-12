@@ -2,6 +2,7 @@
 import { createClient } from "@/utils/supabase/server";
 import type {
   CtaButton,
+  Feature,
   FooterBlockWithLinks,
   HeaderAction,
   NavLink,
@@ -18,7 +19,9 @@ import BrandingTextForm from "./BrandingTextForm";
 import FooterBlocksManager from "./FooterBlocksManager";
 import SocialLinksManager from "./SocialLinksManager";
 import HeaderNavigationManager from "./HeaderNavigationManager";
+import HomepageLayoutManager from "./HomepageLayoutManager";
 import SettingsTabs from "./SettingsTabs";
+import { computeHomepageOrder } from "@/lib/homepage-layout";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -31,6 +34,7 @@ export default async function SettingsPage() {
     { data: socialLinks },
     { data: navLinks },
     { data: headerActions },
+    { data: features },
   ] = await Promise.all([
     supabase.from("site_settings").select("*").eq("id", "default").single(),
     supabase.from("organizations").select("*").order("display_order", { ascending: true }),
@@ -43,11 +47,16 @@ export default async function SettingsPage() {
     supabase.from("social_links").select("*").order("display_order", { ascending: true }),
     supabase.from("nav_links").select("*").order("display_order", { ascending: true }),
     supabase.from("header_actions").select("*").order("display_order", { ascending: true }),
+    // Every feature, published or not — the Layout Builder needs to
+    // show and let an admin re-enable a currently-hidden section.
+    supabase.from("features").select("*").order("display_order", { ascending: true }),
   ]);
 
   const s = settings as SiteSettings | null;
   const themePrimary = s?.theme_primary_color || "#C1832B";
   const themeSecondary = s?.theme_secondary_color || "#151F33";
+  const featureList = (features as Feature[]) ?? [];
+  const homepageOrder = computeHomepageOrder(s?.homepage_layout, featureList);
 
   return (
     <div className="max-w-2xl">
@@ -66,6 +75,14 @@ export default async function SettingsPage() {
             <SocialLinksManager links={(socialLinks as SocialLink[]) ?? []} />
             <ThemeColorForm primaryColor={themePrimary} secondaryColor={themeSecondary} />
           </>
+        }
+        sections={
+          <HomepageLayoutManager
+            initialOrder={homepageOrder}
+            features={featureList}
+            organizationsVisible={s?.show_organizations_section ?? true}
+            postsVisible={s?.show_posts_feed_section ?? true}
+          />
         }
         header={
           <HeaderNavigationManager

@@ -41,6 +41,42 @@ export async function updateSiteImage(
   revalidatePath("/");
 }
 
+export async function updateHomepageLayout(orderedKeys: string[]) {
+  const { supabase } = await requireAdmin();
+
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ homepage_layout: orderedKeys, updated_at: new Date().toISOString() })
+    .eq("id", "default");
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/settings");
+  revalidatePath("/");
+}
+
+export async function updateHomepageSectionVisibility(
+  key: "organizations" | "posts",
+  visible: boolean
+) {
+  const { supabase } = await requireAdmin();
+
+  const patch =
+    key === "organizations"
+      ? { show_organizations_section: visible }
+      : { show_posts_feed_section: visible };
+
+  const { error } = await supabase
+    .from("site_settings")
+    .update({ ...patch, updated_at: new Date().toISOString() })
+    .eq("id", "default");
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/settings");
+  revalidatePath("/");
+}
+
 export type LandingContentInput = {
   hero_headline: string;
   hero_body: string;
@@ -124,6 +160,11 @@ export async function createOrganization(input: {
 }) {
   const { supabase } = await requireAdmin();
 
+  // Designation and Name are strictly mandatory; External Link stays
+  // optional (only rendered as a link when present).
+  if (!input.name.trim()) throw new Error("Organization name is required.");
+  if (!input.designation?.trim()) throw new Error("Designation / role is required.");
+
   const { count } = await supabase
     .from("organizations")
     .select("*", { count: "exact", head: true });
@@ -131,11 +172,11 @@ export async function createOrganization(input: {
   const { data, error } = await supabase
     .from("organizations")
     .insert({
-      name: input.name,
+      name: input.name.trim(),
       logo_url: input.logo_url,
       logo_path: input.logo_path,
-      external_url: input.external_url || null,
-      designation: input.designation || null,
+      external_url: input.external_url?.trim() || null,
+      designation: input.designation.trim(),
       display_order: count ?? 0,
     })
     .select("id, display_order, created_at")
@@ -155,10 +196,20 @@ export async function updateOrganization(
 ) {
   const { supabase } = await requireAdmin();
 
-  const patch: { name?: string; external_url?: string | null; designation?: string | null } = {};
-  if (input.name !== undefined) patch.name = input.name;
-  if (input.external_url !== undefined) patch.external_url = input.external_url || null;
-  if (input.designation !== undefined) patch.designation = input.designation || null;
+  // Same mandatory-field rule as createOrganization: a field that's
+  // being changed here can't be blanked out, only replaced with
+  // another non-empty value.
+  if (input.name !== undefined && !input.name.trim()) {
+    throw new Error("Organization name is required.");
+  }
+  if (input.designation !== undefined && !input.designation.trim()) {
+    throw new Error("Designation / role is required.");
+  }
+
+  const patch: { name?: string; external_url?: string | null; designation?: string } = {};
+  if (input.name !== undefined) patch.name = input.name.trim();
+  if (input.external_url !== undefined) patch.external_url = input.external_url.trim() || null;
+  if (input.designation !== undefined) patch.designation = input.designation.trim();
 
   const { error } = await supabase.from("organizations").update(patch).eq("id", id);
   if (error) throw new Error(error.message);

@@ -12,16 +12,13 @@
 import { useState } from "react";
 import ExpandableBio from "@/components/ExpandableBio";
 import CtaButtonGroup from "@/components/CtaButtonGroup";
-import OrganizationLogos from "@/components/OrganizationLogos";
-import type { CtaButton, Organization } from "@/types/domain";
+import type { CtaButton } from "@/types/domain";
 
 export default function DesktopHero({
   headline,
   body,
   ctas,
   themePrimary,
-  orgs,
-  orgMaxPerRow,
   heroImageUrl,
   badgeSubtitle,
   badgeTitle,
@@ -30,8 +27,6 @@ export default function DesktopHero({
   body: string;
   ctas: CtaButton[];
   themePrimary: string;
-  orgs: Organization[];
-  orgMaxPerRow: number;
   heroImageUrl?: string | null;
   /** Empty string when the dashboard field is blank — no fallback placeholder text. */
   badgeSubtitle: string;
@@ -41,7 +36,12 @@ export default function DesktopHero({
   const hasBadge = Boolean(badgeSubtitle || badgeTitle);
 
   return (
-    <div className="max-w-6xl mx-auto px-5 md:px-8 pt-12 md:pt-20 pb-14 md:pb-24 grid md:grid-cols-[1.1fr_0.9fr] gap-12 md:gap-10 items-start">
+    // Wider container (7xl, was 6xl) and a portrait column given a much
+    // larger fr-share (1.35fr, was 0.9fr — ~1.5x) so the enlarged photo
+    // has room without squeezing the text column. `items-start` keeps
+    // the photo's top edge aligned with the headline/bio regardless of
+    // which column ends up taller.
+    <div className="max-w-7xl mx-auto px-5 md:px-8 pt-12 md:pt-20 pb-14 md:pb-24 grid md:grid-cols-[1fr_1.35fr] gap-12 md:gap-10 items-start">
       <div>
         <h1 className="font-display text-4xl sm:text-5xl md:text-[3.4rem] leading-[1.08] text-navy-900">
           {headline}
@@ -57,11 +57,9 @@ export default function DesktopHero({
         <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
           <CtaButtonGroup buttons={ctas} themePrimary={themePrimary} />
         </div>
-
-        <OrganizationLogos organizations={orgs} maxPerRow={orgMaxPerRow} />
       </div>
 
-      <div className="relative w-full max-w-sm mx-auto md:max-w-none">
+      <div className="relative w-full max-w-xl mx-auto md:max-w-none">
         <div className="absolute -inset-3 border border-[var(--theme-primary)]/60 rounded-lg hidden sm:block" />
         <div
           className={`relative w-full rounded-lg shadow-[0_18px_40px_-16px_rgba(21,31,51,0.35)] bg-navy-800 overflow-hidden flex items-center justify-center transition-[aspect-ratio] duration-300 ease-in-out ${

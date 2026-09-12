@@ -2,6 +2,14 @@
 //
 // Single post permalink. Async `params`, per the Next.js 15+ App Router
 // convention already used across the admin edit pages in this project.
+//
+// Layout: the description always gets the full readable column width —
+// media never sits beside it squeezing it down. Any attached
+// images/video or an external embed instead render in a dedicated
+// "Media" section below the text, styled with the site's secondary
+// theme color to set it apart. Inside that section the strict split
+// applies: uploaded images/video on the LEFT, the external embed (if
+// any) on the RIGHT.
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -42,134 +50,25 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
   const embed = getEmbedInfo(typedPost.external_link);
   const images = typedPost.post_media.filter((m) => m.kind === "image");
   const videos = typedPost.post_media.filter((m) => m.kind === "video");
+  const hasUploadedMedia = typedPost.post_media.length > 0;
+  const hasMedia = hasUploadedMedia || Boolean(embed);
 
-  const header = (
-    <>
-      <p className="text-xs text-ink-400 font-medium">
-        {formatDate(typedPost.published_at)}
-      </p>
-      <h1 className="font-display text-3xl md:text-4xl text-navy-900 leading-tight mt-2">
-        {typedPost.title || "Update"}
-      </h1>
-    </>
-  );
-
-  const bodyContent = typedPost.body && (
-    <div className="max-w-none text-ink-600 leading-relaxed [&_p]:leading-relaxed [&_p]:mb-4">
-      <ReactMarkdown>{typedPost.body}</ReactMarkdown>
-    </div>
-  );
-
-  const attachedMedia = typedPost.post_media.length > 0 && (
+  const uploadedMedia = hasUploadedMedia && (
     <div className="space-y-6">
       {images.length > 1 ? (
         <PostImageCarousel images={images} intervalMs={typedPost.image_interval_ms ?? undefined} />
       ) : (
-        images.map((media, i) => (
-          <MediaPlayer
-            key={media.id}
-            kind={media.kind}
-            src={media.public_url}
-            externalLink={!embed && i === 0 ? (typedPost.external_link ?? undefined) : undefined}
-          />
-        ))
+        images.map((media) => <MediaPlayer key={media.id} kind={media.kind} src={media.public_url} />)
       )}
-      {videos.map((media, i) => (
-        <MediaPlayer
-          key={media.id}
-          kind={media.kind}
-          src={media.public_url}
-          externalLink={!embed && images.length === 0 && i === 0 ? (typedPost.external_link ?? undefined) : undefined}
-        />
+      {videos.map((media) => (
+        <MediaPlayer key={media.id} kind={media.kind} src={media.public_url} />
       ))}
     </div>
   );
 
-  const hasUploadedMedia = typedPost.post_media.length > 0;
-
-  // Strict two-column split — LEFT: text + any uploaded images/video,
-  // RIGHT: the external embed — only kicks in once there's an embed to
-  // anchor the right column. A post with only uploaded media (no
-  // embed) instead gets a single wide column: images have nowhere
-  // "strict" to go without an embed on the other side, so they simply
-  // follow the text in reading order.
-  if (embed) {
-    return (
-      <main className="bg-paper-100 min-h-screen transition-colors">
-        <article className="max-w-6xl mx-auto px-5 md:px-8 py-12 md:py-16">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--theme-primary)] hover:opacity-80 mb-8"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </Link>
-
-          {header}
-
-          <div className="mt-8 grid lg:grid-cols-[0.95fr_1.05fr] gap-8 lg:gap-12 items-start">
-            <div className="space-y-6">
-              {bodyContent}
-              {attachedMedia}
-              {typedPost.external_link && (
-                <a
-                  href={typedPost.external_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--theme-primary)] hover:opacity-80"
-                >
-                  View original
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
-              )}
-            </div>
-
-            <div>
-              <PostEmbed embed={embed} />
-            </div>
-          </div>
-        </article>
-      </main>
-    );
-  }
-
-  if (hasUploadedMedia) {
-    return (
-      <main className="bg-paper-100 min-h-screen transition-colors">
-        <article className="max-w-3xl mx-auto px-5 md:px-8 py-12 md:py-16">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--theme-primary)] hover:opacity-80 mb-8"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </Link>
-
-          {header}
-
-          {bodyContent && <div className="mt-8">{bodyContent}</div>}
-
-          <div className="mt-8">{attachedMedia}</div>
-
-          {typedPost.external_link && (
-            <a
-              href={typedPost.external_link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-8 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--theme-primary)] hover:opacity-80"
-            >
-              View original
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          )}
-        </article>
-      </main>
-    );
-  }
-
   return (
-    <main className="bg-paper-100 min-h-screen transition-colors">
-      <article className="max-w-2xl mx-auto px-5 md:px-8 py-12 md:py-16">
+    <main className="bg-paper-100 min-h-screen">
+      <article className="max-w-3xl mx-auto px-5 md:px-8 py-12 md:py-16">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--theme-primary)] hover:opacity-80 mb-8"
@@ -178,22 +77,54 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           Back to Home
         </Link>
 
-        {header}
+        <p className="text-xs text-ink-400 font-medium">{formatDate(typedPost.published_at)}</p>
+        <h1 className="font-display text-3xl md:text-4xl text-navy-900 leading-tight mt-2">
+          {typedPost.title || "Update"}
+        </h1>
 
-        {bodyContent && <div className="mt-8">{bodyContent}</div>}
+        {typedPost.body && (
+          <div className="mt-8 max-w-none text-ink-600 leading-relaxed [&_p]:leading-relaxed [&_p]:mb-4">
+            <ReactMarkdown>{typedPost.body}</ReactMarkdown>
+          </div>
+        )}
 
         {typedPost.external_link && (
           <a
             href={typedPost.external_link}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-8 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--theme-primary)] hover:opacity-80"
+            className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--theme-primary)] hover:opacity-80"
           >
             View original
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
         )}
       </article>
+
+      {hasMedia && (
+        <section className="border-y border-[var(--theme-secondary)]/15 bg-[var(--theme-secondary)]/[0.04] py-12 md:py-16">
+          <div className="max-w-6xl mx-auto px-5 md:px-8">
+            <p className="text-xs font-semibold uppercase tracking-wide text-[var(--theme-secondary)] mb-6">
+              Media
+            </p>
+
+            {hasUploadedMedia && embed ? (
+              <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+                <div>{uploadedMedia}</div>
+                <div>
+                  <PostEmbed embed={embed} />
+                </div>
+              </div>
+            ) : embed ? (
+              <div className="max-w-2xl">
+                <PostEmbed embed={embed} />
+              </div>
+            ) : (
+              uploadedMedia
+            )}
+          </div>
+        </section>
+      )}
     </main>
   );
 }

@@ -121,19 +121,29 @@ export async function addFeatureMedia(
     .select("*", { count: "exact", head: true })
     .eq("feature_id", featureId);
 
-  const { error } = await supabase.from("feature_media").insert({
-    feature_id: featureId,
-    kind: input.kind,
-    storage_path: input.storage_path,
-    public_url: input.public_url,
-    caption: input.caption || null,
-    display_order: count ?? 0,
-  });
+  // Returns the real row id — MediaManager needs it (not the storage
+  // path) as the item's key/identity so a delete or reorder right after
+  // upload targets the actual database row instead of failing against
+  // a non-UUID "id".
+  const { data, error } = await supabase
+    .from("feature_media")
+    .insert({
+      feature_id: featureId,
+      kind: input.kind,
+      storage_path: input.storage_path,
+      public_url: input.public_url,
+      caption: input.caption || null,
+      display_order: count ?? 0,
+    })
+    .select("id")
+    .single();
 
   if (error) throw new Error(error.message);
 
   revalidatePath(`/admin/features/${featureId}`);
   revalidatePath("/");
+
+  return { id: data.id };
 }
 
 export async function deleteFeatureMedia(featureId: string, mediaId: string) {

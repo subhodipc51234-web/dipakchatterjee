@@ -8,6 +8,7 @@ import { z } from "zod";
 import { Loader2, Save } from "lucide-react";
 import { FEATURE_TYPE_LABELS, type Feature, type FeatureType } from "@/types/domain";
 import type { FeatureFormInput } from "./actions";
+import { useUnsavedChangesWarning } from "@/lib/useUnsavedChangesWarning";
 
 const FEATURE_TYPES = Object.keys(FEATURE_TYPE_LABELS) as FeatureType[];
 
@@ -34,7 +35,8 @@ export default function FeatureForm({
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    reset,
+    formState: { errors, isDirty },
   } = useForm<FeatureFormValues>({
     resolver: zodResolver(featureSchema),
     defaultValues: {
@@ -45,6 +47,8 @@ export default function FeatureForm({
       is_published: feature?.is_published ?? false,
     },
   });
+
+  useUnsavedChangesWarning(isDirty);
 
   function submit(values: FeatureFormValues) {
     setServerError(null);
@@ -57,6 +61,7 @@ export default function FeatureForm({
           type: values.type,
           is_published: values.is_published,
         });
+        reset(values);
       } catch (err) {
         setServerError(err instanceof Error ? err.message : "Something went wrong.");
       }
@@ -143,14 +148,23 @@ export default function FeatureForm({
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={isPending}
-        className="inline-flex items-center gap-2 bg-saffron hover:bg-saffron-600 disabled:opacity-60 text-white font-semibold px-5 py-3 rounded-md transition-colors"
-      >
-        {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-        {isPending ? "Saving…" : "Save"}
-      </button>
+      <div className="flex items-center gap-3">
+        <button
+          type="submit"
+          disabled={isPending}
+          className={`inline-flex items-center gap-2 disabled:opacity-60 text-white font-semibold px-5 py-3 rounded-md transition-colors ${
+            isDirty
+              ? "bg-rust hover:bg-rust/90 shadow-[0_0_0_3px_rgba(180,75,61,0.2)]"
+              : "bg-saffron hover:bg-saffron-600"
+          }`}
+        >
+          {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {isPending ? "Saving…" : isDirty ? "Save Changes" : "Save"}
+        </button>
+        {isDirty && !isPending && (
+          <span className="text-xs font-medium text-rust">You have unsaved changes.</span>
+        )}
+      </div>
     </form>
   );
 }

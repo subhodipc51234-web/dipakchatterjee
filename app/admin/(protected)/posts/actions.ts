@@ -111,18 +111,28 @@ export async function addPostMedia(
     .select("*", { count: "exact", head: true })
     .eq("post_id", postId);
 
-  const { error } = await supabase.from("post_media").insert({
-    post_id: postId,
-    kind: input.kind,
-    storage_path: input.storage_path,
-    public_url: input.public_url,
-    display_order: count ?? 0,
-  });
+  // Returns the real row id — MediaManager needs it (not the storage
+  // path) as the item's key/identity so a delete or reorder right after
+  // upload targets the actual database row instead of failing against
+  // a non-UUID "id".
+  const { data, error } = await supabase
+    .from("post_media")
+    .insert({
+      post_id: postId,
+      kind: input.kind,
+      storage_path: input.storage_path,
+      public_url: input.public_url,
+      display_order: count ?? 0,
+    })
+    .select("id")
+    .single();
 
   if (error) throw new Error(error.message);
 
   revalidatePath(`/admin/posts/${postId}`);
   revalidatePath("/");
+
+  return { id: data.id };
 }
 
 export async function deletePostMedia(postId: string, mediaId: string) {

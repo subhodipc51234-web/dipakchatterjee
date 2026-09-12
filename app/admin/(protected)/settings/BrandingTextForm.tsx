@@ -14,6 +14,7 @@ import { z } from "zod";
 import { Loader2, Save } from "lucide-react";
 import type { SiteSettings } from "@/types/domain";
 import { updateBrandingText } from "./actions";
+import { useUnsavedChangesWarning } from "@/lib/useUnsavedChangesWarning";
 
 const brandingSchema = z.object({
   header_name: z.string().trim().max(120).optional(),
@@ -34,7 +35,8 @@ export default function BrandingTextForm({ settings }: { settings: SiteSettings 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    reset,
+    formState: { errors, isDirty },
   } = useForm<BrandingFormValues>({
     resolver: zodResolver(brandingSchema),
     defaultValues: {
@@ -46,6 +48,8 @@ export default function BrandingTextForm({ settings }: { settings: SiteSettings 
       office_email: settings?.office_email ?? "",
     },
   });
+
+  useUnsavedChangesWarning(isDirty);
 
   function submit(values: BrandingFormValues) {
     setServerError(null);
@@ -61,6 +65,7 @@ export default function BrandingTextForm({ settings }: { settings: SiteSettings 
           office_email: values.office_email ?? "",
         });
         setSaved(true);
+        reset(values);
       } catch (err) {
         setServerError(err instanceof Error ? err.message : "Something went wrong.");
       }
@@ -206,12 +211,19 @@ export default function BrandingTextForm({ settings }: { settings: SiteSettings 
           <button
             type="submit"
             disabled={isPending}
-            className="inline-flex items-center gap-2 bg-saffron hover:bg-saffron-600 disabled:opacity-60 text-white font-semibold px-5 py-3 rounded-md transition-colors"
+            className={`inline-flex items-center gap-2 disabled:opacity-60 text-white font-semibold px-5 py-3 rounded-md transition-colors ${
+              isDirty
+                ? "bg-rust hover:bg-rust/90 shadow-[0_0_0_3px_rgba(180,75,61,0.2)]"
+                : "bg-saffron hover:bg-saffron-600"
+            }`}
           >
             {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {isPending ? "Saving…" : "Save"}
+            {isPending ? "Saving…" : isDirty ? "Save Changes" : "Save"}
           </button>
-          {saved && !isPending && <span className="text-xs text-forest">Saved.</span>}
+          {isDirty && !isPending && (
+            <span className="text-xs font-medium text-rust">You have unsaved changes.</span>
+          )}
+          {saved && !isPending && !isDirty && <span className="text-xs text-forest">Saved.</span>}
         </div>
       </form>
     </div>

@@ -1,17 +1,20 @@
 // app/(site)/page.tsx
 //
-// Public homepage. Hero copy, hero image, CTA buttons, and the
-// affiliated-organization logos all come from site_settings/cta_buttons/
-// organizations (editable at /admin/settings -> Landing), falling back to
-// the original static index.html copy when unset. The About/Public
-// Life/press sections and the feed come straight from Supabase.
+// Public homepage. Hero copy, hero image, and CTA buttons come from
+// site_settings/cta_buttons (editable at /admin/settings -> Hero & Bio),
+// falling back to the original static index.html copy when unset. The
+// hero and its bio/CTAs always render first — everything after it
+// (Organizations, the posts feed, and every Feature section) renders in
+// the order and visibility chosen in Settings -> Homepage Sections (see
+// lib/homepage-layout.ts), so an admin can show/hide and reorder them
+// without a code change.
 //
-// The hero renders twice: a `md:hidden` mobile-only version (heading
-// overlaid on the image, body copy/CTAs live below it in normal flow so
-// nothing overlaps or blocks taps) and a `hidden md:block` desktop
-// version (components/DesktopHero.tsx) with the original side-by-side
-// layout, plus client state so the portrait resizes in sync with the
-// bio's Read More/Read Less.
+// The hero itself renders twice: a `md:hidden` mobile-only version
+// (heading overlaid on the image, body copy/CTAs live below it in
+// normal flow so nothing overlaps or blocks taps) and a `hidden
+// md:block` desktop version (components/DesktopHero.tsx) with the
+// side-by-side layout, plus client state so the portrait resizes in
+// sync with the bio's Read More/Read Less.
 //
 // "Submit a complaint" only ever appears once per viewport — in the
 // header nav (and its mobile drawer) — so it isn't duplicated beside the
@@ -21,11 +24,17 @@ import { createClient } from "@/utils/supabase/server";
 import type { CtaButton, FeatureWithMedia, Organization, PostWithMedia, SiteSettings } from "@/types/domain";
 import FeatureSection from "@/components/features/FeatureSection";
 import PostsFeed from "@/components/posts/PostsFeed";
-import OrganizationLogos from "@/components/OrganizationLogos";
+import OrganizationsSection from "@/components/OrganizationsSection";
 import CtaButtonGroup from "@/components/CtaButtonGroup";
 import RevealOnScroll from "@/components/RevealOnScroll";
 import ExpandableBio from "@/components/ExpandableBio";
 import DesktopHero from "@/components/DesktopHero";
+import {
+  computeHomepageOrder,
+  featureIdFromKey,
+  ORGANIZATIONS_SECTION_KEY,
+  POSTS_SECTION_KEY,
+} from "@/lib/homepage-layout";
 
 const FALLBACK_HEADLINE = "A life spent teaching, organising, and showing up when it matters.";
 const FALLBACK_BODY =
@@ -65,14 +74,17 @@ export default async function HomePage() {
   const orgMaxPerRow = s?.org_max_per_row ?? 6;
   const orgs = (organizations as Organization[]) ?? [];
   const ctas = (ctaButtons as CtaButton[]) ?? [];
+  const featureList = (features as FeatureWithMedia[]) ?? [];
+  const featureMap = new Map(featureList.map((f) => [f.id, f]));
+
+  const sectionOrder = computeHomepageOrder(s?.homepage_layout, featureList);
 
   return (
     <main id="main">
       {/* Mobile-only hero: ONLY the heading sits over the photo (with a
-          gradient behind it for legibility). Body copy, CTAs, and the
-          organization logos live below the image in normal document
-          flow — never overlapping it, so nothing is ever visually
-          blocked or untappable. */}
+          gradient behind it for legibility). Body copy and CTAs live
+          below it in normal document flow — never overlapping it, so
+          nothing is ever visually blocked or untappable. */}
       <section className="md:hidden border-b border-line">
         <div className="relative w-full aspect-[4/5] overflow-hidden">
           {s?.hero_image_url ? (
@@ -98,8 +110,6 @@ export default async function HomePage() {
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
             <CtaButtonGroup buttons={ctas} themePrimary={themePrimary} />
           </div>
-
-          <OrganizationLogos organizations={orgs} maxPerRow={orgMaxPerRow} />
         </div>
       </section>
 
@@ -112,21 +122,33 @@ export default async function HomePage() {
           body={body}
           ctas={ctas}
           themePrimary={themePrimary}
-          orgs={orgs}
-          orgMaxPerRow={orgMaxPerRow}
           heroImageUrl={s?.hero_image_url}
           badgeSubtitle={badgeSubtitle}
           badgeTitle={badgeTitle}
         />
       </section>
 
-      {((features as FeatureWithMedia[]) ?? []).map((feature) => (
-        <RevealOnScroll key={feature.id}>
-          <FeatureSection feature={feature} galleryIntervalMs={s?.gallery_interval_ms ?? undefined} />
-        </RevealOnScroll>
-      ))}
+      {sectionOrder.map((key) => {
+        if (key === ORGANIZATIONS_SECTION_KEY) {
+          if (s?.show_organizations_section === false) return null;
+          return <OrganizationsSection key={key} organizations={orgs} maxPerRow={orgMaxPerRow} />;
+        }
 
-      <PostsFeed posts={(posts as PostWithMedia[]) ?? []} />
+        if (key === POSTS_SECTION_KEY) {
+          if (s?.show_posts_feed_section === false) return null;
+          return <PostsFeed key={key} posts={(posts as PostWithMedia[]) ?? []} />;
+        }
+
+        const featureId = featureIdFromKey(key);
+        const feature = featureId ? featureMap.get(featureId) : undefined;
+        if (!feature) return null;
+
+        return (
+          <RevealOnScroll key={key}>
+            <FeatureSection feature={feature} galleryIntervalMs={s?.gallery_interval_ms ?? undefined} />
+          </RevealOnScroll>
+        );
+      })}
     </main>
   );
 }

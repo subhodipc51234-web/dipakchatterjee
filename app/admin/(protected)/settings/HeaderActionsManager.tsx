@@ -44,6 +44,7 @@ import {
   reorderHeaderActions,
   updateHeaderAction,
 } from "./header-actions";
+import { useUnsavedChangesWarning } from "@/lib/useUnsavedChangesWarning";
 
 const ICON_OPTIONS = Object.keys(HEADER_ACTION_ICON_LABELS) as HeaderActionIcon[];
 const STYLE_OPTIONS = Object.keys(HEADER_ACTION_STYLE_LABELS) as HeaderActionStyle[];
@@ -199,6 +200,11 @@ function SortableActionRow({
   const [url, setUrl] = useState(action.url);
   const [bgColor, setBgColor] = useState(action.bg_color ?? "");
   const [textColor, setTextColor] = useState(action.text_color ?? "");
+
+  // Label/url auto-save on blur; color pickers save on change. The
+  // only real "unsaved" window is label/url text mid-edit, before blur
+  // fires — still worth a beforeunload guard for a tab close/reload.
+  useUnsavedChangesWarning(label !== action.label || url !== action.url);
 
   const style = { transform: CSS.Transform.toString(transform), transition };
 

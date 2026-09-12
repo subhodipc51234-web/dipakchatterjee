@@ -505,12 +505,15 @@ export type Database = {
           hero_headline: string | null
           hero_image_path: string | null
           hero_image_url: string | null
+          homepage_layout: Json | null
           id: string
           office_address: string | null
           office_email: string | null
           office_hours_enabled: boolean
           office_hours_text: string | null
           org_max_per_row: number
+          show_organizations_section: boolean
+          show_posts_feed_section: boolean
           theme_primary_color: string
           theme_secondary_color: string
           updated_at: string
@@ -534,12 +537,15 @@ export type Database = {
           hero_headline?: string | null
           hero_image_path?: string | null
           hero_image_url?: string | null
+          homepage_layout?: Json | null
           id?: string
           office_address?: string | null
           office_email?: string | null
           office_hours_enabled?: boolean
           office_hours_text?: string | null
           org_max_per_row?: number
+          show_organizations_section?: boolean
+          show_posts_feed_section?: boolean
           theme_primary_color?: string
           theme_secondary_color?: string
           updated_at?: string
@@ -563,12 +569,15 @@ export type Database = {
           hero_headline?: string | null
           hero_image_path?: string | null
           hero_image_url?: string | null
+          homepage_layout?: Json | null
           id?: string
           office_address?: string | null
           office_email?: string | null
           office_hours_enabled?: boolean
           office_hours_text?: string | null
           org_max_per_row?: number
+          show_organizations_section?: boolean
+          show_posts_feed_section?: boolean
           theme_primary_color?: string
           theme_secondary_color?: string
           updated_at?: string

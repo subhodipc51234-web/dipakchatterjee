@@ -59,12 +59,16 @@ type MediaManagerProps = {
   bucket: string;
   entityId: string;
   media: MediaItem[];
+  // Must resolve with the real database row id — MediaManager uses it
+  // as the item's key/identity, so a delete or reorder that happens
+  // right after upload (before any full page refresh) still targets
+  // the actual row instead of a stand-in value like the storage path.
   addAction: (input: {
     kind: MediaKind;
     storage_path: string;
     public_url: string;
     caption?: string;
-  }) => Promise<void>;
+  }) => Promise<{ id: string }>;
   deleteAction: (mediaId: string) => Promise<void>;
   reorderAction: (orderedIds: string[]) => Promise<void>;
   editableMeta?: boolean;
@@ -151,10 +155,18 @@ export default function MediaManager({
     } = supabase.storage.from(bucket).getPublicUrl(path);
 
     try {
-      await addAction({ kind, storage_path: path, public_url: publicUrl });
+      const created = await addAction({ kind, storage_path: path, public_url: publicUrl });
       setItems((prev) => [
         ...prev,
-        { id: path, kind, storage_path: path, public_url: publicUrl, display_order: prev.length },
+        {
+          id: created.id,
+          kind,
+          storage_path: path,
+          public_url: publicUrl,
+          title: null,
+          caption: null,
+          display_order: prev.length,
+        },
       ]);
       setPending((prev) => prev.filter((p) => p.localId !== entry.localId));
       URL.revokeObjectURL(entry.previewUrl);
@@ -203,13 +215,19 @@ export default function MediaManager({
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
+    const previous = items;
     const oldIndex = items.findIndex((m) => m.id === active.id);
     const newIndex = items.findIndex((m) => m.id === over.id);
     const reordered = arrayMove(items, oldIndex, newIndex);
     setItems(reordered);
 
     startTransition(async () => {
-      await reorderAction(reordered.map((m) => m.id));
+      try {
+        await reorderAction(reordered.map((m) => m.id));
+      } catch (err) {
+        setItems(previous);
+        alert(err instanceof Error ? err.message : "Failed to save the new order.");
+      }
     });
   }
 

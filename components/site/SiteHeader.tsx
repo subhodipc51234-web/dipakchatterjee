@@ -153,7 +153,10 @@ export default function SiteHeader({
             <span className="block font-display text-base md:text-lg text-navy-900 truncate">
               {name || DEFAULT_NAME}
             </span>
-            <span className="block text-[11px] md:text-xs text-ink-400 tracking-wide truncate">
+            {/* Mobile shows only the avatar + name — the subtitle (and
+                any truncated "…" from it) is desktop-only, so the
+                mobile header bar stays uncluttered. */}
+            <span className="hidden md:block text-xs text-ink-400 tracking-wide truncate">
               {subtitle || DEFAULT_SUBTITLE}
             </span>
           </span>

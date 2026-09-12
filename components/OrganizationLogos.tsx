@@ -1,53 +1,93 @@
 // components/OrganizationLogos.tsx
 //
-// Static, always-visible grid of affiliated organizations — no hover
-// expansion or collapsed state. Each card shows only the full-color
-// logo, enlarged, with the organization name directly beneath it
-// (role/designation is intentionally not shown here, even though the
-// field still exists on the row for internal/admin reference).
+// Two entirely different layouts by breakpoint, not just restyled at
+// different sizes:
 //
-// On mobile, cards are a plain flex-wrap row: however many fit at each
-// card's own width wrap naturally. On desktop (md+), the container
-// switches to a CSS grid with exactly `min(count, maxPerRow)` columns
-// sized to content (Settings -> Affiliated Organizations controls
-// maxPerRow) — that strictly fills one row up to the threshold before
-// the grid's own auto-wrapping starts a new row, rather than wrapping
-// whenever the viewport happens to run out of width.
+//   - Mobile: a vertical stacked list, one row per organization — logo
+//     on the LEFT (fixed square box, `object-contain`), Designation/
+//     role and Organization name stacked on the RIGHT. Designation is
+//     the prominent top line; the org name is the smaller line below
+//     it. Text wraps freely — never truncated/ellipsized/line-clamped.
+//   - Desktop (sm+): the original wrapped card grid, logo above text,
+//     with the same Designation-then-Name hierarchy inside each card.
+//
+// Both Designation and Organization name are mandatory at the data
+// layer (Settings -> Affiliated Organizations), so every row always
+// has both lines; only External Link is ever optional.
 
 import type { Organization } from "@/types/domain";
 
-function OrgCard({ org }: { org: Organization }) {
-  const content = (
-    // Fixed width AND height (not just a fixed-size logo box) so every
-    // card lines up symmetrically regardless of the logo's own aspect
-    // ratio or whether the org name wraps to one line or two —
-    // `line-clamp-2` on the name caps it at the same two lines the
-    // fixed height budgets for.
-    <div className="w-28 md:w-32 h-40 md:h-44 flex flex-col items-center text-center gap-3 p-4 rounded-lg border border-line bg-white">
-      <span className="w-20 h-20 md:w-24 md:h-24 rounded-lg overflow-hidden shrink-0 bg-white flex items-center justify-center">
+function OrgLink({
+  org,
+  children,
+  className = "",
+}: {
+  org: Organization;
+  children: React.ReactNode;
+  className?: string;
+}) {
+  if (!org.external_url) return <div className={className}>{children}</div>;
+
+  return (
+    <a
+      href={org.external_url}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={org.name}
+      className={className}
+    >
+      {children}
+    </a>
+  );
+}
+
+function MobileOrgRow({ org }: { org: Organization }) {
+  return (
+    <OrgLink
+      org={org}
+      className="flex flex-row items-center gap-4 p-3 rounded-lg border border-line bg-white hover:border-[var(--theme-primary)]/50 transition-colors"
+    >
+      <span className="w-14 h-14 shrink-0 rounded-lg overflow-hidden bg-white flex items-center justify-center border border-line/60">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={org.logo_url} alt={org.name} className="w-full h-full object-contain p-1.5" />
+      </span>
+
+      <span className="min-w-0">
+        <span className="block text-sm font-bold text-navy-900 leading-snug">
+          {org.designation || org.name}
+        </span>
+        {/* Designation is mandatory going forward — this only omits a
+            duplicate second line for pre-existing rows saved before
+            that rule, when designation is still null. */}
+        {org.designation && (
+          <span className="block text-xs text-ink-400 leading-snug mt-0.5">{org.name}</span>
+        )}
+      </span>
+    </OrgLink>
+  );
+}
+
+function DesktopOrgCard({ org }: { org: Organization }) {
+  return (
+    <OrgLink
+      org={org}
+      className="w-32 min-h-[11rem] flex flex-col items-center text-center gap-3 p-4 rounded-lg border border-line bg-white hover:border-[var(--theme-primary)]/50 hover:shadow-md transition-colors"
+    >
+      <span className="w-24 h-24 rounded-lg overflow-hidden shrink-0 bg-white flex items-center justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={org.logo_url} alt={org.name} className="w-full h-full object-contain p-2" />
       </span>
 
-      <p className="text-sm font-bold text-navy-900 leading-tight line-clamp-2">{org.name}</p>
-    </div>
+      <span>
+        <span className="block text-sm font-bold text-navy-900 leading-tight">
+          {org.designation || org.name}
+        </span>
+        {org.designation && (
+          <span className="block text-xs text-ink-400 leading-tight mt-1">{org.name}</span>
+        )}
+      </span>
+    </OrgLink>
   );
-
-  if (org.external_url) {
-    return (
-      <a
-        href={org.external_url}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label={org.name}
-        className="shrink-0 hover:border-[var(--theme-primary)]/50 hover:shadow-md rounded-lg transition-colors"
-      >
-        {content}
-      </a>
-    );
-  }
-
-  return <div className="shrink-0">{content}</div>;
 }
 
 export default function OrganizationLogos({
@@ -66,14 +106,23 @@ export default function OrganizationLogos({
   const columns = Math.max(1, Math.min(organizations.length, maxPerRow));
 
   return (
-    <div className="mt-10">
+    <div>
       <p className={`text-xs font-medium mb-4 ${labelClassName}`}>Organizations Worked With</p>
+
+      {/* Mobile: stacked list, logo left / text right. */}
+      <div className="sm:hidden flex flex-col gap-3">
+        {organizations.map((org) => (
+          <MobileOrgRow key={org.id} org={org} />
+        ))}
+      </div>
+
+      {/* Desktop: wrapped card grid, logo above text. */}
       <div
-        className="flex flex-row flex-wrap items-center justify-center gap-6 md:grid md:gap-10"
+        className="hidden sm:flex flex-row flex-wrap items-start justify-center gap-6 sm:grid sm:gap-10"
         style={{ gridTemplateColumns: `repeat(${columns}, max-content)` }}
       >
         {organizations.map((org) => (
-          <OrgCard key={org.id} org={org} />
+          <DesktopOrgCard key={org.id} org={org} />
         ))}
       </div>
     </div>

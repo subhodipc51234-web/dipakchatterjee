@@ -32,6 +32,7 @@ import { Eye, EyeOff, GripVertical, Loader2, Plus, Trash2 } from "lucide-react";
 import DndListSkeleton from "@/components/admin/DndListSkeleton";
 import type { NavLink } from "@/types/domain";
 import { createNavLink, deleteNavLink, reorderNavLinks, updateNavLink } from "./nav-links-actions";
+import { useUnsavedChangesWarning } from "@/lib/useUnsavedChangesWarning";
 
 export default function NavLinksManager({ links }: { links: NavLink[] }) {
   const [items, setItems] = useState(links);
@@ -168,6 +169,11 @@ function SortableNavLinkRow({
   });
   const [label, setLabel] = useState(link.label);
   const [url, setUrl] = useState(link.url);
+
+  // Fields here auto-save on blur, so the only real "unsaved" window is
+  // while actively typing (before blur fires) — this still needs a
+  // beforeunload guard for a tab close/reload mid-edit.
+  useUnsavedChangesWarning(label !== link.label || url !== link.url);
 
   const style = { transform: CSS.Transform.toString(transform), transition };
 
