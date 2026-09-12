@@ -11,17 +11,18 @@
 // additionally have an icon, a style (solid/outline/text-link), a
 // left/right position, and optional background/text color overrides.
 // Both are filtered to only their visible rows here, so a hidden one
-// disappears from the header without needing to be deleted. The inline
-// actions and the hamburger/drawer are mutually exclusive by breakpoint
-// (`lg:flex` vs `lg:hidden`) so they're never both stacked in the header
-// row on tablet-width screens.
+// disappears from the header without needing to be deleted. Nav links
+// and most actions are desktop-inline / mobile-drawer-only (`lg:flex`
+// vs `lg:hidden`), except the action whose url is "/complaints"
+// ("Submit a Complaint") — that one stays pinned next to the hamburger
+// on every breakpoint and is excluded from the drawer list, so it's
+// never rendered twice at once.
 
 "use client";
 
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
-import ThemeToggle from "./ThemeToggle";
 import SocialIcon from "@/components/SocialIcon";
 import { HEADER_ACTION_ICON_LABELS, type HeaderAction, type NavLink } from "@/types/domain";
 
@@ -40,18 +41,23 @@ const FALLBACK_NAV_LINKS: Pick<NavLink, "id" | "label" | "url" | "is_visible">[]
 const DEFAULT_NAME = "Dipak Chatterjee";
 const DEFAULT_SUBTITLE = "Social Worker · Educationist";
 
+// hover:brightness-90 (not a bg-color swap) so the darken-on-hover
+// effect still works when an action has its own bg_color/text_color
+// override (actionColorStyle sets those via inline `style`, which a
+// Tailwind hover:bg-* class can never win against) — same mechanism
+// CtaButtonGroup already uses for "Submit a Complaint"-style buttons.
 const STYLE_CLASSES: Record<HeaderAction["style"], string> = {
   solid:
-    "bg-[var(--theme-primary)] hover:bg-[var(--theme-primary-hover)] text-white font-semibold px-4 py-2.5 rounded-md transition-colors",
+    "bg-[var(--theme-primary)] hover:brightness-90 text-white font-semibold px-4 py-2.5 rounded-md transition-[filter]",
   outline:
-    "border border-[var(--theme-primary)] text-[var(--theme-primary)] hover:bg-[var(--theme-primary)] hover:text-white font-semibold px-4 py-2.5 rounded-md transition-colors",
-  link: "text-ink-600 dark:text-paper-100/70 hover:text-navy-900 dark:hover:text-white font-medium",
+    "border border-[var(--theme-primary)] text-[var(--theme-primary)] hover:brightness-90 hover:bg-[var(--theme-primary)] hover:text-white font-semibold px-4 py-2.5 rounded-md transition-[filter,color,background-color]",
+  link: "text-ink-600 hover:text-navy-900 font-medium",
 };
 
 const MOBILE_STYLE_CLASSES: Record<HeaderAction["style"], string> = {
   solid: "bg-[var(--theme-primary)] text-white font-semibold px-4 py-3 rounded-md text-center",
   outline: "border border-[var(--theme-primary)] text-[var(--theme-primary)] font-semibold px-4 py-3 rounded-md text-center",
-  link: "text-ink-600 dark:text-paper-100/70 font-medium py-3 border-b border-line/70 dark:border-white/10 last:border-b-0",
+  link: "text-ink-600 font-medium py-3 border-b border-line/70 last:border-b-0",
 };
 
 function ActionLabel({ action }: { action: HeaderAction }) {
@@ -103,6 +109,11 @@ export default function SiteHeader({
   const visibleActions = actions.filter((a) => a.is_visible !== false);
   const leftActions = visibleActions.filter((a) => a.position === "left");
   const rightActions = visibleActions.filter((a) => a.position === "right");
+  // "/complaints" is this site's one fixed system route (not admin-
+  // renamable), so it's a reliable way to single out "Submit a
+  // Complaint" regardless of whatever label an admin gives it.
+  const complaintActionId = visibleActions.find((a) => a.url === "/complaints")?.id;
+  const drawerActions = visibleActions.filter((a) => a.id !== complaintActionId);
 
   // Shared by every nav link, action link, and the logo: on the
   // homepage, a same-page "/#section" link should smoothly scroll
@@ -126,30 +137,30 @@ export default function SiteHeader({
   }
 
   return (
-    <header className="sticky top-0 z-40 bg-paper-100/95 dark:bg-navy-900/95 backdrop-blur border-b border-line dark:border-white/10 transition-colors">
+    <header className="sticky top-0 z-40 bg-paper-100/95 backdrop-blur border-b border-line transition-colors">
       <nav className="relative z-10 max-w-6xl mx-auto px-5 md:px-8 h-16 md:h-20 flex items-center justify-between gap-3">
         <a href="/" onClick={(e) => handleAnchorClick(e, "/")} className="flex items-center gap-3 min-w-0">
-          <span className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden shrink-0 border border-line dark:border-white/15 bg-paper-100 dark:bg-navy-800 flex items-center justify-center">
+          <span className="w-9 h-9 md:w-10 md:h-10 rounded-full overflow-hidden shrink-0 border border-line bg-paper-100 flex items-center justify-center">
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
             ) : (
-              <span className="font-display text-xs text-ink-400 dark:text-paper-100/50">DC</span>
+              <span className="font-display text-xs text-ink-400">DC</span>
             )}
           </span>
 
           <span className="leading-tight min-w-0">
-            <span className="block font-display text-base md:text-lg text-navy-900 dark:text-white truncate">
+            <span className="block font-display text-base md:text-lg text-navy-900 truncate">
               {name || DEFAULT_NAME}
             </span>
-            <span className="block text-[11px] md:text-xs text-ink-400 dark:text-paper-100/50 tracking-wide truncate">
+            <span className="block text-[11px] md:text-xs text-ink-400 tracking-wide truncate">
               {subtitle || DEFAULT_SUBTITLE}
             </span>
           </span>
         </a>
 
         {leftActions.length > 0 && (
-          <div className="hidden lg:flex items-center gap-3 text-sm shrink-0">
+          <div className="flex items-center gap-3 text-sm shrink-0">
             {leftActions.map((action) => (
               <a
                 key={action.id}
@@ -159,7 +170,9 @@ export default function SiteHeader({
                 aria-label={actionAriaLabel(action)}
                 onClick={(e) => handleAnchorClick(e, action.url)}
                 style={actionColorStyle(action)}
-                className={`inline-flex items-center gap-2 text-sm ${STYLE_CLASSES[action.style]}`}
+                className={`items-center gap-2 text-sm ${STYLE_CLASSES[action.style]} ${
+                  action.id === complaintActionId ? "inline-flex" : "hidden lg:inline-flex"
+                }`}
               >
                 <ActionLabel action={action} />
               </a>
@@ -167,13 +180,13 @@ export default function SiteHeader({
           </div>
         )}
 
-        <div className="hidden lg:flex items-center gap-8 text-sm text-ink-600 dark:text-paper-100/70 font-medium">
+        <div className="hidden lg:flex items-center gap-8 text-sm text-ink-600 font-medium">
           {visibleNavLinks.map((link) => (
             <a
               key={link.id}
               href={link.url}
               onClick={(e) => handleAnchorClick(e, link.url)}
-              className="hover:text-navy-900 dark:hover:text-white"
+              className="hover:text-navy-900"
             >
               {link.label}
             </a>
@@ -181,8 +194,6 @@ export default function SiteHeader({
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <ThemeToggle />
-
           {rightActions.map((action) => (
             <a
               key={action.id}
@@ -192,7 +203,9 @@ export default function SiteHeader({
               aria-label={actionAriaLabel(action)}
               onClick={(e) => handleAnchorClick(e, action.url)}
               style={actionColorStyle(action)}
-              className={`hidden lg:inline-flex items-center gap-2 text-sm ${STYLE_CLASSES[action.style]}`}
+              className={`items-center gap-2 text-sm ${STYLE_CLASSES[action.style]} ${
+                action.id === complaintActionId ? "inline-flex" : "hidden lg:inline-flex"
+              }`}
             >
               <ActionLabel action={action} />
             </a>
@@ -204,7 +217,7 @@ export default function SiteHeader({
             aria-expanded={menuOpen}
             aria-controls="mobile-menu"
             onClick={() => setMenuOpen((v) => !v)}
-            className="lg:hidden w-10 h-10 flex items-center justify-center rounded-md border border-line dark:border-white/15 text-navy-900 dark:text-white touch-manipulation"
+            className="lg:hidden w-10 h-10 flex items-center justify-center rounded-md border border-line text-navy-900 touch-manipulation"
           >
             {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -214,9 +227,9 @@ export default function SiteHeader({
       {menuOpen && (
         <div
           id="mobile-menu"
-          className="lg:hidden relative z-10 border-t border-line dark:border-white/10 bg-paper-100 dark:bg-navy-900 max-h-[calc(100vh-4rem)] overflow-y-auto"
+          className="lg:hidden relative z-10 border-t border-line bg-paper-100 max-h-[calc(100vh-4rem)] overflow-y-auto"
         >
-          <div className="px-5 py-4 flex flex-col gap-1 text-ink-600 dark:text-paper-100/70 font-medium">
+          <div className="px-5 py-4 flex flex-col gap-1 text-ink-600 font-medium">
             {visibleNavLinks.map((link) => (
               <a
                 key={link.id}
@@ -225,12 +238,12 @@ export default function SiteHeader({
                   setMenuOpen(false);
                   handleAnchorClick(e, link.url);
                 }}
-                className="py-3 border-b border-line/70 dark:border-white/10 last:border-b-0 touch-manipulation"
+                className="py-3 border-b border-line/70 last:border-b-0 touch-manipulation"
               >
                 {link.label}
               </a>
             ))}
-            {visibleActions.map((action) => (
+            {drawerActions.map((action) => (
               <a
                 key={action.id}
                 href={action.url}

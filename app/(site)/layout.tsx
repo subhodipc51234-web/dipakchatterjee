@@ -56,7 +56,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
 
   return (
     <div
-      className="min-h-screen dark:bg-navy-900 dark:text-paper-100 transition-colors"
+      className="min-h-screen transition-colors"
       style={
         {
           "--theme-primary": primary,

@@ -62,7 +62,9 @@ export default function PostForm({
       published_at: toLocalDatetimeInputValue(post ? new Date(post.published_at) : new Date()),
       external_link: post?.external_link ?? "",
       is_published: post?.is_published ?? false,
-      image_interval_seconds: post?.image_interval_ms ? String(Math.round(post.image_interval_ms / 1000)) : "",
+      image_interval_seconds: post?.image_interval_ms
+        ? String(Math.round((post.image_interval_ms / 1000) * 10) / 10)
+        : "",
     },
   });
 
@@ -162,14 +164,14 @@ export default function PostForm({
           type="number"
           min={1}
           max={60}
-          step={1}
+          step={0.1}
           placeholder="Default"
           {...register("image_interval_seconds")}
           className="w-32 rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none"
         />
         <p className="text-xs text-ink-400 mt-1.5">
-          How long each image shows before advancing, when this post has multiple images. Leave
-          blank to use the default speed.
+          How long each image shows before advancing, when this post has multiple images. Decimal
+          values are allowed (e.g. 2.5). Leave blank to use the default speed.
         </p>
         {errors.image_interval_seconds && (
           <p className="text-xs text-rust mt-1.5">{errors.image_interval_seconds.message}</p>

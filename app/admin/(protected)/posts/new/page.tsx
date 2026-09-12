@@ -21,7 +21,7 @@ export default function NewPostPage() {
       <div className="bg-white border border-line rounded-xl p-6 md:p-8">
         <PostForm onSubmit={createPost} />
         <p className="text-xs text-ink-400 mt-5">
-          Save first, then add photos or video for this post on the next screen.
+          Save first, then add a thumbnail, photos, or video for this post on the next screen.
         </p>
       </div>
     </div>

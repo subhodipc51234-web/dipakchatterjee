@@ -421,6 +421,8 @@ export type Database = {
           image_interval_ms: number | null
           is_published: boolean
           published_at: string
+          thumbnail_path: string | null
+          thumbnail_url: string | null
           title: string | null
           updated_at: string
         }
@@ -433,6 +435,8 @@ export type Database = {
           image_interval_ms?: number | null
           is_published?: boolean
           published_at?: string
+          thumbnail_path?: string | null
+          thumbnail_url?: string | null
           title?: string | null
           updated_at?: string
         }
@@ -445,6 +449,8 @@ export type Database = {
           image_interval_ms?: number | null
           is_published?: boolean
           published_at?: string
+          thumbnail_path?: string | null
+          thumbnail_url?: string | null
           title?: string | null
           updated_at?: string
         }

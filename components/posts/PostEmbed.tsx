@@ -19,7 +19,7 @@ export default function PostEmbed({ embed }: { embed: EmbedInfo }) {
 
   return (
     <div
-      className={`w-full rounded-lg overflow-hidden border border-line dark:border-white/10 bg-navy-900 ${
+      className={`w-full rounded-lg overflow-hidden border border-line bg-navy-900 ${
         locked ? "aspect-video" : "min-h-[560px]"
       }`}
     >

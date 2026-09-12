@@ -180,11 +180,13 @@ export async function updateFeatureMediaMeta(
 export async function updateGalleryIntervalSeconds(seconds: number) {
   const { supabase } = await requireAdmin();
 
-  const clamped = Math.min(60, Math.max(1, Math.round(seconds)));
+  // Rounded to the nearest 0.1s (not a whole second) so decimal speeds
+  // like "2.5" survive the round-trip instead of being floored/ceiled.
+  const clamped = Math.min(60, Math.max(1, Math.round(seconds * 10) / 10));
 
   const { error } = await supabase
     .from("site_settings")
-    .update({ gallery_interval_ms: clamped * 1000, updated_at: new Date().toISOString() })
+    .update({ gallery_interval_ms: Math.round(clamped * 1000), updated_at: new Date().toISOString() })
     .eq("id", "default");
 
   if (error) throw new Error(error.message);

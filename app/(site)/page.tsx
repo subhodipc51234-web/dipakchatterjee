@@ -9,8 +9,9 @@
 // The hero renders twice: a `md:hidden` mobile-only version (heading
 // overlaid on the image, body copy/CTAs live below it in normal flow so
 // nothing overlaps or blocks taps) and a `hidden md:block` desktop
-// version that is the original side-by-side layout, byte-for-byte — so
-// the desktop hero is guaranteed unaffected by the mobile redesign.
+// version (components/DesktopHero.tsx) with the original side-by-side
+// layout, plus client state so the portrait resizes in sync with the
+// bio's Read More/Read Less.
 //
 // "Submit a complaint" only ever appears once per viewport — in the
 // header nav (and its mobile drawer) — so it isn't duplicated beside the
@@ -24,12 +25,11 @@ import OrganizationLogos from "@/components/OrganizationLogos";
 import CtaButtonGroup from "@/components/CtaButtonGroup";
 import RevealOnScroll from "@/components/RevealOnScroll";
 import ExpandableBio from "@/components/ExpandableBio";
+import DesktopHero from "@/components/DesktopHero";
 
 const FALLBACK_HEADLINE = "A life spent teaching, organising, and showing up when it matters.";
 const FALLBACK_BODY =
   "Dipak Chatterjee has spent over two decades as a schoolteacher and headmaster in Chanchal, North Malda, alongside a parallel life of community organising. This is his record of work, and a direct line for anyone who needs help.";
-const FALLBACK_BADGE_SUBTITLE = "Chanchal, North Malda";
-const FALLBACK_BADGE_TITLE = "Community Leader";
 
 export default async function HomePage() {
   const supabase = await createClient();
@@ -58,8 +58,10 @@ export default async function HomePage() {
   const headline = s?.hero_headline || FALLBACK_HEADLINE;
   const body = s?.hero_body || FALLBACK_BODY;
   const themePrimary = s?.theme_primary_color || "#C1832B";
-  const badgeSubtitle = s?.hero_badge_subtitle || FALLBACK_BADGE_SUBTITLE;
-  const badgeTitle = s?.hero_badge_title || FALLBACK_BADGE_TITLE;
+  // No fallback text here (unlike headline/body): a blank badge field
+  // means "don't show the badge", not "show placeholder copy".
+  const badgeSubtitle = s?.hero_badge_subtitle?.trim() || "";
+  const badgeTitle = s?.hero_badge_title?.trim() || "";
   const orgMaxPerRow = s?.org_max_per_row ?? 6;
   const orgs = (organizations as Organization[]) ?? [];
   const ctas = (ctaButtons as CtaButton[]) ?? [];
@@ -71,7 +73,7 @@ export default async function HomePage() {
           organization logos live below the image in normal document
           flow — never overlapping it, so nothing is ever visually
           blocked or untappable. */}
-      <section className="md:hidden border-b border-line dark:border-white/10">
+      <section className="md:hidden border-b border-line">
         <div className="relative w-full aspect-[4/5] overflow-hidden">
           {s?.hero_image_url ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -90,7 +92,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="px-5 pt-6 pb-10 bg-paper-100 dark:bg-navy-900">
+        <div className="px-5 pt-6 pb-10 bg-paper-100">
           <ExpandableBio text={body} />
 
           <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -101,47 +103,21 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Desktop hero — unchanged side-by-side layout. */}
-      <section className="hidden md:block ledger-lines border-b border-line dark:border-white/10">
-        <div className="max-w-6xl mx-auto px-5 md:px-8 pt-12 md:pt-20 pb-14 md:pb-24 grid md:grid-cols-[1.1fr_0.9fr] gap-12 md:gap-10 items-start">
-          <div>
-            <h1 className="font-display text-4xl sm:text-5xl md:text-[3.4rem] leading-[1.08] text-navy-900 dark:text-white">
-              {headline}
-            </h1>
-
-            <ExpandableBio
-              text={body}
-              className="mt-6 max-w-xl"
-              textClassName="text-ink-600 dark:text-paper-100/70 text-base md:text-lg leading-relaxed"
-            />
-
-            <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-              <CtaButtonGroup buttons={ctas} themePrimary={themePrimary} />
-            </div>
-
-            <OrganizationLogos organizations={orgs} maxPerRow={orgMaxPerRow} />
-          </div>
-
-          <div className="relative w-full max-w-sm mx-auto md:max-w-none">
-            <div className="absolute -inset-3 border border-[var(--theme-primary)]/60 rounded-lg hidden sm:block" />
-            <div className="relative w-full rounded-lg aspect-[4/5] shadow-[0_18px_40px_-16px_rgba(21,31,51,0.35)] bg-navy-800 overflow-hidden flex items-center justify-center">
-              {s?.hero_image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={s.hero_image_url}
-                  alt="Portrait of Dipak Chatterjee"
-                  className="w-full h-full object-cover object-top"
-                />
-              ) : (
-                <span className="font-display text-6xl text-paper-100/30">DC</span>
-              )}
-            </div>
-            <div className="relative -mt-8 mr-6 ml-auto w-max bg-[var(--theme-secondary)] text-paper-100 px-5 py-3 rounded-md shadow-lg hidden sm:block">
-              <p className="text-xs text-paper-100/70">{badgeSubtitle}</p>
-              <p className="font-display text-sm">{badgeTitle}</p>
-            </div>
-          </div>
-        </div>
+      {/* Desktop hero — same side-by-side layout, now a client component
+          so the portrait can grow/shrink in sync with Read More/Read
+          Less (see components/DesktopHero.tsx). */}
+      <section className="hidden md:block ledger-lines border-b border-line">
+        <DesktopHero
+          headline={headline}
+          body={body}
+          ctas={ctas}
+          themePrimary={themePrimary}
+          orgs={orgs}
+          orgMaxPerRow={orgMaxPerRow}
+          heroImageUrl={s?.hero_image_url}
+          badgeSubtitle={badgeSubtitle}
+          badgeTitle={badgeTitle}
+        />
       </section>
 
       {((features as FeatureWithMedia[]) ?? []).map((feature) => (

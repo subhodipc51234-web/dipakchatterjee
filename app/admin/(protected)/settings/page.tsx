@@ -18,6 +18,7 @@ import BrandingTextForm from "./BrandingTextForm";
 import FooterBlocksManager from "./FooterBlocksManager";
 import SocialLinksManager from "./SocialLinksManager";
 import HeaderNavigationManager from "./HeaderNavigationManager";
+import SettingsTabs from "./SettingsTabs";
 
 export default async function SettingsPage() {
   const supabase = await createClient();
@@ -57,46 +58,53 @@ export default async function SettingsPage() {
         homepage.
       </p>
 
-      <div className="space-y-6">
-        <LandingForm settings={s} />
+      <SettingsTabs
+        general={
+          <>
+            <BrandingTextForm settings={s} />
+            <FooterBlocksManager blocks={(footerBlocks as FooterBlockWithLinks[]) ?? []} />
+            <SocialLinksManager links={(socialLinks as SocialLink[]) ?? []} />
+            <ThemeColorForm primaryColor={themePrimary} secondaryColor={themeSecondary} />
+          </>
+        }
+        header={
+          <HeaderNavigationManager
+            navLinks={(navLinks as NavLink[]) ?? []}
+            headerActions={(headerActions as HeaderAction[]) ?? []}
+            themePrimary={themePrimary}
+          />
+        }
+        hero={
+          <>
+            <LandingForm settings={s} />
+            <CtaButtonsManager buttons={(ctaButtons as CtaButton[]) ?? []} themePrimary={themePrimary} />
+          </>
+        }
+        media={
+          <>
+            <SiteImageUploader
+              kind="hero"
+              label="Hero Image"
+              helpText="Large portrait shown at the top of the homepage. Recommended: a 4:5 portrait photo."
+              currentUrl={s?.hero_image_url ?? null}
+              previewClassName="w-32 aspect-[4/5] rounded-lg"
+            />
 
-        <BrandingTextForm settings={s} />
+            <SiteImageUploader
+              kind="avatar"
+              label="Profile Avatar"
+              helpText="Small circular photo shown in the site header next to the name."
+              currentUrl={s?.avatar_url ?? null}
+              previewClassName="w-16 h-16 rounded-full"
+            />
 
-        <HeaderNavigationManager
-          navLinks={(navLinks as NavLink[]) ?? []}
-          headerActions={(headerActions as HeaderAction[]) ?? []}
-          themePrimary={themePrimary}
-        />
-
-        <FooterBlocksManager blocks={(footerBlocks as FooterBlockWithLinks[]) ?? []} />
-
-        <SocialLinksManager links={(socialLinks as SocialLink[]) ?? []} />
-
-        <CtaButtonsManager buttons={(ctaButtons as CtaButton[]) ?? []} themePrimary={themePrimary} />
-
-        <ThemeColorForm primaryColor={themePrimary} secondaryColor={themeSecondary} />
-
-        <SiteImageUploader
-          kind="hero"
-          label="Hero Image"
-          helpText="Large portrait shown at the top of the homepage. Recommended: a 4:5 portrait photo."
-          currentUrl={s?.hero_image_url ?? null}
-          previewClassName="w-32 aspect-[4/5] rounded-lg"
-        />
-
-        <SiteImageUploader
-          kind="avatar"
-          label="Profile Avatar"
-          helpText="Small circular photo shown in the site header next to the name."
-          currentUrl={s?.avatar_url ?? null}
-          previewClassName="w-16 h-16 rounded-full"
-        />
-
-        <OrganizationsManager
-          organizations={(organizations as Organization[]) ?? []}
-          orgMaxPerRow={s?.org_max_per_row ?? 6}
-        />
-      </div>
+            <OrganizationsManager
+              organizations={(organizations as Organization[]) ?? []}
+              orgMaxPerRow={s?.org_max_per_row ?? 6}
+            />
+          </>
+        }
+      />
     </div>
   );
 }

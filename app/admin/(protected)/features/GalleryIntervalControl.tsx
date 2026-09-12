@@ -10,8 +10,13 @@ import { useState, useTransition } from "react";
 import { Loader2, Save } from "lucide-react";
 import { updateGalleryIntervalSeconds } from "./actions";
 
+/** Milliseconds -> seconds, rounded to one decimal place (e.g. 2500ms -> 2.5). */
+function toSeconds(ms: number) {
+  return Math.round((ms / 1000) * 10) / 10;
+}
+
 export default function GalleryIntervalControl({ intervalMs }: { intervalMs: number }) {
-  const [seconds, setSeconds] = useState(Math.round(intervalMs / 1000));
+  const [seconds, setSeconds] = useState(toSeconds(intervalMs));
   const [saved, setSaved] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -37,9 +42,9 @@ export default function GalleryIntervalControl({ intervalMs }: { intervalMs: num
         type="number"
         min={1}
         max={60}
-        step={1}
+        step={0.1}
         value={seconds}
-        onChange={(e) => setSeconds(Number(e.target.value))}
+        onChange={(e) => setSeconds(parseFloat(e.target.value))}
         className="w-20 rounded border border-line bg-white px-2.5 py-1.5 text-sm text-ink focus:border-saffron focus:outline-none"
       />
       <span className="text-sm text-ink-400">seconds</span>
@@ -47,7 +52,7 @@ export default function GalleryIntervalControl({ intervalMs }: { intervalMs: num
       <button
         type="button"
         onClick={save}
-        disabled={isPending || seconds === Math.round(intervalMs / 1000)}
+        disabled={isPending || seconds === toSeconds(intervalMs)}
         className="ml-auto inline-flex items-center gap-1.5 text-xs font-semibold text-saffron-600 hover:text-saffron disabled:opacity-50"
       >
         {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}

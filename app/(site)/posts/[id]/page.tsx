@@ -45,17 +45,17 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
   const header = (
     <>
-      <p className="text-xs text-ink-400 dark:text-paper-100/50 font-medium">
+      <p className="text-xs text-ink-400 font-medium">
         {formatDate(typedPost.published_at)}
       </p>
-      <h1 className="font-display text-3xl md:text-4xl text-navy-900 dark:text-white leading-tight mt-2">
+      <h1 className="font-display text-3xl md:text-4xl text-navy-900 leading-tight mt-2">
         {typedPost.title || "Update"}
       </h1>
     </>
   );
 
   const bodyContent = typedPost.body && (
-    <div className="max-w-none text-ink-600 dark:text-paper-100/70 leading-relaxed [&_p]:leading-relaxed [&_p]:mb-4">
+    <div className="max-w-none text-ink-600 leading-relaxed [&_p]:leading-relaxed [&_p]:mb-4">
       <ReactMarkdown>{typedPost.body}</ReactMarkdown>
     </div>
   );
@@ -85,18 +85,17 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
     </div>
   );
 
-  // Side-by-side only when there's real media (an embed or attached
-  // images/video) to show on the right — otherwise the original
-  // single-column article layout (media needs the extra width; plain
-  // text-only posts don't). Text (title, metadata, description) is
-  // always the left column, media/embed always the right, per the
-  // desktop reading order; both stack to a single column on mobile via
-  // the unprefixed `grid` (no columns until `lg`).
-  const hasMedia = Boolean(embed) || typedPost.post_media.length > 0;
+  const hasUploadedMedia = typedPost.post_media.length > 0;
 
-  if (hasMedia) {
+  // Strict two-column split — LEFT: text + any uploaded images/video,
+  // RIGHT: the external embed — only kicks in once there's an embed to
+  // anchor the right column. A post with only uploaded media (no
+  // embed) instead gets a single wide column: images have nowhere
+  // "strict" to go without an embed on the other side, so they simply
+  // follow the text in reading order.
+  if (embed) {
     return (
-      <main className="bg-paper-100 dark:bg-navy-900 min-h-screen transition-colors">
+      <main className="bg-paper-100 min-h-screen transition-colors">
         <article className="max-w-6xl mx-auto px-5 md:px-8 py-12 md:py-16">
           <Link
             href="/"
@@ -111,7 +110,8 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
           <div className="mt-8 grid lg:grid-cols-[0.95fr_1.05fr] gap-8 lg:gap-12 items-start">
             <div className="space-y-6">
               {bodyContent}
-              {embed && typedPost.external_link && (
+              {attachedMedia}
+              {typedPost.external_link && (
                 <a
                   href={typedPost.external_link}
                   target="_blank"
@@ -124,9 +124,8 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
               )}
             </div>
 
-            <div className="space-y-6">
-              {embed && <PostEmbed embed={embed} />}
-              {attachedMedia}
+            <div>
+              <PostEmbed embed={embed} />
             </div>
           </div>
         </article>
@@ -134,8 +133,42 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
     );
   }
 
+  if (hasUploadedMedia) {
+    return (
+      <main className="bg-paper-100 min-h-screen transition-colors">
+        <article className="max-w-3xl mx-auto px-5 md:px-8 py-12 md:py-16">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--theme-primary)] hover:opacity-80 mb-8"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Home
+          </Link>
+
+          {header}
+
+          {bodyContent && <div className="mt-8">{bodyContent}</div>}
+
+          <div className="mt-8">{attachedMedia}</div>
+
+          {typedPost.external_link && (
+            <a
+              href={typedPost.external_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-8 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--theme-primary)] hover:opacity-80"
+            >
+              View original
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
+        </article>
+      </main>
+    );
+  }
+
   return (
-    <main className="bg-paper-100 dark:bg-navy-900 min-h-screen transition-colors">
+    <main className="bg-paper-100 min-h-screen transition-colors">
       <article className="max-w-2xl mx-auto px-5 md:px-8 py-12 md:py-16">
         <Link
           href="/"

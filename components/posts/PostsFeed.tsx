@@ -26,14 +26,18 @@ function excerpt(body: string) {
 }
 
 function PostCard({ post }: { post: PostWithMedia }) {
+  // The dedicated thumbnail (Admin -> Posts -> edit) takes priority on
+  // every card/feed view; only falls back to the post's first attached
+  // media item when no thumbnail has been set.
   const media = post.post_media[0];
+  const cardImageUrl = post.thumbnail_url ?? media?.public_url;
 
   return (
     <article className="h-full bg-black/20 border border-white/10 rounded-lg overflow-hidden flex flex-col">
-      {media && (
+      {cardImageUrl && (
         <MediaPlayer
-          kind={media.kind}
-          src={media.public_url}
+          kind={post.thumbnail_url ? "image" : media!.kind}
+          src={cardImageUrl}
           className="[&_figcaption]:hidden"
         />
       )}

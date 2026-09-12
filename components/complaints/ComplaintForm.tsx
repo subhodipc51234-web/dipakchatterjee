@@ -115,14 +115,14 @@ export default function ComplaintForm() {
         <div className="w-14 h-14 rounded-full bg-forest-100 text-forest flex items-center justify-center mx-auto mb-5">
           <Check className="w-7 h-7" />
         </div>
-        <h3 className="font-display text-xl text-navy-900 dark:text-white mb-2">Your complaint has been logged</h3>
-        <p className="text-sm text-ink-600 dark:text-paper-100/70 max-w-sm mx-auto mb-1">
+        <h3 className="font-display text-xl text-navy-900 mb-2">Your complaint has been logged</h3>
+        <p className="text-sm text-ink-600 max-w-sm mx-auto mb-1">
           Reference number
         </p>
-        <p className="font-display text-2xl text-navy-900 dark:text-white tracking-wide">
+        <p className="font-display text-2xl text-navy-900 tracking-wide">
           {formatReferenceNumber(result.referenceId)}
         </p>
-        <p className="text-sm text-ink-600 dark:text-paper-100/70 max-w-sm mx-auto mt-3">
+        <p className="text-sm text-ink-600 max-w-sm mx-auto mt-3">
           Please keep this number for any follow-up.
         </p>
         <button
@@ -139,7 +139,7 @@ export default function ComplaintForm() {
   return (
     <form onSubmit={handleSubmit(submit)} className="space-y-5">
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-navy-900 dark:text-white mb-1.5">
+        <label htmlFor="description" className="block text-sm font-medium text-navy-900 mb-1.5">
           Description <span className="text-rust">*</span>
         </label>
         <textarea
@@ -147,7 +147,7 @@ export default function ComplaintForm() {
           rows={6}
           {...register("description")}
           placeholder="Describe the issue: what happened, when, where, and who else is affected."
-          className="w-full rounded-md border border-line dark:border-white/15 bg-white dark:bg-navy-900 px-4 py-3 text-sm text-ink dark:text-white placeholder:text-ink-400 dark:placeholder:text-paper-100/40 focus:border-[var(--theme-primary)] focus:outline-none resize-y"
+          className="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink placeholder:text-ink-400 focus:border-[var(--theme-primary)] focus:outline-none resize-y"
         />
         {errors.description && (
           <p className="text-xs text-rust mt-1.5">{errors.description.message}</p>
@@ -155,7 +155,7 @@ export default function ComplaintForm() {
       </div>
 
       <div>
-        <label htmlFor="contact_phone" className="block text-sm font-medium text-navy-900 dark:text-white mb-1.5">
+        <label htmlFor="contact_phone" className="block text-sm font-medium text-navy-900 mb-1.5">
           Phone Number <span className="text-ink-400 font-normal">(optional)</span>
         </label>
         <input
@@ -163,7 +163,7 @@ export default function ComplaintForm() {
           type="tel"
           {...register("contact_phone")}
           placeholder="10-digit mobile number"
-          className="w-full rounded-md border border-line dark:border-white/15 bg-white dark:bg-navy-900 px-4 py-3 text-sm text-ink dark:text-white placeholder:text-ink-400 dark:placeholder:text-paper-100/40 focus:border-[var(--theme-primary)] focus:outline-none"
+          className="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink placeholder:text-ink-400 focus:border-[var(--theme-primary)] focus:outline-none"
         />
         {errors.contact_phone && (
           <p className="text-xs text-rust mt-1.5">{errors.contact_phone.message}</p>
@@ -171,7 +171,7 @@ export default function ComplaintForm() {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-navy-900 dark:text-white mb-1.5">
+        <label className="block text-sm font-medium text-navy-900 mb-1.5">
           Media Upload <span className="text-ink-400 font-normal">(optional, up to {MAX_FILES} photos/videos)</span>
         </label>
 
@@ -188,7 +188,7 @@ export default function ComplaintForm() {
         {files.length > 0 && (
           <ul className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-3">
             {files.map((f) => (
-              <li key={f.id} className="relative aspect-square rounded-md overflow-hidden border border-line dark:border-white/15 bg-paper-100 dark:bg-navy-900">
+              <li key={f.id} className="relative aspect-square rounded-md overflow-hidden border border-line bg-paper-100">
                 {f.file.type.startsWith("video/") ? (
                   <div className="w-full h-full flex items-center justify-center">
                     <FileVideo className="w-6 h-6 text-ink-400" />
@@ -226,7 +226,7 @@ export default function ComplaintForm() {
         {isPending ? "Submitting…" : "Submit Complaint"}
       </button>
 
-      <p className="text-xs text-ink-400 dark:text-paper-100/40 text-center leading-relaxed">
+      <p className="text-xs text-ink-400 text-center leading-relaxed">
         By submitting, you agree that your details are shared with our office for the sole
         purpose of resolving this issue.
       </p>

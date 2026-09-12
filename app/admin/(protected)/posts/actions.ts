@@ -157,3 +157,58 @@ export async function reorderPostMedia(postId: string, orderedIds: string[]) {
   revalidatePath(`/admin/posts/${postId}`);
   revalidatePath("/");
 }
+
+export async function updatePostThumbnail(
+  postId: string,
+  input: { storage_path: string; public_url: string }
+) {
+  const { supabase } = await requireAdmin();
+
+  const { data: current } = await supabase
+    .from("posts")
+    .select("thumbnail_path")
+    .eq("id", postId)
+    .single();
+
+  const { error } = await supabase
+    .from("posts")
+    .update({
+      thumbnail_url: input.public_url,
+      thumbnail_path: input.storage_path,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", postId);
+
+  if (error) throw new Error(error.message);
+
+  if (current?.thumbnail_path) {
+    await supabase.storage.from(POST_BUCKET).remove([current.thumbnail_path]);
+  }
+
+  revalidatePath(`/admin/posts/${postId}`);
+  revalidatePath("/");
+}
+
+export async function removePostThumbnail(postId: string) {
+  const { supabase } = await requireAdmin();
+
+  const { data: current } = await supabase
+    .from("posts")
+    .select("thumbnail_path")
+    .eq("id", postId)
+    .single();
+
+  const { error } = await supabase
+    .from("posts")
+    .update({ thumbnail_url: null, thumbnail_path: null, updated_at: new Date().toISOString() })
+    .eq("id", postId);
+
+  if (error) throw new Error(error.message);
+
+  if (current?.thumbnail_path) {
+    await supabase.storage.from(POST_BUCKET).remove([current.thumbnail_path]);
+  }
+
+  revalidatePath(`/admin/posts/${postId}`);
+  revalidatePath("/");
+}

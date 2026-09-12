@@ -7,6 +7,7 @@ import { POST_BUCKET, type Post, type PostMedia } from "@/types/domain";
 import MediaManager from "@/components/admin/MediaManager";
 import DeleteEntityButton from "@/components/admin/DeleteEntityButton";
 import PostForm from "../PostForm";
+import PostThumbnailUploader from "../PostThumbnailUploader";
 import {
   addPostMedia,
   deletePost,
@@ -62,6 +63,10 @@ export default async function EditPostPage({
 
       <div className="bg-white border border-line rounded-xl p-6 md:p-8 mb-6">
         <PostForm post={post as Post} onSubmit={updatePost.bind(null, id)} />
+      </div>
+
+      <div className="bg-white border border-line rounded-xl p-6 md:p-8 mb-6">
+        <PostThumbnailUploader postId={id} currentUrl={(post as Post).thumbnail_url} />
       </div>
 
       <div className="bg-white border border-line rounded-xl p-6 md:p-8">

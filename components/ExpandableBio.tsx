@@ -21,14 +21,17 @@ const CLAMP_LINES = 5;
 export default function ExpandableBio({
   text,
   className = "",
-  textClassName = "text-ink-600 dark:text-paper-100/70 text-base leading-relaxed",
-  fadeFromClassName = "from-paper-100 dark:from-navy-900",
+  textClassName = "text-ink-600 text-base leading-relaxed",
+  fadeFromClassName = "from-paper-100",
+  onExpandedChange,
 }: {
   text: string;
   className?: string;
   textClassName?: string;
   /** Gradient start color, matching whatever surface this sits on — see from-{color} in the bg-gradient-to-t fade. */
   fadeFromClassName?: string;
+  /** Notifies a parent (e.g. the hero's adjacent portrait) so it can animate in sync with Read More/Read Less. */
+  onExpandedChange?: (expanded: boolean) => void;
 }) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const paragraphRef = useRef<HTMLParagraphElement>(null);
@@ -68,7 +71,10 @@ export default function ExpandableBio({
       // is already comfortably in view.
       wrapperRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
-    setExpanded((v) => !v);
+    setExpanded((v) => {
+      onExpandedChange?.(!v);
+      return !v;
+    });
   }
 
   return (

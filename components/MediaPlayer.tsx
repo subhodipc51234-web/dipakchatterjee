@@ -89,7 +89,7 @@ export default function MediaPlayer({
       {(caption || externalLink) && (
         <figcaption className="mt-3 flex items-start justify-between gap-4">
           {caption && (
-            <span className="text-sm text-ink-600 dark:text-paper-100/70 leading-relaxed">
+            <span className="text-sm text-ink-600 leading-relaxed">
               {caption}
             </span>
           )}

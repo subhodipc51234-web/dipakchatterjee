@@ -18,13 +18,18 @@ import type { Organization } from "@/types/domain";
 
 function OrgCard({ org }: { org: Organization }) {
   const content = (
-    <div className="w-28 md:w-32 flex flex-col items-center text-center gap-3 p-4 rounded-lg border border-line dark:border-white/10 bg-white dark:bg-navy-800">
+    // Fixed width AND height (not just a fixed-size logo box) so every
+    // card lines up symmetrically regardless of the logo's own aspect
+    // ratio or whether the org name wraps to one line or two —
+    // `line-clamp-2` on the name caps it at the same two lines the
+    // fixed height budgets for.
+    <div className="w-28 md:w-32 h-40 md:h-44 flex flex-col items-center text-center gap-3 p-4 rounded-lg border border-line bg-white">
       <span className="w-20 h-20 md:w-24 md:h-24 rounded-lg overflow-hidden shrink-0 bg-white flex items-center justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={org.logo_url} alt={org.name} className="w-full h-full object-contain p-2" />
       </span>
 
-      <p className="text-sm font-bold text-navy-900 dark:text-white leading-tight">{org.name}</p>
+      <p className="text-sm font-bold text-navy-900 leading-tight line-clamp-2">{org.name}</p>
     </div>
   );
 
@@ -48,12 +53,12 @@ function OrgCard({ org }: { org: Organization }) {
 export default function OrganizationLogos({
   organizations,
   maxPerRow = 6,
-  labelClassName = "text-ink-400 dark:text-paper-100/50",
+  labelClassName = "text-ink-400",
 }: {
   organizations: Organization[];
   /** Max cards kept on one row on desktop before wrapping — Settings -> Affiliated Organizations. */
   maxPerRow?: number;
-  /** Override when embedded somewhere that's always on a dark background (e.g. the mobile hero photo overlay), independent of the site's light/dark toggle. */
+  /** Override when embedded somewhere that's always on a dark background (e.g. the mobile hero photo overlay). */
   labelClassName?: string;
 }) {
   if (organizations.length === 0) return null;

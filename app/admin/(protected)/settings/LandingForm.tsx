@@ -59,8 +59,8 @@ export default function LandingForm({ settings }: { settings: SiteSettings | nul
     <div className="bg-white border border-line rounded-xl p-6 md:p-8">
       <p className="text-sm font-semibold text-navy-900 mb-1">Hero content</p>
       <p className="text-xs text-ink-400 mb-5">
-        Leave any field blank to fall back to the original site copy. CTA buttons are managed
-        separately below.
+        Leave the headline or body blank to fall back to the original site copy; leave both badge
+        fields blank to hide the photo badge entirely. CTA buttons are managed separately below.
       </p>
 
       <form onSubmit={handleSubmit(submit)} className="space-y-5">
@@ -127,6 +127,7 @@ export default function LandingForm({ settings }: { settings: SiteSettings | nul
         </div>
         <p className="text-xs text-ink-400 -mt-3">
           Shown on the small floating card over the corner of the hero photo (desktop only).
+          Leave both blank to hide the badge entirely — no placeholder text is shown.
         </p>
 
         {serverError && (

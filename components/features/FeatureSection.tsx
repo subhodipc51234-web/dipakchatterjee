@@ -21,7 +21,7 @@ const statComponents: Components = {
   ),
   li: ({ children }) => (
     <div className="border-l-2 border-[var(--theme-primary)] pl-4">
-      <dd className="font-display text-3xl md:text-4xl text-navy-900 dark:text-white">
+      <dd className="font-display text-3xl md:text-4xl text-navy-900">
         {children}
       </dd>
     </div>
@@ -40,7 +40,7 @@ function MediaGrid({ media, dark }: { media: FeatureWithMedia["feature_media"]; 
           kind={item.kind}
           src={item.public_url}
           caption={item.caption ?? undefined}
-          className={dark ? "[&_figcaption]:text-paper-100/70" : "dark:[&_figcaption]:text-paper-100/70"}
+          className={dark ? "[&_figcaption]:text-paper-100/70" : ""}
         />
       ))}
     </div>
@@ -49,19 +49,19 @@ function MediaGrid({ media, dark }: { media: FeatureWithMedia["feature_media"]; 
 
 function AboutFeature({ feature }: { feature: FeatureWithMedia }) {
   return (
-    <section id="about" className="py-16 md:py-24 bg-paper-100 dark:bg-navy-900">
+    <section id="about" className="py-16 md:py-24 bg-paper-100">
       <div className="max-w-6xl mx-auto px-5 md:px-8 grid grid-cols-1 md:grid-cols-[0.8fr_1.2fr] gap-10 md:gap-16">
         <div>
           <p className="text-[var(--theme-primary)] font-semibold text-sm mb-3">About</p>
-          <h2 className="font-display text-3xl md:text-4xl text-navy-900 dark:text-white leading-tight">
+          <h2 className="font-display text-3xl md:text-4xl text-navy-900 leading-tight">
             {feature.title}
           </h2>
           {feature.subtitle && (
-            <p className="mt-3 text-ink-600 dark:text-paper-100/70 leading-relaxed">{feature.subtitle}</p>
+            <p className="mt-3 text-ink-600 leading-relaxed">{feature.subtitle}</p>
           )}
         </div>
 
-        <div className="space-y-5 text-ink-600 dark:text-paper-100/70 leading-relaxed max-w-2xl">
+        <div className="space-y-5 text-ink-600 leading-relaxed max-w-2xl">
           {feature.body_markdown && (
             <ReactMarkdown components={proseComponents}>{feature.body_markdown}</ReactMarkdown>
           )}
@@ -76,19 +76,19 @@ function PublicLifeFeature({ feature, galleryIntervalMs }: { feature: FeatureWit
   return (
     <section
       id="public-life"
-      className="py-16 md:py-24 bg-paper-100 dark:bg-navy-900 border-y border-line dark:border-white/10"
+      className="py-16 md:py-24 bg-paper-100 border-y border-line"
     >
       <div className="max-w-6xl mx-auto px-5 md:px-8">
         <div className="max-w-2xl mb-10">
           <p className="text-[var(--theme-primary)] font-semibold text-sm mb-3">Image Gallery</p>
-          <h2 className="font-display text-3xl md:text-4xl text-navy-900 dark:text-white leading-tight">
+          <h2 className="font-display text-3xl md:text-4xl text-navy-900 leading-tight">
             {feature.title}
           </h2>
           {feature.subtitle && (
-            <p className="mt-3 text-ink-600 dark:text-paper-100/70 leading-relaxed">{feature.subtitle}</p>
+            <p className="mt-3 text-ink-600 leading-relaxed">{feature.subtitle}</p>
           )}
           {feature.body_markdown && (
-            <div className="mt-4 text-ink-600 dark:text-paper-100/70 leading-relaxed">
+            <div className="mt-4 text-ink-600 leading-relaxed">
               <ReactMarkdown components={proseComponents}>{feature.body_markdown}</ReactMarkdown>
             </div>
           )}
@@ -102,17 +102,17 @@ function PublicLifeFeature({ feature, galleryIntervalMs }: { feature: FeatureWit
 
 function StatsFeature({ feature }: { feature: FeatureWithMedia }) {
   return (
-    <section className="py-16 md:py-24 bg-paper-100 dark:bg-navy-900">
+    <section className="py-16 md:py-24 bg-paper-100">
       <div className="max-w-6xl mx-auto px-5 md:px-8">
         {(feature.title || feature.subtitle) && (
           <div className="mb-10 max-w-2xl">
             {feature.title && (
-              <h2 className="font-display text-3xl md:text-4xl text-navy-900 dark:text-white leading-tight">
+              <h2 className="font-display text-3xl md:text-4xl text-navy-900 leading-tight">
                 {feature.title}
               </h2>
             )}
             {feature.subtitle && (
-              <p className="mt-3 text-ink-600 dark:text-paper-100/70 leading-relaxed">{feature.subtitle}</p>
+              <p className="mt-3 text-ink-600 leading-relaxed">{feature.subtitle}</p>
             )}
           </div>
         )}
