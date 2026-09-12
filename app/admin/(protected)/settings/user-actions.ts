@@ -229,3 +229,54 @@ export async function transferAdminRole(targetUserId: string, adminPassword: str
 
   revalidatePath("/admin/settings");
 }
+
+/**
+ * Self-service password change — any recognized profile, own account
+ * only. Re-verifies currentPassword the same way deleteUserAccount/
+ * transferAdminRole re-verify an admin's password (a fresh
+ * signInWithPassword against a throwaway client, never trusting the
+ * client to have checked it), then applies the change through the
+ * request's own session-bound client — updateUser() always targets
+ * "whoever this session belongs to", so there's no target-user id to
+ * get wrong here.
+ */
+export async function changeOwnPassword(currentPassword: string, newPassword: string) {
+  const { supabase, user } = await requireAdmin();
+
+  if (newPassword.length < 8) throw new Error("New password must be at least 8 characters.");
+  if (!user.email) throw new Error("Could not verify your account.");
+
+  const passwordOk = await verifyPassword(user.email, currentPassword);
+  if (!passwordOk) throw new Error("Current password is incorrect.");
+
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Admin override — resets a *different* user's password. Owner-only
+ * (requireOwner(), same as deleteUserAccount/transferAdminRole), and
+ * verifies the caller's own password before touching anything, exactly
+ * like those two. The actual write goes through the service-role
+ * client's admin API (updateUserById), since the admin has no session
+ * to run a plain updateUser() against on the target's behalf.
+ */
+export async function adminResetPassword(targetUserId: string, adminPassword: string, newPassword: string) {
+  const { supabase, user } = await requireOwner();
+
+  if (newPassword.length < 8) throw new Error("New password must be at least 8 characters.");
+  if (targetUserId === user.id) throw new Error("Use Change Password to update your own password.");
+
+  const { data: target } = await supabase.from("profiles").select("id").eq("id", targetUserId).single();
+  if (!target) throw new Error("User not found.");
+
+  const { data: adminAuth } = await supabase.auth.getUser();
+  if (!adminAuth.user?.email) throw new Error("Could not verify your account.");
+
+  const passwordOk = await verifyPassword(adminAuth.user.email, adminPassword);
+  if (!passwordOk) throw new Error("Incorrect password.");
+
+  const service = createServiceClient();
+  const { error } = await service.auth.admin.updateUserById(targetUserId, { password: newPassword });
+  if (error) throw new Error(error.message);
+}

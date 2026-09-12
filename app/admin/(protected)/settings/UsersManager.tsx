@@ -13,10 +13,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Crown, Loader2, Pencil, ShieldCheck, Trash2, UserPlus } from "lucide-react";
+import { Crown, KeyRound, Loader2, Pencil, ShieldCheck, Trash2, UserPlus } from "lucide-react";
 import type { Profile } from "@/types/domain";
 import { createUserAccount, deleteUserAccount, transferAdminRole } from "./user-actions";
 import ContactInfoModal from "@/components/admin/ContactInfoModal";
+import ChangePasswordModal from "@/components/admin/ChangePasswordModal";
+import AdminResetPasswordModal from "@/components/admin/AdminResetPasswordModal";
 
 function formatDate(value: string) {
   return new Date(value).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
@@ -37,6 +39,8 @@ export default function UsersManager({
   const router = useRouter();
   const [pending, setPending] = useState<PendingAction>(null);
   const [editingContact, setEditingContact] = useState<Profile | null>(null);
+  const [changingOwnPassword, setChangingOwnPassword] = useState(false);
+  const [resettingPasswordFor, setResettingPasswordFor] = useState<Profile | null>(null);
 
   const admin = users.find((u) => u.is_admin);
   const others = users.filter((u) => !u.is_admin);
@@ -64,6 +68,7 @@ export default function UsersManager({
             viewerIsOwner={viewerIsOwner}
             isSelf={admin.id === viewerId}
             onEditContact={() => setEditingContact(admin)}
+            onChangeOwnPassword={admin.id === viewerId ? () => setChangingOwnPassword(true) : undefined}
           />
         )}
         {others.map((u) => (
@@ -73,6 +78,7 @@ export default function UsersManager({
             viewerIsOwner={viewerIsOwner}
             isSelf={u.id === viewerId}
             onEditContact={() => setEditingContact(u)}
+            onChangeOwnPassword={u.id === viewerId ? () => setChangingOwnPassword(true) : undefined}
             onDelete={
               viewerIsOwner
                 ? () => setPending({ kind: "delete", userId: u.id, name: u.full_name || u.email || "this user" })
@@ -83,6 +89,7 @@ export default function UsersManager({
                 ? () => setPending({ kind: "transfer", userId: u.id, name: u.full_name || u.email || "this user" })
                 : undefined
             }
+            onResetPassword={viewerIsOwner ? () => setResettingPasswordFor(u) : undefined}
           />
         ))}
       </ul>
@@ -112,6 +119,22 @@ export default function UsersManager({
           }}
         />
       )}
+
+      {changingOwnPassword && (
+        <ChangePasswordModal
+          onClose={() => setChangingOwnPassword(false)}
+          onSaved={() => setChangingOwnPassword(false)}
+        />
+      )}
+
+      {resettingPasswordFor && (
+        <AdminResetPasswordModal
+          targetUserId={resettingPasswordFor.id}
+          targetName={resettingPasswordFor.full_name || resettingPasswordFor.email || "this user"}
+          onClose={() => setResettingPasswordFor(null)}
+          onSaved={() => setResettingPasswordFor(null)}
+        />
+      )}
     </div>
   );
 }
@@ -126,15 +149,19 @@ function UserRow({
   viewerIsOwner,
   isSelf,
   onEditContact,
+  onChangeOwnPassword,
   onDelete,
   onTransfer,
+  onResetPassword,
 }: {
   profile: Profile;
   viewerIsOwner: boolean;
   isSelf: boolean;
   onEditContact: () => void;
+  onChangeOwnPassword?: () => void;
   onDelete?: () => void;
   onTransfer?: () => void;
+  onResetPassword?: () => void;
 }) {
   const roleLabel = profile.is_admin ? "ADMIN" : "USER";
   // Anyone can edit their own contact info; only the owner can edit
@@ -167,6 +194,28 @@ function UserRow({
           >
             <Pencil className="w-3.5 h-3.5" />
             Edit contact
+          </button>
+        )}
+
+        {isSelf && onChangeOwnPassword && (
+          <button
+            type="button"
+            onClick={onChangeOwnPassword}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-600 hover:text-navy-900 border border-line hover:border-navy-900/30 rounded-md px-2.5 py-1.5"
+          >
+            <KeyRound className="w-3.5 h-3.5" />
+            Change Password
+          </button>
+        )}
+
+        {!isSelf && onResetPassword && (
+          <button
+            type="button"
+            onClick={onResetPassword}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-600 hover:text-navy-900 border border-line hover:border-navy-900/30 rounded-md px-2.5 py-1.5"
+          >
+            <KeyRound className="w-3.5 h-3.5" />
+            Reset Password
           </button>
         )}
 

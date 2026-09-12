@@ -11,26 +11,38 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Pencil, Phone } from "lucide-react";
+import { KeyRound, Mail, Pencil, Phone } from "lucide-react";
 import type { Profile } from "@/types/domain";
 import ContactInfoModal from "./ContactInfoModal";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 export default function MyContactInfoCard({ profile }: { profile: Profile }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   return (
     <div className="bg-white border border-line rounded-xl p-6">
       <div className="flex items-center justify-between mb-4">
         <p className="font-semibold text-navy-900">Your contact info</p>
-        <button
-          type="button"
-          onClick={() => setEditing(true)}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-saffron-600 hover:text-saffron"
-        >
-          <Pencil className="w-3.5 h-3.5" />
-          Edit
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setChangingPassword(true)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-saffron-600 hover:text-saffron"
+          >
+            <KeyRound className="w-3.5 h-3.5" />
+            Change Password
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-saffron-600 hover:text-saffron"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Edit
+          </button>
+        </div>
       </div>
 
       <div className="space-y-2 text-sm text-ink-600">
@@ -54,6 +66,13 @@ export default function MyContactInfoCard({ profile }: { profile: Profile }) {
             setEditing(false);
             router.refresh();
           }}
+        />
+      )}
+
+      {changingPassword && (
+        <ChangePasswordModal
+          onClose={() => setChangingPassword(false)}
+          onSaved={() => setChangingPassword(false)}
         />
       )}
     </div>
