@@ -172,7 +172,11 @@ export default function ComplaintForm() {
 
       <div>
         <label className="block text-sm font-medium text-navy-900 mb-1.5">
-          Media Upload <span className="text-ink-400 font-normal">(optional, up to {MAX_FILES} photos/videos)</span>
+          Media Upload{" "}
+          <span className="text-ink-400 font-normal">
+            (optional, up to {MAX_FILES} photos/videos &mdash; max {MAX_IMAGE_BYTES / 1024 / 1024}MB per photo,{" "}
+            {MAX_VIDEO_BYTES / 1024 / 1024}MB per video)
+          </span>
         </label>
 
         <DropzoneUpload
@@ -190,8 +194,17 @@ export default function ComplaintForm() {
             {files.map((f) => (
               <li key={f.id} className="relative aspect-square rounded-md overflow-hidden border border-line bg-paper-100">
                 {f.file.type.startsWith("video/") ? (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <FileVideo className="w-6 h-6 text-ink-400" />
+                  <div className="relative w-full h-full">
+                    <video
+                      src={f.previewUrl}
+                      muted
+                      playsInline
+                      preload="metadata"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-navy-900/20">
+                      <FileVideo className="w-5 h-5 text-white drop-shadow" />
+                    </div>
                   </div>
                 ) : (
                   // eslint-disable-next-line @next/next/no-img-element

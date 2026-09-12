@@ -36,13 +36,13 @@ export default async function ComplaintsPage() {
           <p className="text-[var(--theme-primary)] font-semibold text-sm mb-3">Citizen Support</p>
 
           <h1 className="font-display text-3xl md:text-4xl text-navy-900 leading-tight">
-            Tell us what&rsquo;s wrong. We&rsquo;ll follow up.
+            Tell us what&apos;s wrong. We&apos;ll try to help.
           </h1>
 
           <p className="mt-5 text-ink-600 leading-relaxed">
-            Every submission is logged with a reference number and routed to the right person
-            &mdash; a school, a ward office, or a welfare department. Fill in the form, get your
-            reference number, and expect a call within 3&ndash;5 working days.
+            Please describe your problem briefly. It is best to include your phone number so we
+            can reach you quickly. You will receive a reference number after submitting&mdash;please
+            save it to track your request.
           </p>
 
           <div className="mt-8 p-5 rounded-lg border border-line bg-white">
