@@ -158,7 +158,6 @@ export default async function SettingsPage() {
               features={featureList}
               organizationsVisible={s?.show_organizations_section ?? true}
               postsVisible={s?.show_posts_feed_section ?? true}
-              phasesVisible={s?.show_phases_section ?? true}
             />
           </>
         }

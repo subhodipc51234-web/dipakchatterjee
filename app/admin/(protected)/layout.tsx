@@ -14,13 +14,14 @@ import Link from "next/link";
 import { createClient } from "@/utils/supabase/server";
 import SignOutButton from "@/components/admin/SignOutButton";
 import SessionTimer from "@/components/admin/SessionTimer";
+import AdminPresence from "@/components/admin/AdminPresence";
 import {
   ExternalLink,
+  History,
   Image as ImageIcon,
   LayoutDashboard,
   Layers,
   MessageSquareWarning,
-  Milestone,
   Rss,
 } from "lucide-react";
 
@@ -122,14 +123,6 @@ export default async function AdminProtectedLayout({
           </Link>
 
           <Link
-            href="/admin/phases"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-paper-100/80 hover:bg-white/10 hover:text-white transition-colors"
-          >
-            <Milestone className="w-4 h-4" />
-            Phases
-          </Link>
-
-          <Link
             href="/admin/complaints"
             className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-paper-100/80 hover:bg-white/10 hover:text-white transition-colors"
           >
@@ -143,6 +136,14 @@ export default async function AdminProtectedLayout({
           >
             <ImageIcon className="w-4 h-4" />
             Settings
+          </Link>
+
+          <Link
+            href="/admin/logs"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-paper-100/80 hover:bg-white/10 hover:text-white transition-colors"
+          >
+            <History className="w-4 h-4" />
+            Activity Logs
           </Link>
         </nav>
 
@@ -167,7 +168,8 @@ export default async function AdminProtectedLayout({
       </aside>
 
       <main className="flex-1 bg-paper-100 min-h-screen flex flex-col">
-        <header className="h-14 shrink-0 border-b border-line bg-white flex items-center justify-end px-6">
+        <header className="h-14 shrink-0 border-b border-line bg-white flex items-center justify-between px-6">
+          <AdminPresence userId={user.id} email={user.email ?? profile.full_name ?? "Unknown"} name={profile.full_name} />
           <SessionTimer />
         </header>
         <div className="flex-1 max-w-5xl w-full mx-auto px-6 py-10">{children}</div>

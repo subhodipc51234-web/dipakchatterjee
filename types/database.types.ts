@@ -168,6 +168,39 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          user_email: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          user_email: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          user_email?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       feature_media: {
         Row: {
           caption: string | null
@@ -425,36 +458,30 @@ export type Database = {
       }
       phases: {
         Row: {
-          content: string | null
           created_at: string
           id: string
-          is_pinned: boolean
           period: string | null
           photos: Json
           sort_order: number
-          summary: string | null
+          summary: string
           title: string
         }
         Insert: {
-          content?: string | null
           created_at?: string
           id?: string
-          is_pinned?: boolean
           period?: string | null
           photos?: Json
           sort_order?: number
-          summary?: string | null
+          summary: string
           title: string
         }
         Update: {
-          content?: string | null
           created_at?: string
           id?: string
-          is_pinned?: boolean
           period?: string | null
           photos?: Json
           sort_order?: number
-          summary?: string | null
+          summary?: string
           title?: string
         }
         Relationships: []

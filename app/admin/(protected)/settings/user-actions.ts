@@ -15,6 +15,7 @@ import { revalidatePath } from "next/cache";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database.types";
 import { requireAdmin, requireOwner, requireProfile } from "@/lib/admin-guard";
+import { logDashboardActivity } from "@/lib/activity-log";
 import { createServiceClient } from "@/utils/supabase/admin";
 
 /**
@@ -55,7 +56,7 @@ export type CreateUserInput = {
 
 /** Any logged-in profile (ADMIN or USER) may add a new user — always created as a standard USER; only transferAdminRole can ever produce a second privileged account. */
 export async function createUserAccount(input: CreateUserInput) {
-  await requireAdmin();
+  const { supabase, user: caller } = await requireAdmin();
 
   const name = input.name.trim();
   const email = input.email.trim();
@@ -103,15 +104,22 @@ export async function createUserAccount(input: CreateUserInput) {
     throw new Error(profileError.message);
   }
 
+  await logDashboardActivity(supabase, caller, {
+    action: "CREATE_USER",
+    entityType: "users",
+    entityId: created.user.id,
+    details: `Created user account: ${email}`,
+  });
+
   revalidatePath("/admin/settings");
 }
 
 export async function deleteUserAccount(targetUserId: string, adminPassword: string) {
-  const { supabase } = await requireOwner();
+  const { supabase, user: caller } = await requireOwner();
 
   const { data: target } = await supabase
     .from("profiles")
-    .select("is_admin")
+    .select("is_admin, email")
     .eq("id", targetUserId)
     .single();
 
@@ -130,6 +138,13 @@ export async function deleteUserAccount(targetUserId: string, adminPassword: str
   await service.from("profiles").delete().eq("id", targetUserId);
   const { error } = await service.auth.admin.deleteUser(targetUserId);
   if (error) throw new Error(error.message);
+
+  await logDashboardActivity(supabase, caller, {
+    action: "DELETE_USER",
+    entityType: "users",
+    entityId: targetUserId,
+    details: `Deleted user account: ${target.email ?? targetUserId}`,
+  });
 
   revalidatePath("/admin/settings");
 }
@@ -219,11 +234,11 @@ export async function updateContactInfo(input: UpdateContactInfoInput) {
 }
 
 export async function transferAdminRole(targetUserId: string, adminPassword: string) {
-  const { supabase } = await requireOwner();
+  const { supabase, user: caller } = await requireOwner();
 
   const { data: target } = await supabase
     .from("profiles")
-    .select("id, is_admin")
+    .select("id, is_admin, email")
     .eq("id", targetUserId)
     .single();
 
@@ -239,6 +254,13 @@ export async function transferAdminRole(targetUserId: string, adminPassword: str
   const service = createServiceClient();
   const { error } = await service.rpc("transfer_admin_role", { new_admin_id: targetUserId });
   if (error) throw new Error(error.message);
+
+  await logDashboardActivity(supabase, caller, {
+    action: "UPDATE_USER_ROLE",
+    entityType: "users",
+    entityId: targetUserId,
+    details: `Transferred admin role to: ${target.email ?? targetUserId}`,
+  });
 
   revalidatePath("/admin/settings");
 }

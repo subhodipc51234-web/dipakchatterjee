@@ -21,6 +21,7 @@ export type FooterBlock = Tables<"footer_blocks">;
 export type FooterLink = Tables<"footer_links">;
 export type HeaderAction = Tables<"header_actions">;
 export type NavLink = Tables<"nav_links">;
+export type DashboardActivityLog = Tables<"dashboard_activity_logs">;
 
 export type FeatureType = Feature["type"];
 export type MediaKind = FeatureMedia["kind"];
@@ -82,8 +83,8 @@ export const SITE_BUCKET = "site-media";
 export const COMPLAINT_BUCKET = "complaint-media";
 export const PHASE_BUCKET = "phase-media";
 
-/** One entry of phases.photos (a JSONB array, not a foreign-keyed media table). */
-export type PhasePhoto = { url: string; path: string; caption: string };
+/** One entry of phases.photos (a JSONB array, not a foreign-keyed media table). `path` is an internal storage-bookkeeping detail (used to delete the file), not part of the public shape. */
+export type PhasePhoto = { url: string; path: string; caption?: string };
 
 /**
  * One entry of posts.links (a JSONB array). "embed" is rendered as an

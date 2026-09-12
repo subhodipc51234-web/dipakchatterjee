@@ -4,6 +4,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-guard";
+import { logDashboardActivity } from "@/lib/activity-log";
 import { POST_BUCKET, type MediaKind, type PostLink } from "@/types/domain";
 
 export type PostFormInput = {
@@ -43,6 +44,13 @@ export async function createPost(input: PostFormInput) {
 
   if (error) throw new Error(error.message);
 
+  await logDashboardActivity(supabase, user, {
+    action: "CREATE_POST",
+    entityType: "notable_works",
+    entityId: data.id,
+    details: `Created post: '${input.title || "Untitled update"}'`,
+  });
+
   revalidatePath("/admin/posts");
   revalidatePath("/");
   revalidatePath("/notable-works");
@@ -50,7 +58,7 @@ export async function createPost(input: PostFormInput) {
 }
 
 export async function updatePost(id: string, input: PostFormInput) {
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
 
   const { error } = await supabase
     .from("posts")
@@ -66,6 +74,13 @@ export async function updatePost(id: string, input: PostFormInput) {
 
   if (error) throw new Error(error.message);
 
+  await logDashboardActivity(supabase, user, {
+    action: "UPDATE_POST",
+    entityType: "notable_works",
+    entityId: id,
+    details: `Updated post: '${input.title || "Untitled update"}'`,
+  });
+
   revalidatePath("/admin/posts");
   revalidatePath(`/admin/posts/${id}`);
   revalidatePath("/");
@@ -73,7 +88,9 @@ export async function updatePost(id: string, input: PostFormInput) {
 }
 
 export async function deletePost(id: string) {
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
+
+  const { data: post } = await supabase.from("posts").select("title").eq("id", id).single();
 
   const { data: media } = await supabase
     .from("post_media")
@@ -88,6 +105,13 @@ export async function deletePost(id: string) {
 
   const { error } = await supabase.from("posts").delete().eq("id", id);
   if (error) throw new Error(error.message);
+
+  await logDashboardActivity(supabase, user, {
+    action: "DELETE_POST",
+    entityType: "notable_works",
+    entityId: id,
+    details: `Deleted post: '${post?.title || "Untitled update"}'`,
+  });
 
   revalidatePath("/admin/posts");
   revalidatePath("/");
@@ -110,7 +134,9 @@ export async function togglePostPublished(id: string, is_published: boolean) {
 }
 
 export async function togglePostPinned(id: string, is_pinned: boolean) {
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
+
+  const { data: post } = await supabase.from("posts").select("title").eq("id", id).single();
 
   const { error } = await supabase
     .from("posts")
@@ -118,6 +144,13 @@ export async function togglePostPinned(id: string, is_pinned: boolean) {
     .eq("id", id);
 
   if (error) throw new Error(error.message);
+
+  await logDashboardActivity(supabase, user, {
+    action: "UPDATE_POST",
+    entityType: "notable_works",
+    entityId: id,
+    details: `${is_pinned ? "Pinned" : "Unpinned"} post: '${post?.title || "Untitled update"}'`,
+  });
 
   revalidatePath("/admin/posts");
   revalidatePath("/");

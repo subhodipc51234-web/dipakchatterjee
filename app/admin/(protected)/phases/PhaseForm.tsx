@@ -1,4 +1,9 @@
 // app/admin/(protected)/phases/PhaseForm.tsx
+//
+// Streamlined to exactly the fields the schema now has: title, period,
+// and summary (which doubles as the full narrative — there is no
+// separate "short blurb" vs "full story" split anymore). Photos are a
+// separate concern, handled by PhasePhotosManager on the same edit page.
 "use client";
 
 import { useState, useTransition } from "react";
@@ -13,8 +18,7 @@ import { useUnsavedChangesWarning } from "@/lib/useUnsavedChangesWarning";
 const phaseSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200),
   period: z.string().trim().max(100).optional(),
-  summary: z.string().trim().max(500).optional(),
-  content: z.string().trim().max(20000).optional(),
+  summary: z.string().trim().min(1, "Summary / story is required").max(20000),
 });
 
 type PhaseFormValues = z.infer<typeof phaseSchema>;
@@ -40,7 +44,6 @@ export default function PhaseForm({
       title: phase?.title ?? "",
       period: phase?.period ?? "",
       summary: phase?.summary ?? "",
-      content: phase?.content ?? "",
     },
   });
 
@@ -53,8 +56,7 @@ export default function PhaseForm({
         await onSubmit({
           title: values.title,
           period: values.period ?? "",
-          summary: values.summary ?? "",
-          content: values.content ?? "",
+          summary: values.summary,
         });
         reset(values);
       } catch (err) {
@@ -67,7 +69,7 @@ export default function PhaseForm({
     <form onSubmit={handleSubmit(submit)} className="space-y-5">
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-navy-900 mb-1.5">
-          Title
+          Phase Title
         </label>
         <input
           id="title"
@@ -85,7 +87,7 @@ export default function PhaseForm({
         <input
           id="period"
           {...register("period")}
-          placeholder="e.g. 1995 - 2010"
+          placeholder="e.g. 2000 - 2012"
           className="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none"
         />
         {errors.period && <p className="text-xs text-rust mt-1.5">{errors.period.message}</p>}
@@ -93,30 +95,16 @@ export default function PhaseForm({
 
       <div>
         <label htmlFor="summary" className="block text-sm font-medium text-navy-900 mb-1.5">
-          Summary
+          Summary / Story
         </label>
         <textarea
           id="summary"
-          rows={3}
-          {...register("summary")}
-          placeholder="Short one- or two-line summary shown wherever this phase is listed."
-          className="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none resize-y"
-        />
-        {errors.summary && <p className="text-xs text-rust mt-1.5">{errors.summary.message}</p>}
-      </div>
-
-      <div>
-        <label htmlFor="content" className="block text-sm font-medium text-navy-900 mb-1.5">
-          Full story
-        </label>
-        <textarea
-          id="content"
           rows={10}
-          {...register("content")}
+          {...register("summary")}
           placeholder="The full narrative for this phase. Supports Markdown."
           className="w-full rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none resize-y"
         />
-        {errors.content && <p className="text-xs text-rust mt-1.5">{errors.content.message}</p>}
+        {errors.summary && <p className="text-xs text-rust mt-1.5">{errors.summary.message}</p>}
       </div>
 
       {serverError && (

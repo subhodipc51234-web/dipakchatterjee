@@ -3,6 +3,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin-guard";
+import { logDashboardActivity } from "@/lib/activity-log";
 import { SITE_BUCKET } from "@/types/domain";
 
 type ImageKind = "hero" | "avatar";
@@ -11,7 +12,7 @@ export async function updateSiteImage(
   kind: ImageKind,
   input: { storage_path: string; public_url: string }
 ) {
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
 
   const { data: current } = await supabase
     .from("site_settings")
@@ -37,12 +38,18 @@ export async function updateSiteImage(
     await supabase.storage.from(SITE_BUCKET).remove([oldPath]);
   }
 
+  await logDashboardActivity(supabase, user, {
+    action: "UPDATE_SETTINGS",
+    entityType: "settings",
+    details: `Updated ${kind === "hero" ? "hero image" : "profile avatar"}`,
+  });
+
   revalidatePath("/admin/settings");
   revalidatePath("/");
 }
 
 export async function updateHomepageLayout(orderedKeys: string[]) {
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
 
   const { error } = await supabase
     .from("site_settings")
@@ -51,22 +58,20 @@ export async function updateHomepageLayout(orderedKeys: string[]) {
 
   if (error) throw new Error(error.message);
 
+  await logDashboardActivity(supabase, user, {
+    action: "UPDATE_SETTINGS",
+    entityType: "settings",
+    details: "Reordered homepage sections",
+  });
+
   revalidatePath("/admin/settings");
   revalidatePath("/");
 }
 
-export async function updateHomepageSectionVisibility(
-  key: "organizations" | "posts" | "phases",
-  visible: boolean
-) {
-  const { supabase } = await requireAdmin();
+export async function updateHomepageSectionVisibility(key: "organizations" | "posts", visible: boolean) {
+  const { supabase, user } = await requireAdmin();
 
-  const patch =
-    key === "organizations"
-      ? { show_organizations_section: visible }
-      : key === "posts"
-        ? { show_posts_feed_section: visible }
-        : { show_phases_section: visible };
+  const patch = key === "organizations" ? { show_organizations_section: visible } : { show_posts_feed_section: visible };
 
   const { error } = await supabase
     .from("site_settings")
@@ -74,6 +79,12 @@ export async function updateHomepageSectionVisibility(
     .eq("id", "default");
 
   if (error) throw new Error(error.message);
+
+  await logDashboardActivity(supabase, user, {
+    action: "UPDATE_SETTINGS",
+    entityType: "settings",
+    details: `${visible ? "Showed" : "Hid"} the ${key === "organizations" ? "Organizations" : "Notable Works"} homepage section`,
+  });
 
   revalidatePath("/admin/settings");
   revalidatePath("/");
@@ -87,7 +98,7 @@ export type LandingContentInput = {
 };
 
 export async function updateLandingContent(input: LandingContentInput) {
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
 
   const { error } = await supabase
     .from("site_settings")
@@ -102,12 +113,18 @@ export async function updateLandingContent(input: LandingContentInput) {
 
   if (error) throw new Error(error.message);
 
+  await logDashboardActivity(supabase, user, {
+    action: "UPDATE_SETTINGS",
+    entityType: "settings",
+    details: "Updated hero headline/bio",
+  });
+
   revalidatePath("/admin/settings");
   revalidatePath("/");
 }
 
 export async function updateNotableWorksLimit(value: number) {
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
 
   const clamped = Math.min(48, Math.max(1, Math.round(value)));
 
@@ -117,6 +134,12 @@ export async function updateNotableWorksLimit(value: number) {
     .eq("id", "default");
 
   if (error) throw new Error(error.message);
+
+  await logDashboardActivity(supabase, user, {
+    action: "UPDATE_SETTINGS",
+    entityType: "settings",
+    details: `Set homepage display limit to ${clamped}`,
+  });
 
   revalidatePath("/admin/settings");
   revalidatePath("/");
@@ -149,7 +172,7 @@ export type BrandingTextInput = {
 };
 
 export async function updateBrandingText(input: BrandingTextInput) {
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
 
   const { error } = await supabase
     .from("site_settings")
@@ -165,6 +188,12 @@ export async function updateBrandingText(input: BrandingTextInput) {
     .eq("id", "default");
 
   if (error) throw new Error(error.message);
+
+  await logDashboardActivity(supabase, user, {
+    action: "UPDATE_SETTINGS",
+    entityType: "settings",
+    details: "Updated branding text (header/footer)",
+  });
 
   revalidatePath("/admin/settings");
   revalidatePath("/", "layout");
@@ -309,7 +338,7 @@ export async function updateThemeColors(input: {
   theme_primary_color: string;
   theme_secondary_color: string;
 }) {
-  const { supabase } = await requireAdmin();
+  const { supabase, user } = await requireAdmin();
 
   assertHexColor(input.theme_primary_color, "Main Theme Color");
   assertHexColor(input.theme_secondary_color, "Secondary Color");
@@ -324,6 +353,12 @@ export async function updateThemeColors(input: {
     .eq("id", "default");
 
   if (error) throw new Error(error.message);
+
+  await logDashboardActivity(supabase, user, {
+    action: "UPDATE_SETTINGS",
+    entityType: "settings",
+    details: `Updated theme colors (${input.theme_primary_color} / ${input.theme_secondary_color})`,
+  });
 
   revalidatePath("/admin/settings");
   revalidatePath("/");
