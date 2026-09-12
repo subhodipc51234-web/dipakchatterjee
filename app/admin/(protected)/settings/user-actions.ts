@@ -75,13 +75,26 @@ export async function createUserAccount(input: CreateUserInput) {
 
   if (createError) throw new Error(createError.message);
 
-  const { error: profileError } = await service.from("profiles").insert({
-    id: created.user.id,
-    full_name: name,
-    email,
-    phone: phone || null,
-    is_admin: false,
-  });
+  // A pre-existing DB trigger (handle_new_user(), not part of this
+  // migration history) already inserts a bare (id, full_name) profiles
+  // row the instant createUser() above succeeds — a plain .insert()
+  // here always collided with it (profiles_pkey violation) rather than
+  // sometimes, since the trigger runs synchronously as part of the
+  // auth.users insert. upsert() fills in the real name/email/phone
+  // over whatever the trigger guessed, in the same single round trip.
+  // is_admin: false is safe to upsert unconditionally — created.user.id
+  // is a UUID Supabase just generated for a brand-new auth user, so it
+  // can never collide with the existing admin's row.
+  const { error: profileError } = await service.from("profiles").upsert(
+    {
+      id: created.user.id,
+      full_name: name,
+      email,
+      phone: phone || null,
+      is_admin: false,
+    },
+    { onConflict: "id" }
+  );
 
   if (profileError) {
     // Roll back the auth user so a failed profile insert doesn't leave

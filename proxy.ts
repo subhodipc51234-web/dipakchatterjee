@@ -34,6 +34,23 @@
 //      the OTP gate, it's just short-circuited: flip the flag back on
 //      and this file's logic reverts with no further changes.
 //
+// A Server Action invoked from a client component on one of these
+// pages (e.g. LoginForm.tsx's requestLoginOtp()) POSTs back to that
+// same page's own URL — so, with the flag off, the instant the
+// client's own signInWithPassword() call has set the Supabase session
+// cookie, that very next POST to /admin/login already looks
+// "verified" to the check above. Substituting a redirect Response for
+// a Server Action's own request corrupts Next's action-response
+// protocol (it isn't the encoded result the client's fetch is
+// expecting) and surfaces to the browser as a bare "Failed to fetch" —
+// the action never gets to return its result, so LoginForm.tsx's own
+// window.location.assign("/admin") never runs, even though the user
+// really is signed in underneath. `isServerAction` below exempts these
+// requests from every redirect branch for that reason: the action
+// itself decides what to return (including throwing a normal,
+// try/catch-able error if it's genuinely unauthorized), and the client
+// does its own navigation once that resolves.
+//
 // Note: proxy.ts always runs on the Node.js runtime (not Edge), so the
 // full Supabase SSR client works here without any edge-compatibility
 // workarounds.
@@ -105,6 +122,9 @@ export async function proxy(request: NextRequest) {
     const { user } = await updateSession(request, response);
     const isLoginRoute = pathname === "/admin/login";
     const isVerifyOtpRoute = pathname === "/admin/verify-otp";
+    // See the comment above: never substitute a redirect for a Server
+    // Action's own request, only for an actual page load.
+    const isServerAction = request.headers.has("next-action");
 
     // Both cookies are bound to whichever user set them — a stale
     // cookie from a previous account (or a signed session for a user
@@ -117,7 +137,11 @@ export async function proxy(request: NextRequest) {
     const pending2fa = verifyPending2faToken(request.cookies.get(PENDING_2FA_COOKIE)?.value);
     const isPending2fa = Boolean(user && pending2fa && pending2fa.userId === user.id);
 
-    if (isVerifyOtpRoute) {
+    if (isServerAction) {
+      // Let it through as-is; requireAdmin()/requireOwner() (and the
+      // OTP actions' own checks) are the real authorization boundary
+      // for actions, independent of this gate.
+    } else if (isVerifyOtpRoute) {
       if (isOtpVerified) {
         response = NextResponse.redirect(new URL("/admin", request.url));
       } else if (!isPending2fa) {
