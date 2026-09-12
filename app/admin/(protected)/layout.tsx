@@ -20,6 +20,7 @@ import {
   LayoutDashboard,
   Layers,
   MessageSquareWarning,
+  Milestone,
   Rss,
 } from "lucide-react";
 
@@ -33,24 +34,46 @@ export default async function AdminProtectedLayout({
 }) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Both queries below are wrapped rather than left to reject
+  // naturally: this layout wraps every /admin/* page, so an unhandled
+  // rejection here (a transient auth/network drop, not a real "you're
+  // not logged in") would surface as Next's generic error page instead
+  // of the graceful "please sign in again" redirect this already has a
+  // path for. Any failure is treated the same as "no session" —
+  // fail-closed, never fail-open into showing the dashboard.
+  let user: Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"] = null;
+  try {
+    const {
+      data: { user: fetchedUser },
+    } = await supabase.auth.getUser();
+    user = fetchedUser;
+  } catch (err) {
+    console.error("[AdminProtectedLayout] auth.getUser() failed:", err);
+  }
 
   if (!user) {
     redirect("/admin/login");
   }
 
-  const [{ data: profile }, { data: settings }] = await Promise.all([
-    supabase.from("profiles").select("is_admin, full_name").eq("id", user.id).single(),
-    supabase.from("site_settings").select("header_name, header_subtitle").eq("id", "default").single(),
-  ]);
+  let profile: { is_admin: boolean; full_name: string | null } | null = null;
+  let settings: { header_name: string | null; header_subtitle: string | null } | null = null;
+  try {
+    const [{ data: profileData }, { data: settingsData }] = await Promise.all([
+      supabase.from("profiles").select("is_admin, full_name").eq("id", user.id).single(),
+      supabase.from("site_settings").select("header_name, header_subtitle").eq("id", "default").single(),
+    ]);
+    profile = profileData;
+    settings = settingsData;
+  } catch (err) {
+    console.error("[AdminProtectedLayout] profile/settings fetch failed:", err);
+  }
 
   // Any recognized profile (ADMIN or USER) may view the dashboard shell
   // — privileged mutations are gated separately, per-action, by
   // requireAdmin()/requireOwner() (see lib/admin-guard.ts). A row
-  // missing entirely means this Supabase user has no profile at all,
-  // which shouldn't happen for a real account.
+  // missing entirely means this Supabase user has no profile at all
+  // (or the fetch above failed), which shouldn't happen for a real,
+  // reachable account.
   if (!profile) {
     redirect("/admin/login");
   }
@@ -96,6 +119,14 @@ export default async function AdminProtectedLayout({
           >
             <Rss className="w-4 h-4" />
             Posts
+          </Link>
+
+          <Link
+            href="/admin/phases"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-paper-100/80 hover:bg-white/10 hover:text-white transition-colors"
+          >
+            <Milestone className="w-4 h-4" />
+            Phases
           </Link>
 
           <Link

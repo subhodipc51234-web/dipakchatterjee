@@ -18,9 +18,20 @@ import {
 
 export async function POST() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+
+  // A transient auth-check failure here should just fail this one
+  // heartbeat (the client-side SessionTimer already tolerates a failed
+  // ping and retries on the next interval) rather than surfacing as an
+  // unhandled 500 from a route a client polls repeatedly.
+  let user: Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"] = null;
+  try {
+    const {
+      data: { user: fetchedUser },
+    } = await supabase.auth.getUser();
+    user = fetchedUser;
+  } catch (err) {
+    console.error("[heartbeat] auth.getUser() failed:", err);
+  }
 
   if (!user) {
     return NextResponse.json({ ok: false }, { status: 401 });

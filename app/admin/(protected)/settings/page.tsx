@@ -21,6 +21,7 @@ import FooterBlocksManager from "./FooterBlocksManager";
 import SocialLinksManager from "./SocialLinksManager";
 import HeaderNavigationManager from "./HeaderNavigationManager";
 import HomepageLayoutManager from "./HomepageLayoutManager";
+import NotableWorksLimitControl from "./NotableWorksLimitControl";
 import UsersManager from "./UsersManager";
 import SettingsTabs from "./SettingsTabs";
 import { computeHomepageOrder } from "@/lib/homepage-layout";
@@ -30,15 +31,50 @@ export const metadata: Metadata = {
   title: "Settings - Dashboard | Dipak Chatterjee",
 };
 
+function SettingsMessage({ heading, body }: { heading: string; body: string }) {
+  return (
+    <div className="max-w-2xl">
+      <p className="text-sm font-semibold text-saffron-600 mb-2">Settings</p>
+      <h1 className="font-display text-3xl text-navy-900 mb-4">{heading}</h1>
+      <p className="text-sm text-ink-600">{body}</p>
+    </div>
+  );
+}
+
 export default async function SettingsPage() {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: viewerProfile } = user
-    ? await supabase.from("profiles").select("is_admin").eq("id", user.id).single()
-    : { data: null };
+  // Auth check and profile lookup are wrapped: a transient failure here
+  // is not "signed out" and shouldn't be presented as such, but it also
+  // must never crash this page via an unhandled rejection — fall
+  // through to the same explicit error message either way.
+  let user: Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"] = null;
+  let viewerProfile: { is_admin: boolean } | null = null;
+  let authFailed = false;
+
+  try {
+    const {
+      data: { user: fetchedUser },
+    } = await supabase.auth.getUser();
+    user = fetchedUser;
+
+    if (user) {
+      const { data } = await supabase.from("profiles").select("is_admin").eq("id", user.id).single();
+      viewerProfile = data;
+    }
+  } catch (err) {
+    console.error("[SettingsPage] auth/profile lookup failed:", err);
+    authFailed = true;
+  }
+
+  if (authFailed) {
+    return (
+      <SettingsMessage
+        heading="Couldn't verify your session"
+        body="Something went wrong checking your account. Please refresh the page — if this keeps happening, sign out and back in."
+      />
+    );
+  }
 
   // Every recognized profile (ADMIN or USER) has full content/settings
   // access — the (protected) layout already redirects to /admin/login
@@ -47,42 +83,48 @@ export default async function SettingsPage() {
   // Users & Access itself further restricts transfer/delete to the
   // ADMIN alone — see viewerIsOwner below and UsersManager.tsx.
   if (!viewerProfile) {
-    return (
-      <div className="max-w-2xl">
-        <p className="text-sm font-semibold text-saffron-600 mb-2">Settings</p>
-        <h1 className="font-display text-3xl text-navy-900 mb-4">Signed out</h1>
-        <p className="text-sm text-ink-600">Please sign in to manage site settings.</p>
-      </div>
-    );
+    return <SettingsMessage heading="Signed out" body="Please sign in to manage site settings." />;
   }
 
-  const [
-    { data: settings },
-    { data: organizations },
-    { data: ctaButtons },
-    { data: footerBlocks },
-    { data: socialLinks },
-    { data: navLinks },
-    { data: headerActions },
-    { data: features },
-    { data: profiles },
-  ] = await Promise.all([
-    supabase.from("site_settings").select("*").eq("id", "default").single(),
-    supabase.from("organizations").select("*").order("display_order", { ascending: true }),
-    supabase.from("cta_buttons").select("*").order("display_order", { ascending: true }),
-    supabase
-      .from("footer_blocks")
-      .select("*, footer_links(*)")
-      .order("display_order", { ascending: true })
-      .order("display_order", { foreignTable: "footer_links", ascending: true }),
-    supabase.from("social_links").select("*").order("display_order", { ascending: true }),
-    supabase.from("nav_links").select("*").order("display_order", { ascending: true }),
-    supabase.from("header_actions").select("*").order("display_order", { ascending: true }),
-    // Every feature, published or not — the Layout Builder needs to
-    // show and let an admin re-enable a currently-hidden section.
-    supabase.from("features").select("*").order("display_order", { ascending: true }),
-    supabase.from("profiles").select("*").order("created_at", { ascending: true }),
-  ]);
+  let settings, organizations, ctaButtons, footerBlocks, socialLinks, navLinks, headerActions, features, profiles;
+
+  try {
+    [
+      { data: settings },
+      { data: organizations },
+      { data: ctaButtons },
+      { data: footerBlocks },
+      { data: socialLinks },
+      { data: navLinks },
+      { data: headerActions },
+      { data: features },
+      { data: profiles },
+    ] = await Promise.all([
+      supabase.from("site_settings").select("*").eq("id", "default").single(),
+      supabase.from("organizations").select("*").order("display_order", { ascending: true }),
+      supabase.from("cta_buttons").select("*").order("display_order", { ascending: true }),
+      supabase
+        .from("footer_blocks")
+        .select("*, footer_links(*)")
+        .order("display_order", { ascending: true })
+        .order("display_order", { foreignTable: "footer_links", ascending: true }),
+      supabase.from("social_links").select("*").order("display_order", { ascending: true }),
+      supabase.from("nav_links").select("*").order("display_order", { ascending: true }),
+      supabase.from("header_actions").select("*").order("display_order", { ascending: true }),
+      // Every feature, published or not — the Layout Builder needs to
+      // show and let an admin re-enable a currently-hidden section.
+      supabase.from("features").select("*").order("display_order", { ascending: true }),
+      supabase.from("profiles").select("*").order("created_at", { ascending: true }),
+    ]);
+  } catch (err) {
+    console.error("[SettingsPage] settings data load failed:", err);
+    return (
+      <SettingsMessage
+        heading="Couldn't load settings"
+        body="Something went wrong loading this page's data. Please refresh to try again."
+      />
+    );
+  }
 
   const s = settings as SiteSettings | null;
   const themePrimary = s?.theme_primary_color || "#C1832B";
@@ -109,12 +151,16 @@ export default async function SettingsPage() {
           </>
         }
         sections={
-          <HomepageLayoutManager
-            initialOrder={homepageOrder}
-            features={featureList}
-            organizationsVisible={s?.show_organizations_section ?? true}
-            postsVisible={s?.show_posts_feed_section ?? true}
-          />
+          <>
+            <NotableWorksLimitControl limit={s?.notable_works_limit ?? 6} />
+            <HomepageLayoutManager
+              initialOrder={homepageOrder}
+              features={featureList}
+              organizationsVisible={s?.show_organizations_section ?? true}
+              postsVisible={s?.show_posts_feed_section ?? true}
+              phasesVisible={s?.show_phases_section ?? true}
+            />
+          </>
         }
         header={
           <HeaderNavigationManager

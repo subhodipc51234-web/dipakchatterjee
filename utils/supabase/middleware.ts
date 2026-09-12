@@ -40,9 +40,23 @@ export async function updateSession(request: NextRequest, response: NextResponse
   // any route logic. Using getUser() (not getSession()) because it
   // revalidates the token against Supabase Auth rather than trusting a
   // possibly-stale cookie.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  //
+  // This runs on every /admin/* and /dashboard/* request (see proxy.ts),
+  // so a transient failure here (Supabase Auth network blip, DNS hiccup)
+  // must never throw — an uncaught rejection would 500 the whole admin
+  // area, including /admin/login itself, until connectivity recovers.
+  // Falling back to `user: null` is the correct fail-closed behavior:
+  // proxy.ts already treats a missing user as "not authenticated" and
+  // redirects to /admin/login, exactly what should happen when the
+  // session genuinely can't be verified.
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  return { user };
+    return { user };
+  } catch (err) {
+    console.error("[updateSession] auth.getUser() failed:", err);
+    return { user: null };
+  }
 }

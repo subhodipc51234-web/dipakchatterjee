@@ -52,6 +52,18 @@ export type Database = {
           },
         ]
       }
+      admins: {
+        Row: {
+          user_id: string
+        }
+        Insert: {
+          user_id: string
+        }
+        Update: {
+          user_id?: string
+        }
+        Relationships: []
+      }
       complaint_media: {
         Row: {
           complaint_id: string
@@ -365,7 +377,7 @@ export type Database = {
           display_order?: number
           id?: string
           is_visible?: boolean
-          label?: string
+          label: string
           url: string
         }
         Update: {
@@ -408,6 +420,42 @@ export type Database = {
           logo_path?: string
           logo_url?: string
           name?: string
+        }
+        Relationships: []
+      }
+      phases: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          is_pinned: boolean
+          period: string | null
+          photos: Json
+          sort_order: number
+          summary: string | null
+          title: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          period?: string | null
+          photos?: Json
+          sort_order?: number
+          summary?: string | null
+          title: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_pinned?: boolean
+          period?: string | null
+          photos?: Json
+          sort_order?: number
+          summary?: string | null
+          title?: string
         }
         Relationships: []
       }
@@ -454,11 +502,12 @@ export type Database = {
           body: string | null
           created_at: string
           created_by: string | null
-          external_link: string | null
           id: string
-          image_interval_ms: number | null
+          is_pinned: boolean
           is_published: boolean
+          links: Json
           published_at: string
+          slideshow_interval: number
           thumbnail_path: string | null
           thumbnail_url: string | null
           title: string | null
@@ -468,11 +517,12 @@ export type Database = {
           body?: string | null
           created_at?: string
           created_by?: string | null
-          external_link?: string | null
           id?: string
-          image_interval_ms?: number | null
+          is_pinned?: boolean
           is_published?: boolean
+          links?: Json
           published_at?: string
+          slideshow_interval?: number
           thumbnail_path?: string | null
           thumbnail_url?: string | null
           title?: string | null
@@ -482,11 +532,12 @@ export type Database = {
           body?: string | null
           created_at?: string
           created_by?: string | null
-          external_link?: string | null
           id?: string
-          image_interval_ms?: number | null
+          is_pinned?: boolean
           is_published?: boolean
+          links?: Json
           published_at?: string
+          slideshow_interval?: number
           thumbnail_path?: string | null
           thumbnail_url?: string | null
           title?: string | null
@@ -511,23 +562,27 @@ export type Database = {
           id: string
           is_admin: boolean
           phone: string | null
-          role: string
+          role: string | null
         }
         Insert: {
+          admin_flag?: boolean | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id: string
           is_admin?: boolean
           phone?: string | null
+          role?: string | null
         }
         Update: {
+          admin_flag?: boolean | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
           is_admin?: boolean
           phone?: string | null
+          role?: string | null
         }
         Relationships: []
       }
@@ -553,12 +608,14 @@ export type Database = {
           hero_image_url: string | null
           homepage_layout: Json | null
           id: string
+          notable_works_limit: number
           office_address: string | null
           office_email: string | null
           office_hours_enabled: boolean
           office_hours_text: string | null
           org_max_per_row: number
           show_organizations_section: boolean
+          show_phases_section: boolean
           show_posts_feed_section: boolean
           theme_primary_color: string
           theme_secondary_color: string
@@ -585,12 +642,14 @@ export type Database = {
           hero_image_url?: string | null
           homepage_layout?: Json | null
           id?: string
+          notable_works_limit?: number
           office_address?: string | null
           office_email?: string | null
           office_hours_enabled?: boolean
           office_hours_text?: string | null
           org_max_per_row?: number
           show_organizations_section?: boolean
+          show_phases_section?: boolean
           show_posts_feed_section?: boolean
           theme_primary_color?: string
           theme_secondary_color?: string
@@ -617,12 +676,14 @@ export type Database = {
           hero_image_url?: string | null
           homepage_layout?: Json | null
           id?: string
+          notable_works_limit?: number
           office_address?: string | null
           office_email?: string | null
           office_hours_enabled?: boolean
           office_hours_text?: string | null
           org_max_per_row?: number
           show_organizations_section?: boolean
+          show_phases_section?: boolean
           show_posts_feed_section?: boolean
           theme_primary_color?: string
           theme_secondary_color?: string
@@ -663,7 +724,10 @@ export type Database = {
     }
     Functions: {
       is_admin: { Args: never; Returns: boolean }
-      transfer_admin_role: { Args: { new_admin_id: string }; Returns: undefined }
+      transfer_admin_role: {
+        Args: { new_admin_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       feature_type: "about" | "public_life_gallery" | "stats" | "custom_section"

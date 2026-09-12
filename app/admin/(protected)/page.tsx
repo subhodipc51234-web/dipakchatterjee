@@ -13,27 +13,44 @@ export const metadata: Metadata = {
 export default async function AdminOverviewPage() {
   const supabase = await createClient();
 
-  const [
-    { count: featureCount },
-    { count: postCount },
-    { count: complaintCount },
-    {
-      data: { user },
-    },
-  ] = await Promise.all([
-    supabase.from("features").select("*", { count: "exact", head: true }),
-    supabase.from("posts").select("*", { count: "exact", head: true }),
-    supabase
-      .from("complaints")
-      .select("*", { count: "exact", head: true })
-      .eq("is_expired", false)
-      .gt("expires_at", new Date().toISOString()),
-    supabase.auth.getUser(),
-  ]);
+  // Each count and the auth check are independent of one another — a
+  // transient failure in one (e.g. a dropped connection mid-request)
+  // shouldn't take down the whole overview page via an unhandled
+  // Promise.all rejection. Any query that fails just falls back to a
+  // safe default (0 / no profile card) instead of crashing.
+  let featureCount = 0;
+  let postCount = 0;
+  let complaintCount = 0;
+  let user: Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"] = null;
 
-  const { data: viewerProfile } = user
-    ? await supabase.from("profiles").select("*").eq("id", user.id).single()
-    : { data: null };
+  try {
+    const [featureResult, postResult, complaintResult, authResult] = await Promise.all([
+      supabase.from("features").select("*", { count: "exact", head: true }),
+      supabase.from("posts").select("*", { count: "exact", head: true }),
+      supabase
+        .from("complaints")
+        .select("*", { count: "exact", head: true })
+        .eq("is_expired", false)
+        .gt("expires_at", new Date().toISOString()),
+      supabase.auth.getUser(),
+    ]);
+    featureCount = featureResult.count ?? 0;
+    postCount = postResult.count ?? 0;
+    complaintCount = complaintResult.count ?? 0;
+    user = authResult.data.user;
+  } catch (err) {
+    console.error("[AdminOverviewPage] initial data load failed:", err);
+  }
+
+  let viewerProfile: Profile | null = null;
+  if (user) {
+    try {
+      const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+      viewerProfile = data;
+    } catch (err) {
+      console.error("[AdminOverviewPage] profile fetch failed:", err);
+    }
+  }
 
   return (
     <div>
