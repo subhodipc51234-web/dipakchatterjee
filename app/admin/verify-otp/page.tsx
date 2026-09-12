@@ -1,17 +1,16 @@
-// app/admin/login/page.tsx
+// app/admin/verify-otp/page.tsx
 //
-// Server wrapper so the brand name/subtitle (Settings -> Header &
-// footer branding, same fields the public site header uses) can be
-// fetched before render — LoginForm.tsx itself is a client component
-// (it needs the browser Supabase client for signInWithPassword).
+// Only reachable with a valid admin_pending_2fa cookie — proxy.ts
+// redirects anyone else to /admin/login before this ever renders. See
+// VerifyOtpForm.tsx and app/admin/login/actions.ts for the flow.
 
 import { createClient } from "@/utils/supabase/server";
-import LoginForm from "./LoginForm";
+import VerifyOtpForm from "./VerifyOtpForm";
 
 const DEFAULT_NAME = "Dipak Chatterjee";
 const DEFAULT_SUBTITLE = "Admin Dashboard";
 
-export default async function LoginPage() {
+export default async function VerifyOtpPage() {
   const supabase = await createClient();
   const { data: settings } = await supabase
     .from("site_settings")
@@ -20,7 +19,7 @@ export default async function LoginPage() {
     .single();
 
   return (
-    <LoginForm
+    <VerifyOtpForm
       brandName={settings?.header_name || DEFAULT_NAME}
       brandSubtitle={settings?.header_subtitle || DEFAULT_SUBTITLE}
     />

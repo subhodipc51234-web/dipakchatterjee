@@ -14,9 +14,17 @@
 
 export type EmbedProvider = "youtube" | "facebook" | "instagram";
 
+// "vertical" locks a 9:16 portrait frame (Shorts/Reels — anything shot
+// for a phone screen); "horizontal" locks 16:9; "auto" (a plain
+// Instagram photo/carousel post, or a Facebook link/post embed) lets
+// the plugin's own iframe report its natural height instead of forcing
+// either ratio, since those aren't reliably one shape or the other.
+export type EmbedOrientation = "vertical" | "horizontal" | "auto";
+
 export type EmbedInfo = {
   provider: EmbedProvider;
   embedUrl: string;
+  orientation: EmbedOrientation;
 };
 
 function extractYouTubeId(url: URL): string | null {
@@ -54,22 +62,39 @@ export function getEmbedInfo(rawUrl: string | null | undefined): EmbedInfo | nul
   if (host === "youtube.com" || host === "youtu.be" || host === "m.youtube.com") {
     const id = extractYouTubeId(url);
     if (!id) return null;
-    return { provider: "youtube", embedUrl: `https://www.youtube-nocookie.com/embed/${id}` };
+    const isShort = /^\/shorts\//.test(url.pathname);
+    return {
+      provider: "youtube",
+      embedUrl: `https://www.youtube-nocookie.com/embed/${id}`,
+      orientation: isShort ? "vertical" : "horizontal",
+    };
   }
 
   if (host === "instagram.com") {
     const shortcode = extractInstagramShortcode(url);
     if (!shortcode) return null;
-    return { provider: "instagram", embedUrl: `https://www.instagram.com/p/${shortcode}/embed` };
+    // /reel/ and /tv/ are always shot vertical; /p/ can be square,
+    // portrait, or landscape, so that one stays "auto".
+    const isReel = /^\/(?:reel|tv)\//.test(url.pathname);
+    return {
+      provider: "instagram",
+      embedUrl: `https://www.instagram.com/p/${shortcode}/embed`,
+      orientation: isReel ? "vertical" : "auto",
+    };
   }
 
   if (host === "facebook.com" || host === "fb.watch") {
+    const isReel = /\/reel\//.test(url.pathname);
+    // fb.watch shortlinks resolve to either a regular video or a reel,
+    // and there's no way to tell from the URL alone — default those to
+    // horizontal, the more common case for shared links.
     const isVideo = /\/videos\/|\/reel\/|\/watch\/?\?/.test(url.pathname + url.search) || host === "fb.watch";
     const plugin = isVideo ? "video" : "post";
     const href = encodeURIComponent(rawUrl);
     return {
       provider: "facebook",
       embedUrl: `https://www.facebook.com/plugins/${plugin}.php?href=${href}&show_text=false`,
+      orientation: isReel ? "vertical" : isVideo ? "horizontal" : "auto",
     };
   }
 

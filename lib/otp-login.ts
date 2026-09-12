@@ -1,48 +1,53 @@
 // lib/otp-login.ts
 //
-// Orchestrates a login OTP challenge: generate, hash + store, send to
-// both channels simultaneously, and verify a submitted code. Always
-// uses the service-role client (admin_otp_codes has no client-facing
-// RLS policies at all — see the migration).
+// Orchestrates the mandatory login OTP challenge: generate, hash +
+// store, send by email, and verify a submitted code. Always uses the
+// service-role client (admin_otp_codes has no client-facing RLS
+// policies at all — see the migration).
 //
-// The OTP always goes to the site's single ADMIN profile's email/phone
-// (not necessarily whichever account is logging in) — this is a small,
-// single-admin site where the admin is meant to be the one gatekeeping
-// every login, including a USER account's. See
-// app/admin/login/actions.ts for how this plugs into the login flow.
+// The OTP always goes to the site's single ADMIN profile's email (not
+// necessarily whichever account is logging in) — this is a small site
+// where the admin is meant to be the one gatekeeping every login,
+// including a MODERATOR or USER account's. See
+// app/admin/login/actions.ts for how this plugs into the two-step
+// login flow (password, then this).
 //
-// Fail-safe by design: if neither email nor SMS is configured (no
-// provider env vars set), requestLoginOtp *skips* the challenge rather
-// than issuing a code nobody can ever receive — otherwise the very
-// first deploy of this feature would permanently lock the admin out of
-// their own dashboard. Configure RESEND_API_KEY/RESEND_FROM_EMAIL
-// and/or a SMS provider (see lib/notify/sms.ts) to turn the challenge on.
-
+// SMS is temporarily disabled (SMS_OTP_ENABLED below) — the `phone`
+// column and the dashboard's phone field stay put so it can be
+// re-enabled later, but no OTP is ever dispatched over it right now.
+//
+// This used to be skippable whenever RESEND_API_KEY/RESEND_FROM_EMAIL
+// weren't set, on the theory that a code nobody could ever receive
+// shouldn't lock the admin out. In practice that made OTP silently
+// optional — the exact "password alone gets you into the dashboard"
+// bypass this file now closes. The only remaining fail-safe is the
+// truly unrecoverable case: the admin profile has no email address on
+// file at all, so there is nowhere to send a challenge to no matter how
+// the provider is configured. Whenever the provider itself isn't
+// configured but an email address exists, the code is logged to the
+// server console instead of a real inbox — enough to complete the flow
+// in local development without ever bypassing the step. Configure
+// RESEND_API_KEY/RESEND_FROM_EMAIL to actually deliver it by email.
 import { createServiceClient } from "@/utils/supabase/admin";
 import { generateOtp, hashOtp, verifyOtpHash, OTP_TTL_MS, OTP_MAX_ATTEMPTS } from "@/lib/otp";
-import { sendOtpEmail, type EmailResult } from "@/lib/notify/email";
-import { sendOtpSms, type SmsResult } from "@/lib/notify/sms";
+import { sendOtpEmail } from "@/lib/notify/email";
+import { sendOtpSms } from "@/lib/notify/sms";
+
+// Flip back to true to re-enable the SMS leg once a provider + a
+// verified admin phone number are both in place.
+const SMS_OTP_ENABLED = false;
 
 const RESEND_COOLDOWN_MS = 30 * 1000;
 
 export type OtpRequestResult =
-  | { status: "sent"; channels: { email: boolean; sms: boolean } }
+  | { status: "sent" }
+  // Fail-safe for the one truly unrecoverable case: no admin email on
+  // file anywhere to challenge against.
   | { status: "skipped" }
   | { status: "cooldown"; retryAfterSeconds: number };
 
 export async function requestLoginOtp(userId: string): Promise<OtpRequestResult> {
   const supabase = createServiceClient();
-
-  const emailConfigured = Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
-  const smsConfigured = Boolean(
-    process.env.FAST2SMS_API_KEY ||
-      (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM_NUMBER)
-  );
-
-  if (!emailConfigured && !smsConfigured) {
-    console.warn("[otp] No email or SMS provider configured — skipping the OTP challenge. See .env.example.");
-    return { status: "skipped" };
-  }
 
   const { data: mostRecent } = await supabase
     .from("admin_otp_codes")
@@ -67,11 +72,16 @@ export async function requestLoginOtp(userId: string): Promise<OtpRequestResult>
     .eq("is_admin", true)
     .single();
 
+  if (!admin?.email) {
+    console.warn("[otp] Admin profile has no email on file — nowhere to send a challenge. Skipping OTP.");
+    return { status: "skipped" };
+  }
+
   const code = generateOtp();
   const codeHash = hashOtp(code);
   const expiresAt = new Date(Date.now() + OTP_TTL_MS).toISOString();
 
-  await supabase.from("admin_otp_codes").delete().eq("user_id", userId).is("consumed_at", null);
+  await supabase.from("admin_otp_codes").delete().eq("user_id", userId);
 
   const { error } = await supabase.from("admin_otp_codes").insert({
     user_id: userId,
@@ -80,25 +90,32 @@ export async function requestLoginOtp(userId: string): Promise<OtpRequestResult>
   });
   if (error) throw new Error(error.message);
 
-  const [emailResult, smsResult] = await Promise.all([
-    emailConfigured && admin?.email
-      ? sendOtpEmail(admin.email, code)
-      : Promise.resolve<EmailResult>({ sent: false, skipped: true }),
-    smsConfigured && admin?.phone
-      ? sendOtpSms(admin.phone, code)
-      : Promise.resolve<SmsResult>({ sent: false, skipped: true }),
-  ]);
+  const emailConfigured = Boolean(process.env.RESEND_API_KEY && process.env.RESEND_FROM_EMAIL);
 
-  if (emailResult.error) console.error("[otp] email send failed:", emailResult.error);
-  if (smsResult.error) console.error("[otp] sms send failed:", smsResult.error);
-
-  if (!emailResult.sent && !smsResult.sent) {
-    throw new Error(
-      "Could not send the login code by email or SMS. Check that the admin profile has an email/phone set and that the provider credentials in .env.local are correct."
+  if (!emailConfigured) {
+    // Dev-only fallback so the mandatory OTP step can still be
+    // completed locally without a real provider wired up. Never do
+    // this in production — RESEND_API_KEY/RESEND_FROM_EMAIL should
+    // always be set there.
+    console.warn(
+      `[otp] RESEND_API_KEY/RESEND_FROM_EMAIL not set — dev fallback, your login code is: ${code} (expires in 5 minutes)`
     );
+  } else {
+    const emailResult = await sendOtpEmail(admin.email, code);
+    if (emailResult.error) console.error("[otp] email send failed:", emailResult.error);
+    if (!emailResult.sent) {
+      throw new Error(
+        "Could not send the login code by email. Check that RESEND_API_KEY/RESEND_FROM_EMAIL in .env.local are correct."
+      );
+    }
   }
 
-  return { status: "sent", channels: { email: emailResult.sent, sms: smsResult.sent } };
+  if (SMS_OTP_ENABLED && admin.phone) {
+    const smsResult = await sendOtpSms(admin.phone, code);
+    if (smsResult.error) console.error("[otp] sms send failed:", smsResult.error);
+  }
+
+  return { status: "sent" };
 }
 
 export type OtpVerifyResult =
@@ -112,7 +129,6 @@ export async function verifyLoginOtp(userId: string, code: string): Promise<OtpV
     .from("admin_otp_codes")
     .select("*")
     .eq("user_id", userId)
-    .is("consumed_at", null)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -135,6 +151,10 @@ export async function verifyLoginOtp(userId: string, code: string): Promise<OtpV
     return { ok: false, reason: "invalid" };
   }
 
-  await supabase.from("admin_otp_codes").update({ consumed_at: new Date().toISOString() }).eq("id", row.id);
+  // Delete rather than mark consumed: once verified, the code must never
+  // be checkable again under any circumstance (see the Server Action
+  // that calls this — it's also gated behind the pending-2FA cookie, so
+  // this is defense in depth, not the only thing preventing reuse).
+  await supabase.from("admin_otp_codes").delete().eq("id", row.id);
   return { ok: true };
 }

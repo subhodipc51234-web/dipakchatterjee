@@ -23,6 +23,9 @@ import {
   Rss,
 } from "lucide-react";
 
+const DEFAULT_BRAND_NAME = "Dipak Chatterjee";
+const DEFAULT_BRAND_SUBTITLE = "Admin Dashboard";
+
 export default async function AdminProtectedLayout({
   children,
 }: {
@@ -38,20 +41,23 @@ export default async function AdminProtectedLayout({
     redirect("/admin/login");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("is_admin, full_name")
-    .eq("id", user.id)
-    .single();
+  const [{ data: profile }, { data: settings }] = await Promise.all([
+    supabase.from("profiles").select("is_admin, is_moderator, full_name").eq("id", user.id).single(),
+    supabase.from("site_settings").select("header_name, header_subtitle").eq("id", "default").single(),
+  ]);
 
-  // Any recognized profile (ADMIN or USER) may view the dashboard shell
-  // — privileged mutations are gated separately, per-action, by
-  // requireAdmin() (see lib/admin-guard.ts). A row missing entirely
-  // means this Supabase user has no profile at all, which shouldn't
-  // happen for a real account.
+  // Any recognized profile (ADMIN, MODERATOR, or USER) may view the
+  // dashboard shell — privileged mutations are gated separately,
+  // per-action, by requireAdmin()/requireOwner() (see
+  // lib/admin-guard.ts). A row missing entirely means this Supabase
+  // user has no profile at all, which shouldn't happen for a real
+  // account.
   if (!profile) {
     redirect("/admin/login");
   }
+
+  const brandName = settings?.header_name || DEFAULT_BRAND_NAME;
+  const brandSubtitle = settings?.header_subtitle || DEFAULT_BRAND_SUBTITLE;
 
   return (
     <div className="min-h-screen flex">
@@ -64,8 +70,8 @@ export default async function AdminProtectedLayout({
 
       <aside className="w-64 shrink-0 bg-navy-900 text-paper-100 flex flex-col">
         <div className="px-6 py-6 border-b border-white/10">
-          <p className="font-display text-lg text-white">Dipak Chatterjee</p>
-          <p className="text-xs text-paper-100/60 mt-1">Admin Dashboard</p>
+          <p className="font-display text-lg text-white">{brandName}</p>
+          <p className="text-xs text-paper-100/60 mt-1">{brandSubtitle}</p>
         </div>
 
         <nav className="flex-1 px-3 py-5 space-y-1">

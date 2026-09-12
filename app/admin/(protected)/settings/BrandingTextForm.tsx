@@ -77,7 +77,9 @@ export default function BrandingTextForm({ settings }: { settings: SiteSettings 
       <p className="text-sm font-semibold text-navy-900 mb-1">Header &amp; footer branding</p>
       <p className="text-xs text-ink-400 mb-5">
         Leave any field blank to fall back to the original site copy. These update the header
-        (name + subtitle beside the icon) and the footer, on both desktop and mobile.
+        (name + subtitle beside the icon) and the footer on the public site, on both desktop and
+        mobile — the name also appears in this dashboard&apos;s sidebar and on the sign-in/verification
+        screens.
       </p>
 
       <form onSubmit={handleSubmit(submit)} className="space-y-5">

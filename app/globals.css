@@ -10,6 +10,12 @@
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;
+  /* Reserves the vertical scrollbar's width at all times. Without this,
+     expanding the hero bio (Read More) grows the page just enough to
+     cross the scrollbar threshold, and the scrollbar popping in shifts
+     the entire page (including "Organizations Worked With" below the
+     hero) sideways by its width. */
+  scrollbar-gutter: stable;
 }
 
 body {

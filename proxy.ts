@@ -16,10 +16,14 @@
 //      same protected area) only: refresh the Supabase session and
 //      require BOTH a Supabase user AND a valid, non-expired OTP
 //      session cookie (see lib/otp-session.ts) — the second factor
-//      completed at login. Redirects an unauthenticated or
-//      OTP-unverified visitor to /admin/login, and a fully verified
-//      admin away from /admin/login. Scoped to these prefixes so public
-//      pages never pay for an extra Supabase auth round trip.
+//      completed at login. A visitor with neither goes to /admin/login;
+//      one who's passed the password check but not yet the OTP (the
+//      admin_pending_2fa cookie, set right after password verification
+//      — see app/admin/login/actions.ts) goes to /admin/verify-otp
+//      instead, so a stuck step 1 doesn't look like a failed login. A
+//      fully verified admin is redirected away from both /admin/login
+//      and /admin/verify-otp. Scoped to these prefixes so public pages
+//      never pay for an extra Supabase auth round trip.
 //
 // Note: proxy.ts always runs on the Node.js runtime (not Edge), so the
 // full Supabase SSR client works here without any edge-compatibility
@@ -27,7 +31,12 @@
 
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/utils/supabase/middleware";
-import { OTP_SESSION_COOKIE, verifyOtpSessionToken } from "@/lib/otp-session";
+import {
+  OTP_SESSION_COOKIE,
+  PENDING_2FA_COOKIE,
+  verifyOtpSessionToken,
+  verifyPending2faToken,
+} from "@/lib/otp-session";
 
 function supabaseHost(): string {
   try {
@@ -85,18 +94,37 @@ export async function proxy(request: NextRequest) {
   if (isAdminRoute) {
     const { user } = await updateSession(request, response);
     const isLoginRoute = pathname === "/admin/login";
+    const isVerifyOtpRoute = pathname === "/admin/verify-otp";
 
-    const otpToken = request.cookies.get(OTP_SESSION_COOKIE)?.value;
-    const otpSession = verifyOtpSessionToken(otpToken);
-    // The OTP session cookie is bound to whichever user completed the
-    // challenge — a stale cookie from a previous account (or a signed
-    // session for a user who's since signed out) doesn't count.
+    // Both cookies are bound to whichever user set them — a stale
+    // cookie from a previous account (or a signed session for a user
+    // who's since signed out) doesn't count for either.
+    const otpSession = verifyOtpSessionToken(request.cookies.get(OTP_SESSION_COOKIE)?.value);
     const isOtpVerified = Boolean(user && otpSession && otpSession.userId === user.id);
 
-    if (!isLoginRoute && !isOtpVerified) {
-      response = NextResponse.redirect(new URL("/admin/login", request.url));
-    } else if (isLoginRoute && isOtpVerified) {
-      response = NextResponse.redirect(new URL("/admin", request.url));
+    const pending2fa = verifyPending2faToken(request.cookies.get(PENDING_2FA_COOKIE)?.value);
+    const isPending2fa = Boolean(user && pending2fa && pending2fa.userId === user.id);
+
+    if (isVerifyOtpRoute) {
+      if (isOtpVerified) {
+        response = NextResponse.redirect(new URL("/admin", request.url));
+      } else if (!isPending2fa) {
+        // Can't verify a code without having completed the password
+        // step first — nothing to check against.
+        response = NextResponse.redirect(new URL("/admin/login", request.url));
+      }
+    } else if (isLoginRoute) {
+      if (isOtpVerified) {
+        response = NextResponse.redirect(new URL("/admin", request.url));
+      }
+      // Otherwise let /admin/login render even with a pending 2FA
+      // cookie present — re-submitting credentials there is how a
+      // stuck step 1 gets a fresh code.
+    } else if (!isOtpVerified) {
+      // Every other /admin (and /dashboard) route requires a verified
+      // session. Mid-2FA goes back to the OTP prompt rather than the
+      // credentials form.
+      response = NextResponse.redirect(new URL(isPending2fa ? "/admin/verify-otp" : "/admin/login", request.url));
     }
   }
 

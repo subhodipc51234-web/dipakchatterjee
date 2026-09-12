@@ -32,19 +32,22 @@ export default async function SettingsPage() {
     data: { user },
   } = await supabase.auth.getUser();
   const { data: viewerProfile } = user
-    ? await supabase.from("profiles").select("is_admin").eq("id", user.id).single()
+    ? await supabase.from("profiles").select("is_admin, is_moderator").eq("id", user.id).single()
     : { data: null };
 
   // Settings holds site-wide content controls and the Users & Access
-  // panel — kept admin-only even though the dashboard shell itself now
-  // also allows a plain USER account in (see the (protected) layout).
-  if (!viewerProfile?.is_admin) {
+  // panel. ADMIN and MODERATOR both get full content/settings access —
+  // kept off-limits to a plain USER account even though the dashboard
+  // shell itself lets one in (see the (protected) layout). Users &
+  // Access itself further restricts mutation controls to the ADMIN
+  // alone — see viewerIsOwner below and UsersManager.tsx.
+  if (!viewerProfile?.is_admin && !viewerProfile?.is_moderator) {
     return (
       <div className="max-w-2xl">
         <p className="text-sm font-semibold text-saffron-600 mb-2">Settings</p>
         <h1 className="font-display text-3xl text-navy-900 mb-4">Admins only</h1>
         <p className="text-sm text-ink-600">
-          Site settings are managed by the account holding the ADMIN role.
+          Site settings are managed by the ADMIN and MODERATOR accounts.
         </p>
       </div>
     );
@@ -147,7 +150,13 @@ export default async function SettingsPage() {
             />
           </>
         }
-        users={<UsersManager users={(profiles as Profile[]) ?? []} viewerId={user!.id} />}
+        users={
+          <UsersManager
+            users={(profiles as Profile[]) ?? []}
+            viewerId={user!.id}
+            viewerIsOwner={Boolean(viewerProfile.is_admin)}
+          />
+        }
       />
     </div>
   );

@@ -1,19 +1,21 @@
 // app/admin/(protected)/settings/UsersManager.tsx
 //
-// Settings -> Users & Access. Lists every profile, lets the admin add a
-// new USER account (no password confirmation needed — creating an
-// account isn't a destructive/privilege-changing action), and exposes
-// Delete / Transfer Admin on any non-admin row, both gated behind a
-// password-confirmation modal. The single active ADMIN's own row has
-// neither action: it can't be deleted, and it's already the admin.
+// Settings -> Users & Access. Every recognized profile (ADMIN,
+// MODERATOR, or USER) can reach the Settings page and view this list —
+// see page.tsx's gate — but mutation controls (add a user, promote/
+// demote, transfer admin, delete) only ever render for `viewerIsOwner`
+// (the single ADMIN). A MODERATOR sees the same list, read-only, plus
+// an "Edit contact" button on their own row only. The ADMIN's own row
+// never gets a delete/transfer/role action: it can't be deleted, and
+// role changes for it go through Transfer Admin, not setUserRole.
 
 "use client";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Crown, Loader2, Pencil, ShieldCheck, Trash2, UserPlus } from "lucide-react";
+import { Crown, Loader2, Pencil, ShieldCheck, ShieldOff, Trash2, UserPlus } from "lucide-react";
 import type { Profile } from "@/types/domain";
-import { createUserAccount, deleteUserAccount, transferAdminRole } from "./user-actions";
+import { createUserAccount, deleteUserAccount, setUserRole, transferAdminRole } from "./user-actions";
 import ContactInfoModal from "@/components/admin/ContactInfoModal";
 
 function formatDate(value: string) {
@@ -22,10 +24,22 @@ function formatDate(value: string) {
 
 type PendingAction = { kind: "delete" | "transfer"; userId: string; name: string } | null;
 
-export default function UsersManager({ users, viewerId }: { users: Profile[]; viewerId: string }) {
+export default function UsersManager({
+  users,
+  viewerId,
+  viewerIsOwner,
+}: {
+  users: Profile[];
+  viewerId: string;
+  /** True only for the single ADMIN account — every mutation control (add/promote/demote/transfer/delete) is hidden from a MODERATOR viewer. */
+  viewerIsOwner: boolean;
+}) {
   const router = useRouter();
   const [pending, setPending] = useState<PendingAction>(null);
   const [editingContact, setEditingContact] = useState<Profile | null>(null);
+  const [rolePendingId, setRolePendingId] = useState<string | null>(null);
+  const [roleError, setRoleError] = useState<string | null>(null);
+  const [, startRoleTransition] = useTransition();
 
   const admin = users.find((u) => u.is_admin);
   const others = users.filter((u) => !u.is_admin);
@@ -34,12 +48,30 @@ export default function UsersManager({ users, viewerId }: { users: Profile[]; vi
     router.refresh();
   }
 
+  function handleRoleToggle(userId: string, nextRole: "USER" | "MODERATOR") {
+    setRoleError(null);
+    setRolePendingId(userId);
+    startRoleTransition(async () => {
+      try {
+        await setUserRole(userId, nextRole);
+        refresh();
+      } catch (err) {
+        setRoleError(err instanceof Error ? err.message : "Failed to update role.");
+      } finally {
+        setRolePendingId(null);
+      }
+    });
+  }
+
   return (
     <div className="bg-white border border-line rounded-xl p-6 md:p-8">
       <p className="text-sm font-semibold text-navy-900 mb-1">Users &amp; Access</p>
       <p className="text-xs text-ink-400 mb-5">
-        Exactly one account holds the ADMIN role at any time. Every other account is a standard
-        USER. Deleting a user or transferring the ADMIN role requires your current password.
+        Exactly one account holds the ADMIN role at any time. MODERATOR accounts have full content
+        and settings access but can&apos;t manage users.
+        {viewerIsOwner
+          ? " Adding, promoting/demoting, transferring, or deleting a user requires your current password where noted."
+          : " Only the ADMIN account can add, edit, or remove users."}
       </p>
 
       <ul className="space-y-2 mb-6">
@@ -47,23 +79,41 @@ export default function UsersManager({ users, viewerId }: { users: Profile[]; vi
           <UserRow
             key={admin.id}
             profile={admin}
+            viewerIsOwner={viewerIsOwner}
+            isSelf={admin.id === viewerId}
             onEditContact={() => setEditingContact(admin)}
-            onDelete={undefined}
-            onTransfer={undefined}
           />
         )}
         {others.map((u) => (
           <UserRow
             key={u.id}
             profile={u}
+            viewerIsOwner={viewerIsOwner}
+            isSelf={u.id === viewerId}
             onEditContact={() => setEditingContact(u)}
-            onDelete={() => setPending({ kind: "delete", userId: u.id, name: u.full_name || u.email || "this user" })}
-            onTransfer={() => setPending({ kind: "transfer", userId: u.id, name: u.full_name || u.email || "this user" })}
+            onDelete={
+              viewerIsOwner
+                ? () => setPending({ kind: "delete", userId: u.id, name: u.full_name || u.email || "this user" })
+                : undefined
+            }
+            onTransfer={
+              viewerIsOwner
+                ? () => setPending({ kind: "transfer", userId: u.id, name: u.full_name || u.email || "this user" })
+                : undefined
+            }
+            onToggleRole={viewerIsOwner ? () => handleRoleToggle(u.id, u.is_moderator ? "USER" : "MODERATOR") : undefined}
+            roleActionPending={rolePendingId === u.id}
           />
         ))}
       </ul>
 
-      <AddUserForm onCreated={refresh} />
+      {roleError && (
+        <p className="text-xs text-rust mb-4" role="alert">
+          {roleError}
+        </p>
+      )}
+
+      {viewerIsOwner && <AddUserForm onCreated={refresh} />}
 
       {pending && (
         <PasswordConfirmModal
@@ -80,7 +130,7 @@ export default function UsersManager({ users, viewerId }: { users: Profile[]; vi
         <ContactInfoModal
           profile={editingContact}
           viewerId={viewerId}
-          viewerIsAdmin={true}
+          viewerIsAdmin={viewerIsOwner}
           onClose={() => setEditingContact(null)}
           onSaved={() => {
             setEditingContact(null);
@@ -92,29 +142,46 @@ export default function UsersManager({ users, viewerId }: { users: Profile[]; vi
   );
 }
 
+const ROLE_BADGE_STYLES: Record<string, string> = {
+  ADMIN: "bg-saffron-100 text-saffron-600",
+  MODERATOR: "bg-[var(--theme-secondary)]/10 text-navy-900",
+  USER: "bg-paper-100 text-ink-400 border border-line",
+};
+
 function UserRow({
   profile,
+  viewerIsOwner,
+  isSelf,
   onEditContact,
   onDelete,
   onTransfer,
+  onToggleRole,
+  roleActionPending,
 }: {
   profile: Profile;
+  viewerIsOwner: boolean;
+  isSelf: boolean;
   onEditContact: () => void;
   onDelete?: () => void;
   onTransfer?: () => void;
+  onToggleRole?: () => void;
+  roleActionPending?: boolean;
 }) {
+  const roleLabel = profile.is_admin ? "ADMIN" : profile.is_moderator ? "MODERATOR" : "USER";
+  // Anyone can edit their own contact info; only the owner can edit
+  // someone else's (matches the server-side rule in updateContactInfo).
+  const canEditContact = isSelf || viewerIsOwner;
+
   return (
     <li className="flex flex-wrap items-center gap-3 rounded-md border border-line bg-white p-3">
       <div className="flex-1 min-w-[180px]">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold text-navy-900">{profile.full_name || "Unnamed"}</p>
           <span
-            className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded ${
-              profile.is_admin ? "bg-saffron-100 text-saffron-600" : "bg-paper-100 text-ink-400 border border-line"
-            }`}
+            className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded ${ROLE_BADGE_STYLES[roleLabel]}`}
           >
             {profile.is_admin && <Crown className="w-3 h-3" />}
-            {profile.is_admin ? "ADMIN" : "USER"}
+            {roleLabel}
           </span>
         </div>
         <p className="text-xs text-ink-400 mt-0.5">
@@ -125,35 +192,56 @@ function UserRow({
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        <button
-          type="button"
-          onClick={onEditContact}
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-600 hover:text-navy-900 border border-line hover:border-navy-900/30 rounded-md px-2.5 py-1.5"
-        >
-          <Pencil className="w-3.5 h-3.5" />
-          Edit contact
-        </button>
+        {canEditContact && (
+          <button
+            type="button"
+            onClick={onEditContact}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-600 hover:text-navy-900 border border-line hover:border-navy-900/30 rounded-md px-2.5 py-1.5"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Edit contact
+          </button>
+        )}
 
-        {!profile.is_admin && (
-          <>
-            <button
-              type="button"
-              onClick={onTransfer}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-saffron-600 hover:text-saffron border border-saffron/30 hover:border-saffron/60 rounded-md px-2.5 py-1.5"
-            >
+        {!profile.is_admin && onToggleRole && (
+          <button
+            type="button"
+            onClick={onToggleRole}
+            disabled={roleActionPending}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-navy-900 hover:text-saffron-600 border border-line hover:border-saffron/60 rounded-md px-2.5 py-1.5 disabled:opacity-60"
+          >
+            {roleActionPending ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : profile.is_moderator ? (
+              <ShieldOff className="w-3.5 h-3.5" />
+            ) : (
               <ShieldCheck className="w-3.5 h-3.5" />
-              Transfer Admin
-            </button>
-            <button
-              type="button"
-              onClick={onDelete}
-              aria-label="Delete user"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-rust hover:text-rust/80 border border-rust/30 hover:border-rust/60 rounded-md px-2.5 py-1.5"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-              Delete
-            </button>
-          </>
+            )}
+            {profile.is_moderator ? "Remove Moderator" : "Make Moderator"}
+          </button>
+        )}
+
+        {!profile.is_admin && onTransfer && (
+          <button
+            type="button"
+            onClick={onTransfer}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-saffron-600 hover:text-saffron border border-saffron/30 hover:border-saffron/60 rounded-md px-2.5 py-1.5"
+          >
+            <ShieldCheck className="w-3.5 h-3.5" />
+            Transfer Admin
+          </button>
+        )}
+
+        {!profile.is_admin && onDelete && (
+          <button
+            type="button"
+            onClick={onDelete}
+            aria-label="Delete user"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-rust hover:text-rust/80 border border-rust/30 hover:border-rust/60 rounded-md px-2.5 py-1.5"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            Delete
+          </button>
         )}
       </div>
     </li>
@@ -165,6 +253,7 @@ function AddUserForm({ onCreated }: { onCreated: () => void }) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState<"USER" | "MODERATOR">("USER");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -173,11 +262,12 @@ function AddUserForm({ onCreated }: { onCreated: () => void }) {
     setError(null);
     startTransition(async () => {
       try {
-        await createUserAccount({ name, email, phone, password });
+        await createUserAccount({ name, email, phone, password, role });
         setName("");
         setEmail("");
         setPhone("");
         setPassword("");
+        setRole("USER");
         onCreated();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to create user.");
@@ -221,6 +311,14 @@ function AddUserForm({ onCreated }: { onCreated: () => void }) {
           autoComplete="new-password"
           className="rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-saffron focus:outline-none"
         />
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value as "USER" | "MODERATOR")}
+          className="sm:col-span-2 rounded-md border border-line bg-white px-3 py-2.5 text-sm text-ink focus:border-saffron focus:outline-none"
+        >
+          <option value="USER">Standard User</option>
+          <option value="MODERATOR">Moderator (full content/settings access)</option>
+        </select>
       </div>
 
       {error && (
@@ -282,7 +380,7 @@ function PasswordConfirmModal({
         <p className="text-xs text-ink-600 mb-4">
           {isDelete
             ? `This permanently deletes ${pending.name}'s account. Enter your password to confirm.`
-            : `${pending.name} will become the sole ADMIN and you'll be downgraded to a USER. Enter your password to confirm.`}
+            : `${pending.name} will become the sole ADMIN and you'll be downgraded to a standard USER. Enter your password to confirm.`}
         </p>
 
         <form onSubmit={submit} className="space-y-3">

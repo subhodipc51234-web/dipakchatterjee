@@ -510,6 +510,7 @@ export type Database = {
           full_name: string | null
           id: string
           is_admin: boolean
+          is_moderator: boolean
           phone: string | null
           role: string
         }
@@ -519,6 +520,7 @@ export type Database = {
           full_name?: string | null
           id: string
           is_admin?: boolean
+          is_moderator?: boolean
           phone?: string | null
         }
         Update: {
@@ -527,6 +529,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           is_admin?: boolean
+          is_moderator?: boolean
           phone?: string | null
         }
         Relationships: []

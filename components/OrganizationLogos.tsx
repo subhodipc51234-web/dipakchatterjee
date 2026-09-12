@@ -4,12 +4,17 @@
 // different sizes:
 //
 //   - Mobile: a vertical stacked list, one row per organization — logo
-//     on the LEFT (fixed square box, `object-contain`), Designation/
-//     role and Organization name stacked on the RIGHT. Designation is
-//     the prominent top line; the org name is the smaller line below
-//     it. Text wraps freely — never truncated/ellipsized/line-clamped.
+//     on the LEFT (circular avatar, `object-cover`), Designation/role
+//     and Organization name stacked on the RIGHT. Designation is the
+//     prominent top line; the org name is the smaller line below it.
+//     Text wraps freely — never truncated/ellipsized/line-clamped.
 //   - Desktop (sm+): the original wrapped card grid, logo above text,
 //     with the same Designation-then-Name hierarchy inside each card.
+//
+// Neither layout draws a border around the card/row itself — width and
+// spacing stay fixed and uniform for grid/list alignment, but height is
+// intentionally NOT fixed: text wraps and the container grows to fit it
+// rather than clamping or cutting anything off.
 //
 // Both Designation and Organization name are mandatory at the data
 // layer (Settings -> Affiliated Organizations), so every row always
@@ -45,11 +50,11 @@ function MobileOrgRow({ org }: { org: Organization }) {
   return (
     <OrgLink
       org={org}
-      className="flex flex-row items-center gap-4 p-3 rounded-lg border border-line bg-white hover:border-[var(--theme-primary)]/50 transition-colors"
+      className="flex flex-row items-center gap-4 p-3 rounded-lg hover:bg-white transition-colors"
     >
-      <span className="w-14 h-14 shrink-0 rounded-lg overflow-hidden bg-white flex items-center justify-center border border-line/60">
+      <span className="w-14 h-14 shrink-0 rounded-full overflow-hidden bg-white flex items-center justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={org.logo_url} alt={org.name} className="w-full h-full object-contain p-1.5" />
+        <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover" />
       </span>
 
       <span className="min-w-0">
@@ -71,13 +76,16 @@ function DesktopOrgCard({ org }: { org: Organization }) {
   return (
     <OrgLink
       org={org}
-      className="w-32 min-h-[11rem] flex flex-col items-center text-center gap-3 p-4 rounded-lg border border-line bg-white hover:border-[var(--theme-primary)]/50 hover:shadow-md transition-colors"
+      className="w-32 flex flex-col items-center text-center gap-3 p-4 rounded-lg hover:bg-white transition-colors"
     >
-      <span className="w-24 h-24 rounded-lg overflow-hidden shrink-0 bg-white flex items-center justify-center">
+      <span className="w-24 h-24 rounded-full overflow-hidden shrink-0 bg-white flex items-center justify-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={org.logo_url} alt={org.name} className="w-full h-full object-contain p-2" />
+        <img src={org.logo_url} alt={org.name} className="w-full h-full object-cover" />
       </span>
 
+      {/* No line-clamp/fixed height — the card's width stays fixed for
+          grid alignment, but its height grows to fit however many
+          lines the designation/name actually wrap to. */}
       <span>
         <span className="block text-sm font-bold text-navy-900 leading-tight">
           {org.designation || org.name}
