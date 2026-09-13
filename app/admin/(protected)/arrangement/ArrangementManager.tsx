@@ -46,6 +46,7 @@ import {
 } from "@/lib/homepage-layout";
 import { updateHomepageSectionVisibility } from "../settings/actions";
 import { toggleFeaturePublished } from "../features/actions";
+import { togglePhasePublished } from "../phases/actions";
 import { updateArrangementOrder } from "./actions";
 
 const FIXED_SECTION_KEYS = [ORGANIZATIONS_SECTION_KEY, POSTS_SECTION_KEY];
@@ -102,8 +103,11 @@ export default function ArrangementManager({
   const [order, setOrder] = useState(initialOrder);
   const [organizationsVisible, setOrganizationsVisible] = useState(initialOrganizationsVisible);
   const [postsVisible, setPostsVisible] = useState(initialPostsVisible);
-  const [featureVisibility, setFeatureVisibility] = useState<Record<string, boolean>>(
-    () => Object.fromEntries(features.map((f) => [f.id, f.is_published]))
+  // Keyed by section id (feature or phase — separate uuid keyspaces, so
+  // no collision risk) rather than split into two maps, since both kinds
+  // toggle the exact same way now that phases has its own is_published.
+  const [sectionVisibility, setSectionVisibility] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries([...features.map((f) => [f.id, f.is_published]), ...phases.map((p) => [p.id, p.is_published])])
   );
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -168,16 +172,16 @@ export default function ArrangementManager({
     });
   }
 
-  function handleToggleFeature(featureId: string) {
-    const next = !featureVisibility[featureId];
-    setFeatureVisibility((prev) => ({ ...prev, [featureId]: next }));
+  function handleToggleSection(id: string, kind: "feature" | "phase") {
+    const next = !sectionVisibility[id];
+    setSectionVisibility((prev) => ({ ...prev, [id]: next }));
     setError(null);
 
     startTransition(async () => {
       try {
-        await toggleFeaturePublished(featureId, next);
+        await (kind === "feature" ? toggleFeaturePublished(id, next) : togglePhasePublished(id, next));
       } catch (err) {
-        setFeatureVisibility((prev) => ({ ...prev, [featureId]: !next }));
+        setSectionVisibility((prev) => ({ ...prev, [id]: !next }));
         setError(err instanceof Error ? err.message : "Failed to save.");
       }
     });
@@ -187,13 +191,10 @@ export default function ArrangementManager({
     if (key === ORGANIZATIONS_SECTION_KEY) return organizationsVisible;
     if (key === POSTS_SECTION_KEY) return postsVisible;
     const featureId = featureIdFromKey(key);
-    if (featureId) return featureVisibility[featureId] ?? false;
-    // A phase has no publish flag — it's always shown once created.
+    if (featureId) return sectionVisibility[featureId] ?? false;
+    const phaseId = phaseIdFromKey(key);
+    if (phaseId) return sectionVisibility[phaseId] ?? false;
     return true;
-  }
-
-  function isToggleable(key: string) {
-    return !phaseIdFromKey(key);
   }
 
   function handleToggle(key: string) {
@@ -202,7 +203,9 @@ export default function ArrangementManager({
       return;
     }
     const featureId = featureIdFromKey(key);
-    if (featureId) handleToggleFeature(featureId);
+    if (featureId) return handleToggleSection(featureId, "feature");
+    const phaseId = phaseIdFromKey(key);
+    if (phaseId) return handleToggleSection(phaseId, "phase");
   }
 
   return (
@@ -242,7 +245,6 @@ export default function ArrangementManager({
                   label={sectionLabel(key, featureMap, phaseMap)}
                   typeLabel={sectionTypeLabel(key, featureMap)}
                   visible={isVisible(key)}
-                  toggleable={isToggleable(key)}
                   disabled={isPending}
                   canMoveUp={index > 0}
                   canMoveDown={index < order.length - 1}
@@ -268,7 +270,6 @@ function SortableSectionRow({
   label,
   typeLabel,
   visible,
-  toggleable,
   disabled,
   canMoveUp,
   canMoveDown,
@@ -280,7 +281,6 @@ function SortableSectionRow({
   label: string;
   typeLabel: string;
   visible: boolean;
-  toggleable: boolean;
   disabled: boolean;
   canMoveUp: boolean;
   canMoveDown: boolean;
@@ -341,25 +341,19 @@ function SortableSectionRow({
         </button>
       </div>
 
-      {toggleable ? (
-        <button
-          type="button"
-          onClick={onToggle}
-          disabled={disabled}
-          aria-pressed={visible}
-          title={visible ? "Visible — click to hide" : "Hidden — click to show"}
-          className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-md border disabled:opacity-60 ${
-            visible ? "border-forest text-forest bg-forest-100" : "border-line text-ink-400 bg-paper-100"
-          }`}
-        >
-          {visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-          {visible ? "Shown" : "Hidden"}
-        </button>
-      ) : (
-        <span className="shrink-0 text-[11px] font-medium text-ink-400 bg-paper-100 border border-line rounded px-2.5 py-1.5">
-          Always shown
-        </span>
-      )}
+      <button
+        type="button"
+        onClick={onToggle}
+        disabled={disabled}
+        aria-pressed={visible}
+        title={visible ? "Visible — click to hide" : "Hidden — click to show"}
+        className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-md border disabled:opacity-60 ${
+          visible ? "border-forest text-forest bg-forest-100" : "border-line text-ink-400 bg-paper-100"
+        }`}
+      >
+        {visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+        {visible ? "Shown" : "Hidden"}
+      </button>
     </li>
   );
 }

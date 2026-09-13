@@ -6,10 +6,10 @@
 // adding/removing/reordering a photo is a read-modify-write of that one
 // column instead of an insert/delete against a child table.
 //
-// Phases is a modular subsection of Features now, not a first-class
-// pinnable homepage section — the schema is deliberately just
-// title/period/summary/photos (see the streamline migration), and
-// there is no pin/publish toggle here the way posts/features have one.
+// Phases is a modular subsection of Features, with the same
+// is_published gate Image Gallery features have (see togglePhasePublished
+// below and SectionList.tsx) — a new phase starts as a draft, same as a
+// new feature.
 "use server";
 
 import { revalidatePath } from "next/cache";
@@ -22,7 +22,10 @@ export type PhaseFormInput = {
   title: string;
   period: string;
   summary: string;
+  full_content: string;
   slideshow_interval: number;
+  max_display_images: number;
+  is_published: boolean;
 };
 
 export async function createPhase(input: PhaseFormInput) {
@@ -36,7 +39,10 @@ export async function createPhase(input: PhaseFormInput) {
       title: input.title,
       period: input.period || null,
       summary: input.summary,
+      full_content: input.full_content || null,
       slideshow_interval: input.slideshow_interval,
+      max_display_images: input.max_display_images,
+      is_published: input.is_published,
       sort_order: count ?? 0,
     })
     .select("id")
@@ -53,6 +59,7 @@ export async function createPhase(input: PhaseFormInput) {
 
   revalidatePath("/admin/features");
   revalidatePath("/admin/phases");
+  revalidatePath("/admin/arrangement");
   revalidatePath("/");
   redirect(`/admin/phases/${data.id}`);
 }
@@ -66,7 +73,10 @@ export async function updatePhase(id: string, input: PhaseFormInput) {
       title: input.title,
       period: input.period || null,
       summary: input.summary,
+      full_content: input.full_content || null,
       slideshow_interval: input.slideshow_interval,
+      max_display_images: input.max_display_images,
+      is_published: input.is_published,
     })
     .eq("id", id);
 
@@ -82,6 +92,19 @@ export async function updatePhase(id: string, input: PhaseFormInput) {
   revalidatePath("/admin/features");
   revalidatePath("/admin/phases");
   revalidatePath(`/admin/phases/${id}`);
+  revalidatePath("/admin/arrangement");
+  revalidatePath("/");
+}
+
+export async function togglePhasePublished(id: string, is_published: boolean) {
+  const { supabase } = await requireAdmin();
+
+  const { error } = await supabase.from("phases").update({ is_published }).eq("id", id);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/features");
+  revalidatePath("/admin/arrangement");
   revalidatePath("/");
 }
 
@@ -112,7 +135,7 @@ export async function deletePhase(id: string) {
 
 export async function addPhasePhoto(
   phaseId: string,
-  input: { url: string; path: string; caption?: string }
+  input: { url: string; path: string; caption?: string; fact?: string }
 ) {
   const { supabase } = await requireAdmin();
 
@@ -125,7 +148,10 @@ export async function addPhasePhoto(
   if (fetchError) throw new Error(fetchError.message);
 
   const photos = (phase?.photos as PhasePhoto[] | null) ?? [];
-  const next: PhasePhoto[] = [...photos, { url: input.url, path: input.path, caption: input.caption ?? "" }];
+  const next: PhasePhoto[] = [
+    ...photos,
+    { url: input.url, path: input.path, caption: input.caption ?? "", fact: input.fact ?? "" },
+  ];
 
   const { error } = await supabase.from("phases").update({ photos: next }).eq("id", phaseId);
   if (error) throw new Error(error.message);
@@ -170,6 +196,27 @@ export async function updatePhasePhotoCaption(phaseId: string, path: string, cap
 
   const photos = (phase?.photos as PhasePhoto[] | null) ?? [];
   const next = photos.map((p) => (p.path === path ? { ...p, caption } : p));
+
+  const { error } = await supabase.from("phases").update({ photos: next }).eq("id", phaseId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/admin/phases/${phaseId}`);
+  revalidatePath("/");
+}
+
+export async function updatePhasePhotoFact(phaseId: string, path: string, fact: string) {
+  const { supabase } = await requireAdmin();
+
+  const { data: phase, error: fetchError } = await supabase
+    .from("phases")
+    .select("photos")
+    .eq("id", phaseId)
+    .single();
+
+  if (fetchError) throw new Error(fetchError.message);
+
+  const photos = (phase?.photos as PhasePhoto[] | null) ?? [];
+  const next = photos.map((p) => (p.path === path ? { ...p, fact } : p));
 
   const { error } = await supabase.from("phases").update({ photos: next }).eq("id", phaseId);
   if (error) throw new Error(error.message);

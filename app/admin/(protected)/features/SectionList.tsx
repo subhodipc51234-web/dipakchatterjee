@@ -9,10 +9,10 @@
 // renders them in this exact interleaved order (see
 // lib/homepage-layout.ts's computeHomepageOrder).
 //
-// Publish/unpublish only applies to Image Gallery features — a phase
-// has no is_published flag (it's always shown once created, matching
-// ../phases/actions.ts's existing design), so phase rows simply don't
-// get that toggle button.
+// Publish/unpublish applies to both kinds now — Phases has its own
+// is_published column, matching Image Gallery features (see
+// ../phases/actions.ts's togglePhasePublished) — so the toggle just
+// reads/writes `item.data.is_published` regardless of `item.kind`.
 "use client";
 
 import { useState, useTransition } from "react";
@@ -37,7 +37,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { ChevronDown, ChevronUp, Eye, EyeOff, GripVertical, Pencil, Trash2 } from "lucide-react";
 import type { Feature, Phase } from "@/types/domain";
 import { deleteFeature, reorderSections, toggleFeaturePublished, type SectionRef } from "./actions";
-import { deletePhase } from "../phases/actions";
+import { deletePhase, togglePhasePublished } from "../phases/actions";
 
 export type SectionItem =
   | { kind: "feature"; data: Feature }
@@ -78,12 +78,20 @@ export default function SectionList({ items: initialItems }: { items: SectionIte
     persist(arrayMove(items, index, target));
   }
 
-  function handleTogglePublished(id: string, next: boolean) {
+  function handleTogglePublished(item: SectionItem) {
+    const next = !item.data.is_published;
     setItems((prev) =>
-      prev.map((it) => (it.kind === "feature" && it.data.id === id ? { ...it, data: { ...it.data, is_published: next } } : it))
+      prev.map((it) => {
+        if (it.data.id !== item.data.id) return it;
+        // Narrowed per-branch (rather than a single spread) so TS keeps
+        // `data`'s type tied to this row's own `kind` discriminant.
+        return it.kind === "feature"
+          ? { ...it, data: { ...it.data, is_published: next } }
+          : { ...it, data: { ...it.data, is_published: next } };
+      })
     );
     startTransition(async () => {
-      await toggleFeaturePublished(id, next);
+      await (item.kind === "feature" ? toggleFeaturePublished(item.data.id, next) : togglePhasePublished(item.data.id, next));
     });
   }
 
@@ -117,9 +125,7 @@ export default function SectionList({ items: initialItems }: { items: SectionIte
               isLast={index === items.length - 1}
               onMoveUp={() => handleMove(index, -1)}
               onMoveDown={() => handleMove(index, 1)}
-              onTogglePublished={
-                item.kind === "feature" ? () => handleTogglePublished(item.data.id, !item.data.is_published) : undefined
-              }
+              onTogglePublished={() => handleTogglePublished(item)}
               onDelete={() => handleDelete(item)}
             />
           ))}
@@ -145,7 +151,7 @@ function SortableSectionRow({
   isLast: boolean;
   onMoveUp: () => void;
   onMoveDown: () => void;
-  onTogglePublished?: () => void;
+  onTogglePublished: () => void;
   onDelete: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -208,25 +214,17 @@ function SortableSectionRow({
         {subtitle && <p className="text-sm text-ink-600 truncate mt-0.5">{subtitle}</p>}
       </div>
 
-      {onTogglePublished && (
-        <button
-          type="button"
-          onClick={onTogglePublished}
-          disabled={disabled}
-          className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-md border disabled:opacity-60 ${
-            item.kind === "feature" && item.data.is_published
-              ? "border-forest text-forest bg-forest-100"
-              : "border-line text-ink-400 bg-paper-100"
-          }`}
-        >
-          {item.kind === "feature" && item.data.is_published ? (
-            <Eye className="w-3.5 h-3.5" />
-          ) : (
-            <EyeOff className="w-3.5 h-3.5" />
-          )}
-          {item.kind === "feature" && item.data.is_published ? "Published" : "Draft"}
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={onTogglePublished}
+        disabled={disabled}
+        className={`shrink-0 inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-md border disabled:opacity-60 ${
+          item.data.is_published ? "border-forest text-forest bg-forest-100" : "border-line text-ink-400 bg-paper-100"
+        }`}
+      >
+        {item.data.is_published ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+        {item.data.is_published ? "Published" : "Draft"}
+      </button>
 
       <Link
         href={editHref}

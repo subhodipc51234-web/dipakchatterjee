@@ -1,30 +1,52 @@
 // components/phases/PhaseGallery.tsx
 //
-// Right-column gallery for a Phase: a neat grid of thumbnails that opens
-// a full-resolution lightbox (prev/next, caption, Escape/backdrop to
-// close) on click — "Carousel/slideshow or neat grid... with full-
-// resolution expand/lightbox inspection" per the Phases layout spec.
+// Right-column media block for a Phase, with two mutually exclusive
+// modes decided by whether a slideshow interval is set:
 //
-// slideshowInterval (whole seconds, 0-10) is the phase's own
-// slideshow_interval, converted to ms by the caller — 0 (or omitted)
-// disables auto-advance entirely, leaving only the manual controls.
-// Auto-advance only runs once the lightbox is open (the thumbnail grid
-// itself never moves on its own), restarting whenever the index changes
-// so manual navigation doesn't fight the timer.
+//   - Case A (slideshowIntervalMs > 0, 2+ photos): renders
+//     PhaseSlideshow — the images auto-advance in place instead of
+//     showing as a grid.
+//   - Case B (no interval, or a single photo): renders a neat grid of
+//     thumbnails, capped to `maxDisplayImages`, that opens a full-
+//     resolution lightbox (prev/next, caption, Escape/backdrop to
+//     close) on click.
+//
+// The full, uncapped gallery (every photo, with its caption and fact)
+// only ever renders on the phase's own Read More page — see
+// app/(site)/phases/[id]/page.tsx.
 
 "use client";
 
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, X, ZoomIn } from "lucide-react";
 import type { PhasePhoto } from "@/types/domain";
+import PhaseSlideshow from "./PhaseSlideshow";
 
 export default function PhaseGallery({
   photos,
   slideshowIntervalMs = 0,
+  maxDisplayImages = 4,
 }: {
   photos: PhasePhoto[];
   slideshowIntervalMs?: number;
+  maxDisplayImages?: number;
 }) {
+  if (photos.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-line bg-white aspect-video flex items-center justify-center text-sm text-ink-400">
+        No photos yet
+      </div>
+    );
+  }
+
+  if (slideshowIntervalMs > 0 && photos.length > 1) {
+    return <PhaseSlideshow photos={photos} intervalMs={slideshowIntervalMs} />;
+  }
+
+  return <PhaseGrid photos={photos.slice(0, maxDisplayImages)} />;
+}
+
+function PhaseGrid({ photos }: { photos: PhasePhoto[] }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   useEffect(() => {
@@ -39,22 +61,6 @@ export default function PhaseGallery({
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
   }, [lightboxIndex, photos.length]);
-
-  useEffect(() => {
-    if (lightboxIndex === null || photos.length <= 1 || !slideshowIntervalMs) return;
-    const timer = setInterval(() => {
-      setLightboxIndex((i) => (i === null ? null : (i + 1) % photos.length));
-    }, slideshowIntervalMs);
-    return () => clearInterval(timer);
-  }, [lightboxIndex, photos.length, slideshowIntervalMs]);
-
-  if (photos.length === 0) {
-    return (
-      <div className="rounded-lg border border-dashed border-line bg-white aspect-video flex items-center justify-center text-sm text-ink-400">
-        No photos yet
-      </div>
-    );
-  }
 
   const active = lightboxIndex !== null ? photos[lightboxIndex] : null;
 

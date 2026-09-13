@@ -1,19 +1,19 @@
 // lib/homepage-layout.ts
 //
 // Shared between the public homepage (app/(site)/page.tsx) and the
-// admin Homepage Layout Builder (Settings -> Homepage Sections) so both
+// admin Arrangement page (app/admin/(protected)/arrangement) so both
 // compute the exact same section order from the same inputs.
 //
 // site_settings.homepage_layout stores an ordered array of section
 // keys: "organizations", "posts", `feature:<feature id>`, or
 // `phase:<phase id>`. It only needs to record ordering — visibility for
 // "organizations"/"posts" lives on their own site_settings booleans,
-// and a feature's visibility is just its existing `is_published` (a
-// phase has no such flag and is always shown) — so this never goes
-// stale in a way that could hide content: any key missing from the
-// stored array (a section never touched by the layout builder yet,
-// most commonly a brand new feature or phase) is appended at the end in
-// a sensible default order rather than silently dropped.
+// and a feature's or phase's visibility is just its own `is_published`
+// — so this never goes stale in a way that could hide content: any key
+// missing from the stored array (a section never touched by the
+// Arrangement page yet, most commonly a brand new feature or phase) is
+// appended at the end in a sensible default order rather than silently
+// dropped.
 //
 // Phases used to render as one fixed, always-last, ungrouped block
 // (see git history for PhasesSection.tsx) separate from this ordering

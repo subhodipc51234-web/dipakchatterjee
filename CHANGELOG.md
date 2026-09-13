@@ -1,5 +1,43 @@
 # Changelog
 
+## [v1.6.0] - 2026-09-13
+
+**Commit:** `8742b26`
+
+### Summary of What Changed
+
+- Converted all site timers (`features.slideshow_interval`, `posts.slideshow_interval`, `phases.slideshow_interval`) from integer to `numeric(4,2)`, and every timer input (Image Galleries, Notable Works, Phases) to `step="0.1"`, so decimal intervals like `2.5` seconds are supported end to end.
+- Added a dedicated `is_published` toggle for Phases, matching the Image Gallery feature toggle — Phases now default to draft on creation, everywhere that toggle appears (its own form, the unified Features/Phases list, and the Arrangement page).
+- Stripped the generic category eyebrow labels ("Image Gallery" above an Image Gallery section, "Notable Works" above the posts feed and its full listing page) that duplicated what the section type already was.
+- Restored a short `summary` vs. long-form `full_content` split for Phases: the homepage shows only the concise summary plus a "Read More" link; the period now renders directly beneath the title in the title's exact typography instead of as a small eyebrow above it.
+- Implemented conditional Phase media rendering (`components/phases/PhaseGallery.tsx`): an auto-advancing slideshow when `slideshow_interval > 0`, otherwise a static grid capped to the new configurable `max_display_images` (default 4).
+- Added a Phase "Read More" page (`/phases/[id]`) with the full narrative and the complete, uncapped photo gallery — each photo alongside its caption and a new optional per-photo "fact/detail" field.
+
+### Files Edited
+
+- `supabase/migrations/20260924000000_phases_and_timer_enhancements.sql`
+- `types/database.types.ts`
+- `types/domain.ts`
+- `app/(site)/page.tsx`
+- `app/(site)/notable-works/page.tsx`
+- `app/(site)/phases/[id]/page.tsx`
+- `components/phases/PhaseEntry.tsx`
+- `components/phases/PhaseGallery.tsx`
+- `components/phases/PhaseSlideshow.tsx`
+- `components/phases/PhaseFullGallery.tsx`
+- `components/features/FeatureSection.tsx`
+- `components/posts/PostsFeed.tsx`
+- `app/admin/(protected)/phases/actions.ts`
+- `app/admin/(protected)/phases/PhaseForm.tsx`
+- `app/admin/(protected)/phases/PhasePhotosManager.tsx`
+- `app/admin/(protected)/features/FeatureForm.tsx`
+- `app/admin/(protected)/features/SectionList.tsx`
+- `app/admin/(protected)/posts/PostForm.tsx`
+- `app/admin/(protected)/arrangement/ArrangementManager.tsx`
+- `lib/homepage-layout.ts`
+- `CHANGELOG.txt`
+- `CHANGELOG.md`
+
 ## [v1.0.0] - 2026-09-13
 
 **Commit:** `74ba91e`

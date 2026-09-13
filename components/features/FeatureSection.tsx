@@ -80,7 +80,6 @@ function PublicLifeFeature({ feature }: { feature: FeatureWithMedia }) {
     >
       <div className="max-w-6xl mx-auto px-5 md:px-8">
         <div className="max-w-2xl mb-10">
-          <p className="text-[var(--theme-primary)] font-semibold text-sm mb-3">Image Gallery</p>
           <h2 className="font-display text-3xl md:text-4xl text-navy-900 leading-tight">
             {feature.title}
           </h2>

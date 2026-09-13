@@ -73,7 +73,11 @@ export default async function HomePage() {
         .order("created_at", { ascending: false })
         .order("display_order", { foreignTable: "post_media", ascending: true })
         .limit(notableWorksLimit),
-      supabase.from("phases").select("*").order("sort_order", { ascending: true }),
+      supabase
+        .from("phases")
+        .select("*")
+        .eq("is_published", true)
+        .order("sort_order", { ascending: true }),
       supabase.from("organizations").select("*").order("display_order", { ascending: true }),
       supabase.from("cta_buttons").select("*").order("display_order", { ascending: true }),
     ]);

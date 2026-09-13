@@ -29,7 +29,13 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { AlertCircle, GripVertical, ImagePlus, Loader2, RotateCcw, Trash2, X } from "lucide-react";
-import { addPhasePhoto, deletePhasePhoto, reorderPhasePhotos, updatePhasePhotoCaption } from "./actions";
+import {
+  addPhasePhoto,
+  deletePhasePhoto,
+  reorderPhasePhotos,
+  updatePhasePhotoCaption,
+  updatePhasePhotoFact,
+} from "./actions";
 
 type PendingUpload = {
   localId: string;
@@ -113,7 +119,7 @@ export default function PhasePhotosManager({ phaseId, photos }: { phaseId: strin
 
     try {
       await addPhasePhoto(phaseId, { url: publicUrl, path });
-      setItems((prev) => [...prev, { url: publicUrl, path, caption: "" }]);
+      setItems((prev) => [...prev, { url: publicUrl, path, caption: "", fact: "" }]);
       setPending((prev) => prev.filter((p) => p.localId !== entry.localId));
       URL.revokeObjectURL(entry.previewUrl);
     } catch (err) {
@@ -163,6 +169,16 @@ export default function PhasePhotosManager({ phaseId, photos }: { phaseId: strin
         await updatePhasePhotoCaption(phaseId, path, caption);
       } catch (err) {
         alert(err instanceof Error ? err.message : "Failed to save caption.");
+      }
+    });
+  }
+
+  function handleFactSave(path: string, fact: string) {
+    startTransition(async () => {
+      try {
+        await updatePhasePhotoFact(phaseId, path, fact);
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Failed to save fact.");
       }
     });
   }
@@ -263,6 +279,7 @@ export default function PhasePhotosManager({ phaseId, photos }: { phaseId: strin
                   onDelete={() => handleDelete(item.path)}
                   disabled={isPending}
                   onCaptionSave={(caption) => handleCaptionSave(item.path, caption)}
+                  onFactSave={(fact) => handleFactSave(item.path, fact)}
                 />
               ))}
             </ul>
@@ -278,14 +295,17 @@ function SortablePhotoRow({
   onDelete,
   disabled,
   onCaptionSave,
+  onFactSave,
 }: {
   item: PhasePhoto;
   onDelete: () => void;
   disabled: boolean;
   onCaptionSave: (caption: string) => void;
+  onFactSave: (fact: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.path });
   const [caption, setCaption] = useState(item.caption ?? "");
+  const [fact, setFact] = useState(item.fact ?? "");
 
   const style = { transform: CSS.Transform.toString(transform), transition };
 
@@ -312,12 +332,19 @@ function SortablePhotoRow({
         <img src={item.url} alt="" className="w-full h-full object-cover" />
       </div>
 
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 space-y-1.5">
         <input
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
           onBlur={() => caption !== (item.caption ?? "") && onCaptionSave(caption)}
           placeholder="Caption"
+          className="w-full rounded border border-line bg-white px-2.5 py-1.5 text-xs text-ink focus:border-saffron focus:outline-none"
+        />
+        <input
+          value={fact}
+          onChange={(e) => setFact(e.target.value)}
+          onBlur={() => fact !== (item.fact ?? "") && onFactSave(fact)}
+          placeholder="Fact / detail (shown on the Read More page)"
           className="w-full rounded border border-line bg-white px-2.5 py-1.5 text-xs text-ink focus:border-saffron focus:outline-none"
         />
       </div>

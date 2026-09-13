@@ -101,7 +101,6 @@ export default async function NotableWorksPage({
           Back to Home
         </Link>
 
-        <p className="text-[var(--theme-primary)] font-semibold text-sm mb-3">Notable Works</p>
         <h1 className="font-display text-3xl md:text-4xl text-navy-900 leading-tight max-w-xl mb-10">
           A record of service, community work, and public action.
         </h1>

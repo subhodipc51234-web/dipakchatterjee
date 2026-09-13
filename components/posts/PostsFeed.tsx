@@ -70,7 +70,6 @@ export default function PostsFeed({ posts }: { posts: PostWithMedia[] }) {
     <section id="works" className="py-16 md:py-24 bg-[var(--theme-secondary)]">
       <div className="max-w-6xl mx-auto px-5 md:px-8">
         <div className="mb-10">
-          <p className="text-[var(--theme-primary)] font-semibold text-sm mb-3">Notable Works</p>
           <h2 className="font-display text-3xl md:text-4xl text-white leading-tight max-w-xl">
             A record of service, community work, and public action.
           </h2>

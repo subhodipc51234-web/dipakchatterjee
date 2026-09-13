@@ -29,7 +29,7 @@ const postSchema = z.object({
   // Registered with { valueAsNumber: true } below, so RHF already hands
   // this a number — no z.coerce needed (and z.coerce's input/output
   // type split trips up zodResolver's inference with useForm here).
-  slideshow_interval: z.number().int().min(0).max(10),
+  slideshow_interval: z.number().min(0).max(10),
 });
 
 type PostFormValues = z.infer<typeof postSchema>;
@@ -221,14 +221,15 @@ export default function PostForm({
           type="number"
           min={0}
           max={10}
-          step={1}
+          step={0.1}
           {...register("slideshow_interval", { valueAsNumber: true })}
           className="w-32 rounded-md border border-line bg-white px-4 py-3 text-sm text-ink focus:border-saffron focus:outline-none"
         />
         <p className="text-xs text-ink-400 mt-1.5">
-          How long each image shows before auto-advancing, when this post has multiple images (0-10
-          seconds). Set to <strong>0</strong> to disable auto-advance entirely — visitors can still
-          navigate manually with the arrows/dots.
+          How long each image shows before auto-advancing, when this post has multiple images
+          (0-10 seconds, decimals like <strong>2.5</strong> allowed). Set to <strong>0</strong> to
+          disable auto-advance entirely — visitors can still navigate manually with the
+          arrows/dots.
         </p>
         {errors.slideshow_interval && (
           <p className="text-xs text-rust mt-1.5">{errors.slideshow_interval.message}</p>

@@ -462,7 +462,10 @@ export type Database = {
       phases: {
         Row: {
           created_at: string
+          full_content: string | null
           id: string
+          is_published: boolean
+          max_display_images: number
           period: string | null
           photos: Json
           slideshow_interval: number
@@ -472,7 +475,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          full_content?: string | null
           id?: string
+          is_published?: boolean
+          max_display_images?: number
           period?: string | null
           photos?: Json
           slideshow_interval?: number
@@ -482,7 +488,10 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          full_content?: string | null
           id?: string
+          is_published?: boolean
+          max_display_images?: number
           period?: string | null
           photos?: Json
           slideshow_interval?: number
