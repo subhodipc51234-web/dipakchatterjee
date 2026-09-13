@@ -127,6 +127,7 @@ export async function toggleFeaturePublished(id: string, is_published: boolean) 
   if (error) throw new Error(error.message);
 
   revalidatePath("/admin/features");
+  revalidatePath("/admin/arrangement");
   revalidatePath("/");
 }
 

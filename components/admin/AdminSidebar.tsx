@@ -9,13 +9,14 @@
 "use client";
 
 import Link from "next/link";
-import { X, ExternalLink, History, Image as ImageIcon, LayoutDashboard, Layers, MessageSquareWarning, Rss } from "lucide-react";
+import { X, ExternalLink, History, Image as ImageIcon, LayoutDashboard, Layers, MessageSquareWarning, Rows3, Rss } from "lucide-react";
 import SignOutButton from "@/components/admin/SignOutButton";
 import { useMobileSidebar } from "@/components/admin/MobileSidebarContext";
 
 const NAV_LINKS = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
   { href: "/admin/features", label: "Features", icon: Layers },
+  { href: "/admin/arrangement", label: "Arrangement", icon: Rows3 },
   { href: "/admin/posts", label: "Posts", icon: Rss },
   { href: "/admin/complaints", label: "Complaints", icon: MessageSquareWarning },
   { href: "/admin/settings", label: "Settings", icon: ImageIcon },

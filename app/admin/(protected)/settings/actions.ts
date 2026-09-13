@@ -48,26 +48,6 @@ export async function updateSiteImage(
   revalidatePath("/");
 }
 
-export async function updateHomepageLayout(orderedKeys: string[]) {
-  const { supabase, user } = await requireAdmin();
-
-  const { error } = await supabase
-    .from("site_settings")
-    .update({ homepage_layout: orderedKeys, updated_at: new Date().toISOString() })
-    .eq("id", "default");
-
-  if (error) throw new Error(error.message);
-
-  await logDashboardActivity(supabase, user, {
-    action: "UPDATE_SETTINGS",
-    entityType: "settings",
-    details: "Reordered homepage sections",
-  });
-
-  revalidatePath("/admin/settings");
-  revalidatePath("/");
-}
-
 export async function updateHomepageSectionVisibility(key: "organizations" | "posts", visible: boolean) {
   const { supabase, user } = await requireAdmin();
 
@@ -87,6 +67,7 @@ export async function updateHomepageSectionVisibility(key: "organizations" | "po
   });
 
   revalidatePath("/admin/settings");
+  revalidatePath("/admin/arrangement");
   revalidatePath("/");
 }
 

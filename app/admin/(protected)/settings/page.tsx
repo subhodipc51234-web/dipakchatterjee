@@ -1,14 +1,14 @@
 // app/admin/(protected)/settings/page.tsx
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Rows3 } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import type {
   CtaButton,
-  Feature,
   FooterBlockWithLinks,
   HeaderAction,
   NavLink,
   Organization,
-  Phase,
   SiteSettings,
   SocialLink,
 } from "@/types/domain";
@@ -21,11 +21,9 @@ import BrandingTextForm from "./BrandingTextForm";
 import FooterBlocksManager from "./FooterBlocksManager";
 import SocialLinksManager from "./SocialLinksManager";
 import HeaderNavigationManager from "./HeaderNavigationManager";
-import HomepageLayoutManager from "./HomepageLayoutManager";
 import NotableWorksLimitControl from "./NotableWorksLimitControl";
 import UsersManager from "./UsersManager";
 import SettingsTabs from "./SettingsTabs";
-import { computeHomepageOrder } from "@/lib/homepage-layout";
 import type { Profile } from "@/types/domain";
 
 export const metadata: Metadata = {
@@ -87,7 +85,7 @@ export default async function SettingsPage() {
     return <SettingsMessage heading="Signed out" body="Please sign in to manage site settings." />;
   }
 
-  let settings, organizations, ctaButtons, footerBlocks, socialLinks, navLinks, headerActions, features, phases, profiles;
+  let settings, organizations, ctaButtons, footerBlocks, socialLinks, navLinks, headerActions, profiles;
 
   try {
     [
@@ -98,8 +96,6 @@ export default async function SettingsPage() {
       { data: socialLinks },
       { data: navLinks },
       { data: headerActions },
-      { data: features },
-      { data: phases },
       { data: profiles },
     ] = await Promise.all([
       supabase.from("site_settings").select("*").eq("id", "default").single(),
@@ -113,10 +109,6 @@ export default async function SettingsPage() {
       supabase.from("social_links").select("*").order("display_order", { ascending: true }),
       supabase.from("nav_links").select("*").order("display_order", { ascending: true }),
       supabase.from("header_actions").select("*").order("display_order", { ascending: true }),
-      // Every feature, published or not — the Layout Builder needs to
-      // show and let an admin re-enable a currently-hidden section.
-      supabase.from("features").select("*").order("display_order", { ascending: true }),
-      supabase.from("phases").select("*").order("sort_order", { ascending: true }),
       supabase.from("profiles").select("*").order("created_at", { ascending: true }),
     ]);
   } catch (err) {
@@ -132,9 +124,6 @@ export default async function SettingsPage() {
   const s = settings as SiteSettings | null;
   const themePrimary = s?.theme_primary_color || "#C1832B";
   const themeSecondary = s?.theme_secondary_color || "#151F33";
-  const featureList = (features as Feature[]) ?? [];
-  const phaseList = (phases as Phase[]) ?? [];
-  const homepageOrder = computeHomepageOrder(s?.homepage_layout, featureList, phaseList);
 
   return (
     <div className="max-w-2xl">
@@ -157,13 +146,21 @@ export default async function SettingsPage() {
         sections={
           <>
             <NotableWorksLimitControl limit={s?.notable_works_limit ?? 6} />
-            <HomepageLayoutManager
-              initialOrder={homepageOrder}
-              features={featureList}
-              phases={phaseList}
-              organizationsVisible={s?.show_organizations_section ?? true}
-              postsVisible={s?.show_posts_feed_section ?? true}
-            />
+            <div className="bg-white border border-line rounded-xl p-6 md:p-8">
+              <p className="text-sm font-semibold text-navy-900 mb-1">Homepage Arrangement</p>
+              <p className="text-xs text-ink-400 mb-4">
+                Reordering and showing/hiding homepage sections has moved to its own dedicated
+                page, where Header/Hero/Footer are shown as fixed bookends around the sections you
+                can move.
+              </p>
+              <Link
+                href="/admin/arrangement"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-saffron-600 hover:text-saffron-700"
+              >
+                <Rows3 className="w-4 h-4" />
+                Go to Arrangement
+              </Link>
+            </div>
           </>
         }
         header={
