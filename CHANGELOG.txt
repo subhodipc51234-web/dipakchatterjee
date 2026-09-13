@@ -2,7 +2,6 @@ CHANGELOG
 =========
 
 [v1.6.0] - 2026-09-13
-Commit: 8742b26
 
 Summary of what changed:
   * Converted all site timers (features.slideshow_interval,
@@ -57,7 +56,6 @@ Files edited (paths only):
   - CHANGELOG.md
 
 [v1.0.0] - 2026-09-13
-Commit: 74ba91e
 
 Summary of what changed:
   * Added a dedicated /admin/arrangement page for reordering homepage

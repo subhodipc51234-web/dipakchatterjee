@@ -2,8 +2,6 @@
 
 ## [v1.6.0] - 2026-09-13
 
-**Commit:** `8742b26`
-
 ### Summary of What Changed
 
 - Converted all site timers (`features.slideshow_interval`, `posts.slideshow_interval`, `phases.slideshow_interval`) from integer to `numeric(4,2)`, and every timer input (Image Galleries, Notable Works, Phases) to `step="0.1"`, so decimal intervals like `2.5` seconds are supported end to end.
@@ -39,8 +37,6 @@
 - `CHANGELOG.md`
 
 ## [v1.0.0] - 2026-09-13
-
-**Commit:** `74ba91e`
 
 ### Summary of What Changed
 
